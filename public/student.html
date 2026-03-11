@@ -33,12 +33,11 @@
             max-width: 450px;
             width: 90%;
             text-align: center;
-            transition: transform 0.3s ease;
         }
 
         .robot-icon {
             font-size: 4rem;
-            margin-bottom: 1rem;
+            margin-bottom: 0.5rem;
             display: block;
         }
 
@@ -56,7 +55,6 @@
             height: 20px;
         }
 
-        /* Der Mikrofon-Button */
         #mic-button {
             width: 120px;
             height: 120px;
@@ -75,10 +73,7 @@
             outline: none;
         }
 
-        #mic-button:hover {
-            transform: scale(1.05);
-            background: #357ABD;
-        }
+        #mic-button:hover { transform: scale(1.05); }
 
         #mic-button.active {
             background: #EF4444;
@@ -98,11 +93,9 @@
             margin-top: 25px;
             min-height: 80px;
             border: 1px solid #E2E8F0;
-            font-style: italic;
             line-height: 1.5;
+            text-align: left;
         }
-
-        .hidden { display: none; }
     </style>
 </head>
 <body>
@@ -121,48 +114,63 @@
 </div>
 
 <script>
-    // WICHTIG: Die URL zur Netlify Function ist jetzt relativ (/.netlify/functions/chat1)
-    // Damit funktioniert es sowohl lokal als auch live im Web!
     const MIC_BUTTON = document.getElementById('mic-button');
     const STATUS_TEXT = document.getElementById('status');
     const CHAT_OUTPUT = document.getElementById('chat-output');
+    const TOPIC_TITLE = document.getElementById('topic-title');
 
-    let isRecording = false;
+    // Thema aus der URL holen
+    const urlParams = new URLSearchParams(window.location.search);
+    const topic = urlParams.get('topic') || "Allgemeines Gespräch";
+    TOPIC_TITLE.innerText = topic;
 
-    MIC_BUTTON.onclick = async () => {
-        if (!isRecording) {
-            startRecording();
-        } else {
-            stopRecording();
-        }
-    };
+    let recognition;
+    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        recognition = new SpeechRecognition();
+        recognition.lang = 'de-DE';
+        recognition.interimResults = false;
 
-    function startRecording() {
-        isRecording = true;
-        MIC_BUTTON.classList.add('active');
-        STATUS_TEXT.innerText = "Ich höre zu...";
-        // Hier käme deine Web Speech API Logik rein
+        recognition.onresult = (event) => {
+            const transcript = event.results[0][0].transcript;
+            sendToAI(transcript);
+        };
+
+        recognition.onerror = (event) => {
+            console.error("Fehler:", event.error);
+            STATUS_TEXT.innerText = "Fehler: " + event.error;
+            MIC_BUTTON.classList.remove('active');
+        };
     }
 
-    async function stopRecording() {
-        isRecording = false;
-        MIC_BUTTON.classList.remove('active');
-        STATUS_TEXT.innerText = "KI verarbeitet...";
+    MIC_BUTTON.onclick = () => {
+        if (!recognition) {
+            alert("Dein Browser unterstützt leider keine Spracherkennung.");
+            return;
+        }
+        MIC_BUTTON.classList.add('active');
+        STATUS_TEXT.innerText = "Ich höre zu...";
+        recognition.start();
+    };
 
+    async function sendToAI(text) {
+        STATUS_TEXT.innerText = "KI verarbeitet...";
         try {
-            // DER FIX: Relative URL für Netlify
             const response = await fetch('/.netlify/functions/chat1', {
                 method: 'POST',
-                body: JSON.stringify({ message: "Hallo KI!" }) // Beispiel-Input
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message: text, topic: topic })
             });
 
             const data = await response.json();
-            CHAT_OUTPUT.innerText = data.reply;
+            // Zeige die Antwort der KI an
+            CHAT_OUTPUT.innerText = data.reply || data.message || "Keine Antwort erhalten.";
             STATUS_TEXT.innerText = "Bereit";
         } catch (err) {
-            STATUS_TEXT.innerText = "Fehler!";
-            CHAT_OUTPUT.innerText = "Oh nein, ich konnte die KI nicht erreichen.";
-            console.error(err);
+            CHAT_OUTPUT.innerText = "Fehler bei der Verbindung zur KI.";
+            STATUS_TEXT.innerText = "Fehler";
+        } finally {
+            MIC_BUTTON.classList.remove('active');
         }
     }
 </script>
