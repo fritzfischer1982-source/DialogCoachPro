@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="de" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DialogCoach Pro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Krypto-Bibliothek für die Link-Verschlüsselung (Client-Side) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    <style>
+        :root { --primary: #2563eb; --bg: #f8fafc; }
+        [data-theme="dark"] { --bg: #0f172a; --text: #f1f5f9; }
+        body { background-color: var(--bg); color: #1e293b; font-family: 'Segoe UI', sans-serif; }
+        .card { background: white; border-radius: 12px; padding: 24px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); border: 1px solid #e2e8f0; }
+        .input-field { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; margin-top: 4px; }
+        .btn { padding: 12px 24px; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-primary:hover { background: #1d4ed8; }
+    </style>
+</head>
+<body class="p-8 max-w-4xl mx-auto">
+
+    <!-- HEADER -->
+    <div class="flex justify-between items-center mb-8">
+        <h1 class="text-2xl font-bold text-blue-600 flex items-center gap-2">
+            🎓 DialogCoach <span class="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">PRO</span>
+        </h1>
+        <div class="text-sm text-gray-500">Lehrer-Konsole</div>
+    </div>
+
+    <!-- CONNECTION STATUS (Automatisch geprüft) -->
+    <div id="statusIndicator" class="mb-6 text-xs font-mono text-gray-400 text-right">
+        Backend Status: <span class="text-orange-500">Prüfe...</span>
+    </div>
+
+    <!-- KONFIGURATOR -->
+    <div class="grid md:grid-cols-2 gap-6">
+        
+        <!-- LINKE SPALTE: Basis-Daten -->
+        <div class="card space-y-4">
+            <h2 class="font-bold text-lg border-b pb-2">1. Schüler & Ziel</h2>
+            
+            <div>
+                <label class="text-sm font-semibold">Titel / Thema</label>
+                <input type="text" id="topic" class="input-field" placeholder="z.B. Bewerbungsgespräch" value="Umweltschutz">
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="text-sm font-semibold">Schüler Name</label>
+                    <input type="text" id="studentName" class="input-field" placeholder="Max">
+                </div>
+                <div>
+                    <label class="text-sm font-semibold">Niveau</label>
+                    <select id="level" class="input-field bg-white">
+                        <option>A1</option><option>A2</option><option>B1</option>
+                        <option selected>B2</option><option>C1</option><option>C2</option>
+                    </select>
+                </div>
+            </div>
+
+            <div>
+                <label class="text-sm font-semibold">Sprache</label>
+                <select id="language" class="input-field bg-white">
+                    <option>Deutsch</option><option>Englisch</option><option>Französisch</option>
+                    <option>Spanisch</option><option>Italienisch</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- RECHTE SPALTE: Didaktik -->
+        <div class="card space-y-4">
+            <h2 class="font-bold text-lg border-b pb-2">2. Steuerung</h2>
+
+            <!-- LÄNGE -->
+            <div>
+                <label class="text-sm font-semibold flex justify-between">
+                    <span>Dauer / Länge</span>
+                    <span id="lengthDisp" class="text-blue-600">5 Fragen</span>
+                </label>
+                <div class="flex items-center gap-2 mt-2">
+                    <select id="lengthMode" class="p-2 border rounded text-sm" onchange="updateSlider()">
+                        <option value="questions">Fragen</option>
+                        <option value="minutes">Minuten</option>
+                    </select>
+                    <input type="range" id="lengthSlider" min="2" max="20" value="5" class="w-full" oninput="updateSlider()">
+                </div>
+            </div>
+
+            <!-- MODUS -->
+            <div>
+                <label class="text-sm font-semibold">Führungs-Stil</label>
+                <div class="flex gap-2 mt-1">
+                    <label class="flex-1 cursor-pointer">
+                        <input type="radio" name="mode" value="linear" class="hidden peer" checked>
+                        <div class="p-2 border rounded text-center text-sm peer-checked:bg-blue-50 peer-checked:border-blue-500 peer-checked:text-blue-700">
+                            📏 Linear (Prüfung)
+                        </div>
+                    </label>
+                    <label class="flex-1 cursor-pointer">
+                        <input type="radio" name="mode" value="adaptive" class="hidden peer">
+                        <div class="p-2 border rounded text-center text-sm peer-checked:bg-green-50 peer-checked:border-green-500 peer-checked:text-green-700">
+                            🌱 Adaptiv (Dialog)
+                        </div>
+                    </label>
+                </div>
+            </div>
+
+            <!-- NEU: Rhetorik Coach -->
+            <div class="flex items-center justify-between p-3 bg-slate-50 rounded border">
+                <div>
+                    <div class="text-sm font-bold">💎 Rhetorik-Coach</div>
+                    <div class="text-xs text-gray-500">Bietet "Level-Up" Formulierungen an</div>
+                </div>
+                <input type="checkbox" id="rhetoricCoach" class="w-5 h-5 accent-blue-600">
+            </div>
+        </div>
+    </div>
+
+    <!-- UNTEN: Content & API -->
+    <div class="card mt-6 space-y-4">
+        <h2 class="font-bold text-lg border-b pb-2">3. Inhalt & Link</h2>
+
+        <div>
+            <label class="text-sm font-semibold">Leitfragen (Optional, eine pro Zeile)</label>
+            <textarea id="questions" rows="3" class="input-field font-mono text-sm" placeholder="1. Was denkst du über...?"></textarea>
+            <button onclick="aiSuggest()" class="text-xs text-blue-600 hover:underline mt-1">✨ KI-Vorschlag generieren</button>
+        </div>
+
+        <div>
+            <label class="text-sm font-semibold">Pflicht-Vokabeln (Kommagetrennt)</label>
+            <input type="text" id="vocabs" class="input-field" placeholder="Nachhaltigkeit, Umwelt, Ressource">
+        </div>
+
+        <div class="bg-blue-50 p-4 rounded border border-blue-100 mt-4">
+            <div class="flex gap-4 items-end">
+                <div class="flex-1">
+                    <label class="text-xs font-bold text-blue-800 uppercase">Dein OpenAI API Key</label>
+                    <input type="password" id="apiKey" class="input-field border-blue-200" placeholder="sk-...">
+                </div>
+                <div class="flex-1">
+                    <label class="text-xs font-bold text-blue-800 uppercase">Schüler-Passwort</label>
+                    <input type="text" id="password" class="input-field border-blue-200 font-mono text-center tracking-widest" value="START123">
+                </div>
+                <button onclick="generateLink()" class="btn btn-primary h-[46px]">
+                    🔗 Link Erstellen
+                </button>
+            </div>
+        </div>
+        
+        <!-- OUTPUT LINK -->
+        <div id="outputArea" class="hidden mt-4 pt-4 border-t">
+            <p class="text-green-600 font-bold mb-2">✅ Link generiert:</p>
+            <div class="flex gap-2">
+                <input type="text" id="finalLink" readonly class="input-field bg-gray-100 text-gray-500 text-xs">
+                <button onclick="copyToClip()" class="p-2 bg-gray-200 rounded hover:bg-gray-300">📋</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 1. BACKEND CHECK (Automatisch beim Laden)
+        window.onload = async () => {
+            try {
+                // Wir pingen unser Backend an (Dummy Request)
+                const res = await fetch('/.netlify/functions/test-connection', { method:'POST', body: JSON.stringify({apiKey:'test'})});
+                if(res.ok) document.getElementById('statusIndicator').innerHTML = 'Backend: <span class="text-green-500">Online ✅</span>';
+                else throw new Error();
+            } catch(e) {
+                document.getElementById('statusIndicator').innerHTML = 'Backend: <span class="text-red-500">Offline ❌ (Server läuft nicht?)</span>';
+            }
+        };
+
+        // UI Updates
+        function updateSlider() {
+            const mode = document.getElementById('lengthMode').value;
+            const val = document.getElementById('lengthSlider').value;
+            document.getElementById('lengthDisp').innerText = `${val} ${mode === 'questions' ? 'Fragen' : 'Minuten'}`;
+        }
+
+        // 2. LINK GENERATOR (AES Verschlüsselung)
+        function generateLink() {
+            const key = document.getElementById('apiKey').value;
+            const pwd = document.getElementById('password').value;
+            
+            if(!key) { alert("Bitte API Key eingeben!"); return; }
+
+            // Das Konfig-Paket schnüren
+            const config = {
+                k: key, // API Key
+                s: document.getElementById('studentName').value,
+                t: document.getElementById('topic').value,
+                l: document.getElementById('level').value,
+                la: document.getElementById('language').value,
+                lenMode: document.getElementById('lengthMode').value,
+                lenVal: document.getElementById('lengthSlider').value,
+                mode: document.querySelector('input[name="mode"]:checked').value,
+                rhetoric: document.getElementById('rhetoricCoach').checked,
+                q: document.getElementById('questions').value.split('\n').filter(x => x.trim()),
+                v: document.getElementById('vocabs').value.split(',').filter(x => x.trim()),
+                date: new Date().toISOString() // Für PDF Dateiname
+            };
+
+            // Verschlüsseln
+            const ciphertext = CryptoJS.AES.encrypt(JSON.stringify(config), pwd).toString();
+            
+            // Link bauen (Wir hängen es an die URL an, aber später bauen wir eine separate student.html)
+            // HINWEIS: Für Schritt 1 zeigen wir den Link nur an.
+            // Später ändern wir den Link auf 'student.html#...'
+            const url = window.location.origin + "/student.html#data=" + encodeURIComponent(ciphertext);
+            
+            document.getElementById('finalLink').value = url;
+            document.getElementById('outputArea').classList.remove('hidden');
+        }
+
+        function copyToClip() {
+            navigator.clipboard.writeText(document.getElementById('finalLink').value);
+            alert("Kopiert!");
+        }
+
+        function aiSuggest() {
+            alert("Diese Funktion verbinden wir im nächsten Schritt mit deinem Backend!"); 
+        }
+    </script>
+</body>
+</html>

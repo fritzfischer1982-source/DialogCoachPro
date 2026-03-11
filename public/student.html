@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DialogCoach - Lernraum</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body class="bg-indigo-50 min-h-screen flex items-center justify-center p-4">
+
+    <div id="login" class="bg-white p-8 rounded-2xl shadow-xl max-w-sm w-full text-center">
+        <h2 class="text-2xl font-bold mb-4">Sitzung starten</h2>
+        <input type="password" id="pass" placeholder="Passwort eingeben" class="w-full p-2 border rounded text-center">
+        <button onclick="unlock()" class="w-full mt-4 bg-indigo-600 text-white py-2 rounded">Entsperren</button>
+    </div>
+
+    <div id="room" class="hidden bg-white p-8 rounded-2xl shadow-xl max-w-lg w-full text-center">
+        <h1 id="topicTitle" class="text-xl font-bold text-indigo-900 mb-6"></h1>
+        <div id="chat" class="h-48 overflow-y-auto mb-6 p-4 bg-slate-50 rounded-lg text-left text-sm space-y-2"></div>
+        
+        <button id="micBtn" class="w-24 h-24 rounded-full bg-indigo-600 text-white text-3xl shadow-lg transition-all active:scale-95">
+            <i class="fas fa-microphone"></i>
+        </button>
+        <p id="status" class="mt-4 text-slate-500 font-medium italic">Bereit...</p>
+    </div>
+
+    <script>
+        let config, history = [], isRecording = false, recorder;
+
+        function unlock() {
+            try {
+                const hash = window.location.hash.substring(6);
+                const pass = document.getElementById('pass').value;
+                const decrypted = CryptoJS.AES.decrypt(atob(hash), pass).toString(CryptoJS.enc.Utf8);
+                config = JSON.parse(decrypted);
+                
+                document.getElementById('login').classList.add('hidden');
+                document.getElementById('room').classList.remove('hidden');
+                document.getElementById('topicTitle').innerText = config.topic;
+                
+                // Erster System-Prompt
+                history.push({role: "system", content: `Du bist Sprachcoach. Thema: ${config.topic}. Niveau: B2. Frag den Schüler: ${config.questions[0]}`});
+            } catch(e) { alert("Passwort falsch!"); }
+        }
+
+        const micBtn = document.getElementById('micBtn');
+        micBtn.onclick = async () => {
+            if(!isRecording) {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                recorder = new MediaRecorder(stream);
+                let chunks = [];
+                recorder.ondataavailable = e => chunks.push(e.data);
+                recorder.onstop = async () => {
+                    const blob = new Blob(chunks, {type: 'audio/webm'});
+                    processAudio(blob);
+                };
+                recorder.start();
+                isRecording = true;
+                micBtn.classList.replace('bg-indigo-600', 'bg-red-500');
+                document.getElementById('status').innerText = "Ich höre zu...";
+            } else {
+                recorder.stop();
+                isRecording = false;
+                micBtn.classList.replace('bg-red-500', 'bg-indigo-600');
+                document.getElementById('status').innerText = "KI verarbeitet...";
+            }
+        };
+
+        async function processAudio(blob) {
+            // Vereinfacht: In diesem MVP senden wir nur Text-History an die Function
+            // (Whisper/TTS kommt im nächsten Schritt in die chat.js)
+            const response = await fetch('/.netlify/functions/chat', {
+                method: 'POST',
+                body: JSON.stringify({ apiKey: config.key, model: config.model, history: history })
+            });
+            const data = await response.json();
+            
+            const chat = document.getElementById('chat');
+            chat.innerHTML += `<p class="bg-indigo-100 p-2 rounded"><b>KI:</b> ${data.aiText}</p>`;
+            history.push({role: "assistant", content: data.aiText});
+            document.getElementById('status').innerText = "Bereit zum Antworten";
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DialogCoach Pro - Admin</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+</head>
+<body class="bg-slate-50 p-8">
+    <div class="max-w-4xl mx-auto bg-white p-8 rounded-xl shadow-md">
+        <h1 class="text-2xl font-bold mb-6 text-blue-900 border-b pb-2 italic">💎 DialogCoach Pro v5.0</h1>
+        
+        <div class="grid grid-cols-2 gap-6">
+            <div class="space-y-4 border-r pr-6">
+                <h2 class="font-bold text-slate-700 underline">1. Konfiguration</h2>
+                <input type="password" id="apiKey" placeholder="OpenAI API Key (sk-...)" class="w-full p-2 border rounded">
+                <input type="text" id="aiModel" value="gpt-4o" class="w-full p-2 border rounded font-mono text-sm">
+                <input type="text" id="studentName" placeholder="Name des Schülers" class="w-full p-2 border rounded">
+                <input type="text" id="topic" placeholder="Thema (z.B. Umweltschutz)" class="w-full p-2 border rounded">
+            </div>
+
+            <div class="space-y-4">
+                <h2 class="font-bold text-slate-700 underline">2. Fragen-Pool</h2>
+                <div id="questionsContainer" class="space-y-2">
+                    <input type="text" class="question-input w-full p-2 border rounded text-sm" placeholder="Frage 1">
+                    <input type="text" class="question-input w-full p-2 border rounded text-sm" placeholder="Frage 2">
+                </div>
+                <button onclick="addQuestion()" class="text-xs bg-slate-200 px-2 py-1 rounded">+ Frage</button>
+            </div>
+        </div>
+
+        <div class="mt-8 pt-6 border-t bg-blue-50 p-4 rounded-lg">
+            <h2 class="font-bold text-blue-900 mb-2 text-center">3. Veröffentlichung</h2>
+            <input type="text" id="studentPass" value="START" class="w-full p-2 border-2 border-blue-300 rounded text-center font-bold">
+            <button onclick="generateLink()" class="w-full mt-4 bg-blue-600 text-white py-3 rounded-lg font-bold hover:bg-blue-700 transition-all">🔗 Link für Schüler generieren</button>
+            <p id="outputLink" class="mt-4 text-[10px] break-all text-slate-400 font-mono text-center"></p>
+        </div>
+    </div>
+
+    <script>
+        function addQuestion() {
+            const input = document.createElement('input');
+            input.className = "question-input w-full p-2 border rounded text-sm";
+            input.placeholder = "Nächste Frage";
+            document.getElementById('questionsContainer').appendChild(input);
+        }
+
+        function generateLink() {
+            const config = {
+                key: document.getElementById('apiKey').value,
+                model: document.getElementById('aiModel').value,
+                student: document.getElementById('studentName').value,
+                topic: document.getElementById('topic').value,
+                pass: document.getElementById('studentPass').value,
+                questions: Array.from(document.querySelectorAll('.question-input')).map(i => i.value).filter(v => v !== "")
+            };
+
+            const encrypted = CryptoJS.AES.encrypt(JSON.stringify(config), config.pass).toString();
+            const baseUrl = window.location.origin + "/student.html";
+            const finalUrl = `${baseUrl}#data=${btoa(encrypted)}`;
+            
+            document.getElementById('outputLink').innerText = finalUrl;
+            navigator.clipboard.writeText(finalUrl);
+            alert("Link kopiert! Passwort für Schüler: " + config.pass);
+        }
+    </script>
+</body>
+</html>

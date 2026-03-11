@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lernraum - DialogCoach</title>
+    <!-- Tailwind für Design -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Krypto für Passwort-Entschlüsselung -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    
+    <style>
+        body { background: #f0fdf4; display: flex; align-items: center; justify-content: center; min-height: 100vh; font-family: 'Segoe UI', sans-serif; }
+        
+        /* Der große Mikrofon-Button */
+        .mic-btn { width: 120px; height: 120px; border-radius: 50%; background: white; border: 4px solid #e5e7eb; font-size: 50px; cursor: pointer; transition: all 0.2s; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); display: flex; align-items: center; justify-content: center; user-select: none; }
+        .mic-btn:hover { transform: scale(1.05); border-color: #22c55e; }
+        .mic-btn.recording { background: #fecaca; border-color: #ef4444; color: #ef4444; animation: pulse 1.5s infinite; }
+        
+        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); } 70% { box-shadow: 0 0 0 20px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
+        
+        .hidden { display: none !important; }
+        .card { background: white; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); padding: 30px; width: 100%; max-width: 400px; text-align: center; }
+    </style>
+</head>
+<body>
+
+    <!-- 1. LOGIN SCREEN -->
+    <div id="loginScreen" class="card">
+        <div class="text-4xl mb-4">🔐</div>
+        <h2 class="text-xl font-bold mb-2 text-gray-800">Geschützter Lernraum</h2>
+        <p class="text-gray-500 text-sm mb-6">Bitte gib das Sitzungs-Passwort ein.</p>
+        
+        <input type="password" id="password" class="w-full p-3 text-center text-xl tracking-widest border-2 border-gray-200 rounded-lg mb-4 uppercase focus:border-green-500 outline-none transition" placeholder="PASSWORT">
+        
+        <button onclick="unlock()" class="w-full bg-green-600 text-white font-bold py-3 rounded-lg hover:bg-green-700 transition transform active:scale-95">
+            🚀 Starten
+        </button>
+        <p id="errorMsg" class="text-red-500 text-sm mt-3 hidden">❌ Falsches Passwort oder Link defekt.</p>
+    </div>
+
+    <!-- 2. AUDIO SCREEN (Eigentliche App) -->
+    <div id="audioScreen" class="hidden flex-col items-center w-full max-w-md">
+        
+        <!-- Info Banner -->
+        <div class="bg-white px-6 py-2 rounded-full shadow-sm mb-10 text-sm font-bold text-gray-500 flex items-center gap-2">
+            <span>📚</span> <span id="topicDisplay" class="text-black">Lade...</span>
+        </div>
+
+        <!-- Avatar / Status -->
+        <div id="avatar" class="text-7xl mb-4 transition-transform duration-500">🤖</div>
+        <h2 id="statusDisplay" class="text-xl font-bold text-gray-700 mb-10 h-8">Bereit</h2>
+
+        <!-- Der Button -->
+        <div class="mic-btn" id="micBtn">🎤</div>
+        <p class="text-gray-400 text-xs mt-4 font-bold uppercase tracking-wide">Halten zum Sprechen</p>
+
+        <!-- Debug Log (kannst du später auskommentieren) -->
+        <div id="debugLog" class="mt-8 text-xs text-gray-400 font-mono h-32 overflow-y-auto w-full border-t border-gray-200 pt-2 text-left bg-white/50 p-2 rounded"></div>
+    </div>
+
+    <script>
+        // Speicher für die entschlüsselte Konfiguration
+        let CONFIG = {};
+        
+        // Audio Recorder Variablen
+        let mediaRecorder;
+        let audioChunks = [];
+
+        // ══════════════════════════════════════════
+        // 1. LOGIN & ENTSCHLÜSSELUNG
+        // ══════════════════════════════════════════
+        function unlock() {
+            const pwd = document.getElementById('password').value;
+            // Daten aus dem URL-Hash lesen (#data=...)
+            const hash = new URLSearchParams(window.location.hash.substring(1)).get('data');
+            
+            if(!hash) { 
+                document.getElementById('errorMsg').innerText = "Keine Daten im Link gefunden.";
+                document.getElementById('errorMsg').classList.remove('hidden'); 
+                return;
+            }
+
+            try {
+                // AES Entschlüsselung
+                const bytes = CryptoJS.AES.decrypt(decodeURIComponent(hash), pwd);
+                const decryptedString = bytes.toString(CryptoJS.enc.Utf8);
+                
+                if (!decryptedString) throw new Error("Falsches Passwort");
+
+                CONFIG = JSON.parse(decryptedString);
+                
+                // Erfolg! UI Umschalten
+                document.getElementById('loginScreen').classList.add('hidden');
+                document.getElementById('audioScreen').classList.remove('hidden');
+                document.getElementById('audioScreen').style.display = 'flex';
+                
+                document.getElementById('topicDisplay').innerText = CONFIG.t || 'Freies Gespräch';
+                
+                // Audio vorbereiten
+                initAudio();
+
+            } catch(e) {
+                console.error(e);
+                document.getElementById('errorMsg').classList.remove('hidden');
+            }
+        }
+
+        // ══════════════════════════════════════════
+        // 2. AUDIO AUFNAHME
+        // ══════════════════════════════════════════
+        async function initAudio() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                mediaRecorder = new MediaRecorder(stream);
+                const btn = document.getElementById('micBtn');
+
+                // Daten sammeln
+                mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+                
+                // Wenn Aufnahme stoppt -> Senden
+                mediaRecorder.onstop = async () => {
+                    // Blob erstellen (webm ist Standard im Browser)
+                    const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                    audioChunks = []; // Reset für nächstes Mal
+                    await sendAudio(audioBlob);
+                };
+
+                // Maus / Touch Events
+                const startRec = (e) => {
+                    e.preventDefault(); // Verhindert z.B. Scrollen am Handy
+                    if(mediaRecorder.state === 'inactive') {
+                        mediaRecorder.start();
+                        btn.classList.add('recording');
+                        setStatus('🔴 Aufnahme läuft...');
+                    }
+                };
+
+                const stopRec = (e) => {
+                    e.preventDefault();
+                    if(mediaRecorder.state === 'recording') {
+                        mediaRecorder.stop();
+                        btn.classList.remove('recording');
+                        setStatus('⏳ Verarbeite Audio...');
+                    }
+                };
+
+                // Desktop + Mobile Events
+                btn.addEventListener('mousedown', startRec);
+                btn.addEventListener('mouseup', stopRec);
+                btn.addEventListener('touchstart', startRec);
+                btn.addEventListener('touchend', stopRec);
+
+            } catch(err) {
+                alert("Mikrofon-Zugriff verweigert! Bitte erlauben.");
+            }
+        }
+
+        // ══════════════════════════════════════════
+        // 3. KOMMUNIKATION MIT BACKEND
+        // ══════════════════════════════════════════
+        async function sendAudio(blob) {
+            
+            // Konvertiere Blob zu Base64 String
+            const reader = new FileReader();
+            reader.readAsDataURL(blob); 
+            
+            reader.onloadend = async () => {
+                const base64Audio = reader.result.split(',')[1]; // Nur der Nutzdaten-Teil
+
+                // Den System-Prompt bauen (aus Lehrer-Config)
+                // Hier bauen wir die "Persönlichkeit"
+                const systemPrompt = `Du bist ein Sprachlehrer für ${CONFIG.la || 'Deutsch'}. 
+                Niveau: ${CONFIG.l || 'B1'}. Thema: ${CONFIG.t}.
+                Deine Anweisung: ${CONFIG.q ? 'Stelle folgende Fragen: ' + CONFIG.q.join(', ') : 'Führe einen Dialog.'}`;
+
+                try {
+                    const res = await fetch('/.netlify/functions/chat', {
+                        method: 'POST',
+                        body: JSON.stringify({
+                            audio: base64Audio,
+                            apiKey: CONFIG.k,       // Der Schlüssel aus dem verschlüsselten Paket
+                            systemPrompt: systemPrompt
+                        })
+                    });
+
+                    const data = await res.json();
+
+                    if(data.error) {
+                        setStatus('❌ Fehler: ' + data.error);
+                        return;
+                    }
+
+                    // Erfolg!
+                    log(`<strong>Du:</strong> ${data.userText}`);
+                    log(`<strong>KI:</strong> ${data.aiText}`);
+                    
+                    if(data.audio) {
+                        setStatus('🗣️ Spricht...');
+                        playResponse(data.audio);
+                    }
+
+                } catch(err) {
+                    setStatus('❌ Server Fehler');
+                    log(err.message);
+                }
+            };
+        }
+
+        function playResponse(base64) {
+            const audio = new Audio("data:audio/mp3;base64," + base64);
+            audio.onended = () => setStatus('Bereit');
+            audio.play();
+        }
+
+        // Helper
+        function setStatus(txt) { document.getElementById('statusDisplay').innerText = txt; }
+        function log(html) { 
+            const d = document.getElementById('debugLog');
+            d.innerHTML += `<div class="mb-2 border-b pb-1">${html}</div>`;
+            d.scrollTop = d.scrollHeight;
+        }
+
+    </script>
+</body>
+</html>

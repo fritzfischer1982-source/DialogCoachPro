@@ -1,0 +1,20 @@
+{
+	"geolocation": {
+		"data": {
+			"city": "Zurich",
+			"country": {
+				"code": "CH",
+				"name": "Switzerland"
+			},
+			"subdivision": {
+				"code": "ZH",
+				"name": "Zurich"
+			},
+			"timezone": "Europe/Zurich",
+			"latitude": 47.3934,
+			"longitude": 8.5163,
+			"postalCode": "8005"
+		},
+		"timestamp": 1773166801698
+	}
+}

@@ -1,0 +1,15 @@
+{
+  "name": "dialog-coach-pro",
+  "version": "1.0.0",
+  "description": "AI Dialog Coach with Netlify Functions",
+  "main": "index.js",
+  "scripts": {
+    "start": "netlify dev"
+  },
+  "dependencies": {
+    "openai": "^4.104.0"
+  },
+  "devDependencies": {
+    "netlify-cli": "^17.0.0"
+  }
+}
