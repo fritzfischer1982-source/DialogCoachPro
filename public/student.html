@@ -11,7 +11,6 @@
             --bg: #F0F4F8;
             --card: #ffffff;
             --text: #2D3748;
-            --accent: #10B981;
         }
 
         body {
@@ -64,16 +63,13 @@
             color: white;
             font-size: 3rem;
             cursor: pointer;
-            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            transition: all 0.3s ease;
             box-shadow: 0 8px 25px rgba(74, 144, 226, 0.4);
             margin: 20px 0;
             display: inline-flex;
             justify-content: center;
             align-items: center;
-            outline: none;
         }
-
-        #mic-button:hover { transform: scale(1.05); }
 
         #mic-button.active {
             background: #EF4444;
@@ -94,7 +90,8 @@
             min-height: 80px;
             border: 1px solid #E2E8F0;
             line-height: 1.5;
-            text-align: left;
+            text-align: center;
+            font-weight: 500;
         }
     </style>
 </head>
@@ -102,14 +99,14 @@
 
 <div class="app-container">
     <span class="robot-icon">🤖</span>
-    <h1 id="topic-title">Lade Thema...</h1>
+    <h1 id="topic-title">Dialog Coach</h1>
     
     <button id="mic-button">🎤</button>
     
     <div id="status" class="status-text">Klicke zum Sprechen</div>
     
     <div class="chat-display" id="chat-output">
-        Bereit für unser Gespräch? Drücke auf das Mikrofon!
+        Hallo! Ich bin dein KI-Trainer. Worüber möchtest du heute sprechen?
     </div>
 </div>
 
@@ -119,9 +116,9 @@
     const CHAT_OUTPUT = document.getElementById('chat-output');
     const TOPIC_TITLE = document.getElementById('topic-title');
 
-    // Thema aus der URL holen
+    // Thema aus der URL holen oder Standard setzen
     const urlParams = new URLSearchParams(window.location.search);
-    const topic = urlParams.get('topic') || "Allgemeines Gespräch";
+    const topic = urlParams.get('topic') || "Allgemeines Training";
     TOPIC_TITLE.innerText = topic;
 
     let recognition;
@@ -129,32 +126,27 @@
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         recognition = new SpeechRecognition();
         recognition.lang = 'de-DE';
-        recognition.interimResults = false;
 
         recognition.onresult = (event) => {
             const transcript = event.results[0][0].transcript;
             sendToAI(transcript);
         };
 
-        recognition.onerror = (event) => {
-            console.error("Fehler:", event.error);
-            STATUS_TEXT.innerText = "Fehler: " + event.error;
+        recognition.onerror = () => {
+            STATUS_TEXT.innerText = "Fehler: Mikrofon nicht erkannt";
             MIC_BUTTON.classList.remove('active');
         };
     }
 
     MIC_BUTTON.onclick = () => {
-        if (!recognition) {
-            alert("Dein Browser unterstützt leider keine Spracherkennung.");
-            return;
-        }
+        if (!recognition) return alert("Browser nicht unterstützt.");
         MIC_BUTTON.classList.add('active');
         STATUS_TEXT.innerText = "Ich höre zu...";
         recognition.start();
     };
 
     async function sendToAI(text) {
-        STATUS_TEXT.innerText = "KI verarbeitet...";
+        STATUS_TEXT.innerText = "KI überlegt...";
         try {
             const response = await fetch('/.netlify/functions/chat1', {
                 method: 'POST',
@@ -163,11 +155,14 @@
             });
 
             const data = await response.json();
-            // Zeige die Antwort der KI an
-            CHAT_OUTPUT.innerText = data.reply || data.message || "Keine Antwort erhalten.";
+            
+            // Wichtigster Fix: Wir nehmen, was die KI liefert, egal wie das Feld heißt
+            const kiAntwort = data.reply || data.message || data.text || "Ich habe dich verstanden, aber meine Antwort ist leer.";
+            
+            CHAT_OUTPUT.innerText = kiAntwort;
             STATUS_TEXT.innerText = "Bereit";
         } catch (err) {
-            CHAT_OUTPUT.innerText = "Fehler bei der Verbindung zur KI.";
+            CHAT_OUTPUT.innerText = "Verbindung zur KI fehlgeschlagen.";
             STATUS_TEXT.innerText = "Fehler";
         } finally {
             MIC_BUTTON.classList.remove('active');
