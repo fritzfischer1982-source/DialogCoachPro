@@ -1,41 +1,43 @@
 const { OpenAI } = require("openai");
 
 exports.handler = async (event) => {
-  // Nur POST-Anfragen erlauben
   if (event.httpMethod !== "POST") {
-    return { statusCode: 405, body: "Method Not Allowed" };
+    return { statusCode: 405, body: "Nur POST erlaubt" };
   }
 
   try {
     const { message, topic } = JSON.parse(event.body);
-    const openai = new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY,
-    });
+    
+    // Prüfen ob der Key da ist
+    if (!process.env.OPENAI_API_KEY) {
+      console.error("FEHLER: OPENAI_API_KEY fehlt in den Netlify Einstellungen!");
+      return { statusCode: 500, body: JSON.stringify({ reply: "API Key fehlt." }) };
+    }
 
-    // Anfrage an ChatGPT
+    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+    console.log("Anfrage an OpenAI mit Thema:", topic);
+
     const response = await openai.chat.completions.create({
-      model: "gpt-3.5-turbo", // oder "gpt-4"
+      model: "gpt-3.5-turbo",
       messages: [
-        { 
-          role: "system", 
-          content: `Du bist ein hilfreicher Sprachlehrer. Das aktuelle Thema ist: ${topic || 'Allgemeines Gespräch'}. Antworte kurz und motivierend auf Deutsch.` 
-        },
-        { role: "user", content: message },
+        { role: "system", content: `Du bist ein Lehrer. Thema: ${topic}. Antworte kurz.` },
+        { role: "user", content: message }
       ],
     });
 
-    // Die Antwort extrahieren
-    const aiReply = response.choices[0].message.content;
+    const answer = response.choices[0].message.content;
+    console.log("KI hat geantwortet:", answer);
 
     return {
       statusCode: 200,
-      body: JSON.stringify({ reply: aiReply }),
+      body: JSON.stringify({ reply: answer })
     };
   } catch (error) {
-    console.error("OpenAI Fehler:", error);
+    console.error("OpenAI Fehler Details:", error);
     return {
       statusCode: 500,
-      body: JSON.stringify({ error: "Fehler bei der KI-Anfrage", details: error.message }),
+      body: JSON.stringify({ reply: "OpenAI Fehler: " + error.message })
     };
   }
 };
