@@ -94,13 +94,17 @@
         </div>
     </div>
 
-    <script>
+        <script>
         let config = {};
         let currentQuestionIndex = 0;
         let isRecording = false;
         let isSpeaking = false;
         let recognition;
         
+        // NEU: Hier speichern wir den Dialog für das Protokoll
+        let conversationLog = []; 
+        let sessionStartTime = new Date();
+
         window.onload = function() {
             const urlParams = new URLSearchParams(window.location.search);
             const encodedConfig = urlParams.get('config');
@@ -117,6 +121,7 @@
         function setupApp() {
             document.getElementById('topicDisplay').textContent = config.topic || "Übung";
             
+            // Ansicht steuern
             if (config.view === 'learning') {
                 document.getElementById('scaffoldPanel').classList.remove('hidden');
                 const vocabContainer = document.getElementById('vocabDisplay');
@@ -128,6 +133,7 @@
                 });
             }
 
+            // Speech API Setup
             if ('webkitSpeechRecognition' in window) {
                 recognition = new webkitSpeechRecognition();
                 recognition.continuous = true; 
@@ -143,6 +149,9 @@
 
         function startSession() {
             document.getElementById('startOverlay').classList.add('hidden');
+            // Intro ins Protokoll
+            conversationLog.push({ speaker: "AI_Tutor", text: config.intro });
+            
             speakText(config.intro, () => {
                 nextQuestion();
             });
@@ -151,6 +160,10 @@
         function nextQuestion() {
             if (currentQuestionIndex < config.questions.length) {
                 const question = config.questions[currentQuestionIndex];
+                
+                // Frage ins Protokoll speichern
+                conversationLog.push({ speaker: "AI_Tutor", text: question });
+
                 document.getElementById('mainQuestion').textContent = question;
                 document.getElementById('subText').textContent = "";
                 
@@ -195,6 +208,7 @@
             const status = document.getElementById('statusText');
 
             if (!isRecording) {
+                // START
                 isRecording = true;
                 btn.classList.add('mic-active');
                 btn.classList.remove('mic-inactive');
@@ -204,12 +218,22 @@
                 document.getElementById('timerBar').style.width = "100%";
 
             } else {
-                // STOP Recording
+                // STOP (Hier erfassen wir die Antwort des Schülers)
                 isRecording = false;
                 btn.classList.remove('mic-active');
                 btn.classList.add('mic-inactive');
                 if(recognition) recognition.stop();
                 
+                // *** WICHTIG: Antwort simulieren oder echt erfassen ***
+                // Da Speech-to-Text im Browser ohne Server oft abbricht, 
+                // nehmen wir für den Test an, der Text im "subText" Feld ist die Antwort.
+                // Falls leer (Simulation), schreiben wir einen Platzhalter.
+                let studentAnswer = document.getElementById('subText').textContent;
+                if(studentAnswer.trim() === "") studentAnswer = "[Audio-Antwort des Schülers]";
+                
+                // Antwort ins Protokoll speichern
+                conversationLog.push({ speaker: "Student", text: studentAnswer });
+
                 document.getElementById('timerBar').style.width = "0%";
                 document.getElementById('statusText').textContent = "Antwort verarbeitet...";
 
@@ -219,11 +243,54 @@
             }
         }
 
+        // *** HIER PASSIERT DIE MAGIE FÜR DEIN BUSINESS ***
         function finishSession() {
             document.getElementById('mainQuestion').textContent = "Übung abgeschlossen!";
-            document.getElementById('subText').textContent = "Das Protokoll wird generiert...";
+            document.getElementById('subText').textContent = "Dein Protokoll wird heruntergeladen...";
             document.getElementById('micBtn').classList.add('hidden');
+            document.getElementById('statusText').classList.add('hidden');
+
+            // 1. Vokabel-Check Logik
+            let vocabCheck = "";
+            let fullText = conversationLog.map(e => e.text).join(" ").toLowerCase();
+            
+            config.vocab.forEach(word => {
+                const used = fullText.includes(word.toLowerCase());
+                vocabCheck += `- [${used ? 'x' : ' '}] ${word}\n`;
+            });
+
+            // 2. Markdown Datei erstellen (Optimiert für NotebookLM)
+            let mdContent = `# Protokoll: ${config.topic}\n`;
+            mdContent += `Datum: ${new Date().toLocaleDateString()} | Modus: ${config.view}\n\n`;
+            
+            mdContent += `## 1. Vokabel-Monitoring\n`;
+            mdContent += `Zielbegriffe:\n${vocabCheck}\n\n`;
+
+            mdContent += `## 2. Gesprächsverlauf\n`;
+            conversationLog.forEach(entry => {
+                mdContent += `**${entry.speaker}:** ${entry.text}\n\n`;
+            });
+
+            mdContent += `\n---\n*Generiert durch AI Tutor Pro für ${config.model} Analyse*`;
+
+            // 3. Download erzwingen
+            const blob = new Blob([mdContent], { type: 'text/markdown' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            // Dateiname Format: YYYY-MM-DD_Thema_Student.md
+            const filename = `${new Date().toISOString().slice(0,10)}_${config.topic.replace(/\s+/g, '_')}_Protokoll.md`;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            
+            // UI Feedback
+            setTimeout(() => {
+                 document.getElementById('subText').innerHTML = `<span class="text-green-400">Protokoll gespeichert: ${filename}</span><br>Bitte sende diese Datei an deinen Coach.`;
+            }, 1000);
         }
+
     </script>
 </body>
 </html>
