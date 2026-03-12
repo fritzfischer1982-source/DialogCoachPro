@@ -3,81 +3,227 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DialogCoach Pro</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <title>Meine Sprachübung</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <style>
-        :root { --primary: #4A90E2; --bg: #F0F4F8; --card: #ffffff; }
-        body { font-family: 'Inter', sans-serif; background: var(--bg); display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
-        .app-container { background: var(--card); padding: 2.5rem; border-radius: 30px; box-shadow: 0 20px 40px rgba(0,0,0,0.1); max-width: 450px; width: 90%; text-align: center; }
-        .robot-icon { font-size: 4rem; display: block; margin-bottom: 10px; }
-        h1 { color: var(--primary); font-size: 1.5rem; margin-bottom: 20px; }
-        #mic-button { width: 100px; height: 100px; border-radius: 50%; border: none; background: var(--primary); color: white; font-size: 2.5rem; cursor: pointer; transition: 0.3s; box-shadow: 0 5px 15px rgba(74,144,226,0.3); }
-        #mic-button.active { background: #EF4444; animation: pulse 1.5s infinite; }
-        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 70% { box-shadow: 0 0 0 20px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
-        .chat-display { background: #F8FAFC; border-radius: 15px; padding: 20px; margin-top: 25px; border: 1px solid #E2E8F0; min-height: 60px; line-height: 1.5; color: #2D3748; }
+        body { background-color: #111827; color: white; height: 100vh; overflow: hidden; font-family: 'Inter', sans-serif; }
+        .mic-btn { width: 80px; height: 80px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 2rem; transition: all 0.3s; cursor: pointer; }
+        .mic-active { background-color: #EF4444; box-shadow: 0 0 20px #EF4444; animation: pulse 1.5s infinite; }
+        .mic-inactive { background-color: #374151; }
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
+        .scaffold-panel { background: rgba(255,255,255,0.05); border-right: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(10px); }
     </style>
 </head>
-<body>
-<div class="app-container">
-    <span class="robot-icon">🤖</span>
-    <h1 id="topic-title">Dialog Coach</h1>
-    <button id="mic-button">🎤</button>
-    <div id="status" style="margin-top: 15px; color: #718096; font-size: 0.9rem;">Bereit</div>
-    <div class="chat-display" id="chat-output">Drücke auf das Mikrofon und sag etwas!</div>
-</div>
+<body class="flex">
 
-<script>
-    const urlParams = new URLSearchParams(window.location.search);
-    const topic = urlParams.get('topic') || "Allgemeines Training";
-    document.getElementById('topic-title').innerText = topic;
+    <!-- SIDEBAR (Nur im Lern-Modus sichtbar) -->
+    <div id="scaffoldPanel" class="hidden w-1/4 h-full scaffold-panel p-6 flex-col overflow-y-auto">
+        <h3 class="text-indigo-400 font-bold uppercase tracking-wider text-xs mb-4">Lernhilfe</h3>
+        
+        <div class="mb-6">
+            <h4 class="font-bold mb-2">Pflichtvokabeln</h4>
+            <div id="vocabDisplay" class="flex flex-wrap gap-2">
+                <!-- Vokabel Tags kommen hier hin -->
+            </div>
+        </div>
 
-    const MIC_BTN = document.getElementById('mic-button');
-    const STATUS = document.getElementById('status');
-    const OUTPUT = document.getElementById('chat-output');
+        <div class="mb-6">
+            <h4 class="font-bold mb-2">Redemittel</h4>
+            <ul class="text-sm text-gray-300 space-y-2 list-disc pl-4">
+                <li>Ich bin der Meinung, dass...</li>
+                <li>Dazu möchte ich ergänzen...</li>
+                <li>Habe ich Sie richtig verstanden?</li>
+            </ul>
+        </div>
+    </div>
 
-    let recognition;
-    if ('webkitSpeechRecognition' in window) {
-        recognition = new webkitSpeechRecognition();
-        recognition.lang = 'de-DE';
-        recognition.onresult = (e) => { 
-            const text = e.results[0][0].transcript;
-            sendToAI(text); 
-        };
-        recognition.onerror = () => {
-            STATUS.innerText = "Fehler: Mikrofon nicht erkannt";
-            MIC_BTN.classList.remove('active');
-        };
-    }
+    <!-- MAIN AREA -->
+    <div class="flex-1 flex flex-col h-full relative">
+        
+        <!-- Header -->
+        <div class="p-4 flex justify-between items-center text-gray-400 text-sm">
+            <div id="topicDisplay">Thema wird geladen...</div>
+            <div class="flex items-center gap-2">
+                <div class="w-2 h-2 rounded-full bg-green-500"></div> Online
+            </div>
+        </div>
 
-    MIC_BTN.onclick = () => {
-        if (!recognition) return alert("Browser nicht unterstützt");
-        MIC_BTN.classList.add('active');
-        STATUS.innerText = "Ich höre zu...";
-        recognition.start();
-    };
-
-    async function sendToAI(userText) {
-        MIC_BTN.classList.remove('active');
-        STATUS.innerText = "KI überlegt...";
-        OUTPUT.innerText = "...";
-
-        try {
-            const res = await fetch('/.netlify/functions/chat1', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ message: userText, topic: topic })
-            });
+        <!-- Center Stage -->
+        <div class="flex-1 flex flex-col items-center justify-center p-8 text-center">
             
-            const data = await res.json();
+            <!-- KI Avatar / Visualizer -->
+            <div class="mb-8 relative">
+                <div class="w-32 h-32 rounded-full bg-indigo-600 flex items-center justify-center border-4 border-indigo-400 shadow-2xl">
+                    <i class="fas fa-robot text-4xl text-white"></i>
+                </div>
+                <div id="speakingIndicator" class="absolute -bottom-2 -right-2 bg-green-500 w-6 h-6 rounded-full hidden"></div>
+            </div>
+
+            <!-- Chat / Frage Text -->
+            <div id="dialogArea" class="max-w-2xl min-h-[100px]">
+                <h2 id="mainQuestion" class="text-2xl font-light leading-relaxed">
+                    Warte auf Start...
+                </h2>
+                <p id="subText" class="text-indigo-400 mt-4 text-sm font-mono"></p>
+            </div>
+
+            <!-- Start Overlay -->
+            <div id="startOverlay" class="absolute inset-0 bg-gray-900/90 flex flex-col items-center justify-center z-50">
+                <h1 class="text-3xl font-bold mb-4">Willkommen zur Sprachübung</h1>
+                <p class="text-gray-400 mb-8 max-w-md text-center">Die KI wird das Gespräch führen. Bitte antworte klar und deutlich.</p>
+                <button onclick="startSession()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-8 py-3 rounded-full font-bold text-lg shadow-lg transition transform hover:scale-105">
+                    <i class="fas fa-play mr-2"></i> Ich bin bereit
+                </button>
+            </div>
+
+        </div>
+
+        <!-- Controls -->
+        <div class="p-8 flex flex-col items-center">
+            <div class="w-full max-w-md h-1 bg-gray-700 rounded-full mb-6 overflow-hidden">
+                <div id="timerBar" class="h-full bg-indigo-500 w-0 transition-all duration-1000"></div>
+            </div>
+
+            <button id="micBtn" class="mic-btn mic-inactive text-white mb-4" onclick="toggleRecording()">
+                <i class="fas fa-microphone"></i>
+            </button>
             
-            // Nimmt die Antwort, die wir gerade im Log gesehen haben
-            OUTPUT.innerText = data.reply || "Ich habe die Antwort erhalten, konnte sie aber nicht anzeigen.";
-            STATUS.innerText = "Bereit";
-        } catch (e) {
-            OUTPUT.innerText = "Verbindungsfehler!";
-            STATUS.innerText = "Fehler";
+            <p id="statusText" class="text-gray-500 text-sm">Drücke START, um zu beginnen</p>
+        </div>
+    </div>
+
+    <script>
+        let config = {};
+        let currentQuestionIndex = 0;
+        let isRecording = false;
+        let isSpeaking = false;
+        let recognition;
+        
+        window.onload = function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const encodedConfig = urlParams.get('config');
+            if (encodedConfig) {
+                try {
+                    config = JSON.parse(decodeURIComponent(escape(atob(encodedConfig))));
+                    setupApp();
+                } catch (e) {
+                    alert("Fehler beim Laden der Konfiguration.");
+                }
+            }
+        };
+
+        function setupApp() {
+            document.getElementById('topicDisplay').textContent = config.topic || "Übung";
+            
+            if (config.view === 'learning') {
+                document.getElementById('scaffoldPanel').classList.remove('hidden');
+                const vocabContainer = document.getElementById('vocabDisplay');
+                config.vocab.forEach(word => {
+                    const tag = document.createElement('span');
+                    tag.className = "bg-indigo-900/50 text-indigo-200 px-2 py-1 rounded text-xs border border-indigo-700";
+                    tag.textContent = word;
+                    vocabContainer.appendChild(tag);
+                });
+            }
+
+            if ('webkitSpeechRecognition' in window) {
+                recognition = new webkitSpeechRecognition();
+                recognition.continuous = true; 
+                recognition.interimResults = true;
+                recognition.lang = 'de-DE';
+
+                recognition.onresult = (event) => {
+                    const transcript = Array.from(event.results).map(r => r[0].transcript).join('');
+                    document.getElementById('subText').textContent = transcript;
+                };
+            }
         }
-    }
-</script>
+
+        function startSession() {
+            document.getElementById('startOverlay').classList.add('hidden');
+            speakText(config.intro, () => {
+                nextQuestion();
+            });
+        }
+
+        function nextQuestion() {
+            if (currentQuestionIndex < config.questions.length) {
+                const question = config.questions[currentQuestionIndex];
+                document.getElementById('mainQuestion').textContent = question;
+                document.getElementById('subText').textContent = "";
+                
+                speakText(question, () => {
+                    enableInput();
+                });
+                currentQuestionIndex++;
+            } else {
+                finishSession();
+            }
+        }
+
+        function speakText(text, callback) {
+            isSpeaking = true;
+            document.getElementById('speakingIndicator').classList.remove('hidden');
+            document.getElementById('statusText').textContent = "KI spricht...";
+            
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = "de-DE";
+            utterance.rate = parseFloat(config.speed) || 1.0;
+            
+            utterance.onend = () => {
+                isSpeaking = false;
+                document.getElementById('speakingIndicator').classList.add('hidden');
+                if (callback) callback();
+            };
+            
+            window.speechSynthesis.speak(utterance);
+        }
+
+        function enableInput() {
+            document.getElementById('statusText').textContent = config.mode === 'manual' ? "Tippen zum Aufnehmen" : "Sprechen Sie jetzt...";
+            if (config.mode === 'auto') {
+                toggleRecording(); 
+            }
+        }
+
+        function toggleRecording() {
+            if (isSpeaking) return;
+
+            const btn = document.getElementById('micBtn');
+            const status = document.getElementById('statusText');
+
+            if (!isRecording) {
+                isRecording = true;
+                btn.classList.add('mic-active');
+                btn.classList.remove('mic-inactive');
+                
+                status.textContent = config.mode === 'manual' ? "Aufnahme läuft... (Tippen zum Beenden)" : "Höre zu...";
+                if(recognition) recognition.start();
+                document.getElementById('timerBar').style.width = "100%";
+
+            } else {
+                // STOP Recording
+                isRecording = false;
+                btn.classList.remove('mic-active');
+                btn.classList.add('mic-inactive');
+                if(recognition) recognition.stop();
+                
+                document.getElementById('timerBar').style.width = "0%";
+                document.getElementById('statusText').textContent = "Antwort verarbeitet...";
+
+                setTimeout(() => {
+                    nextQuestion();
+                }, 1000);
+            }
+        }
+
+        function finishSession() {
+            document.getElementById('mainQuestion').textContent = "Übung abgeschlossen!";
+            document.getElementById('subText').textContent = "Das Protokoll wird generiert...";
+            document.getElementById('micBtn').classList.add('hidden');
+        }
+    </script>
 </body>
 </html>
