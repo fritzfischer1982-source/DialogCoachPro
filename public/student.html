@@ -3,414 +3,276 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sprach-Coaching V4</title>
+    <title>Voice Coaching</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    
     <style>
-        body { background-color: #F8FAFC; color: #334155; height: 100vh; overflow: hidden; font-family: 'Inter', sans-serif; }
+        body { background-color: #F8FAFC; color: #334155; height: 100vh; overflow: hidden; font-family: sans-serif; }
         
-        /* Karteikarten Style */
-        .card { background: white; border-radius: 16px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); border: 1px solid #E2E8F0; }
-        
-        /* Mikrofon Button */
-        .mic-btn { width: 90px; height: 90px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 2.2rem; transition: all 0.2s; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-        .mic-recording { background-color: #EF4444; color: white; animation: pulse 1.5s infinite; transform: scale(1.05); border: none; }
-        .mic-idle { background-color: white; color: #64748B; border: 2px solid #E2E8F0; }
-        .mic-idle:hover { border-color: #4F46E5; color: #4F46E5; }
-        .mic-disabled { opacity: 0.5; cursor: not-allowed; background-color: #E2E8F0; border-color: #CBD5E1; }
-        
-        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); } 70% { box-shadow: 0 0 0 15px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
+        /* GUI */
+        .mic-btn { width: 90px; height: 90px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 2.5rem; cursor: pointer; transition: 0.2s; box-shadow: 0 4px 10px rgba(0,0,0,0.1); border: 4px solid white; }
+        .mic-idle { background-color: #F1F5F9; color: #94A3B8; border-color: #CBD5E1; }
+        .mic-ready { background-color: #4F46E5; color: white; border-color: #818CF8; box-shadow: 0 0 15px rgba(79, 70, 229, 0.3); animation: pop 0.3s; }
+        .mic-recording { background-color: #EF4444; color: white; border-color: #FECACA; animation: pulse 1.5s infinite; }
+        .mic-blocked { background-color: #E2E8F0; color: #CBD5E1; cursor: not-allowed; }
 
-        /* Vokabel Tags */
-        .vocab-tag { padding: 0.4rem 0.8rem; border-radius: 99px; background: #F1F5F9; color: #475569; border: 1px solid #CBD5E1; font-size: 0.9rem; margin: 2px; display: inline-block; }
-        .vocab-hit { background-color: #D1FAE5 !important; color: #065F46 !important; border-color: #34D399 !important; font-weight: bold; transform: scale(1.05); transition: 0.3s; }
-        
-        /* Avatar */
-        .coach-avatar { object-fit: cover; width: 100%; height: 100%; }
-        .speaking-border { border-color: #4F46E5 !important; box-shadow: 0 0 0 6px rgba(79, 70, 229, 0.2) !important; }
+        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); } 70% { box-shadow: 0 0 0 15px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
+        @keyframes pop { 50% { transform: scale(1.1); } }
+
+        .vocab-tag { display: inline-block; padding: 4px 12px; border-radius: 20px; background: #E2E8F0; font-size: 0.85rem; margin: 2px; color: #475569; }
+        .vocab-hit { background: #10B981; color: white; transform: scale(1.1); transition: 0.3s; }
+
+        .image-frame { width: 140px; height: 140px; border-radius: 50%; overflow: hidden; border: 4px solid white; box-shadow: 0 10px 20px rgba(0,0,0,0.1); margin-bottom: 20px; transition: 0.3s; background: #e0e7ff; }
+        .speaking { border-color: #4F46E5; transform: scale(1.05); }
     </style>
 </head>
 <body class="flex flex-col h-full">
 
     <!-- HEADER -->
-    <div class="h-16 bg-white border-b border-gray-200 flex justify-between items-center px-4 md:px-8 shadow-sm z-20">
+    <div class="h-16 bg-white border-b border-gray-200 flex justify-between items-center px-6 shadow-sm z-20">
         <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold text-lg"><i class="fas fa-graduation-cap"></i></div>
-            <div>
-                <h1 id="topicDisplay" class="font-bold text-gray-800 leading-tight text-sm md:text-base">Coaching</h1>
-            </div>
+            <i class="fas fa-graduation-cap text-indigo-600 text-xl"></i>
+            <h1 id="topicDisplay" class="font-bold text-gray-700">Laden...</h1>
         </div>
-        <div class="text-2xl font-mono font-bold text-gray-700 bg-gray-50 px-3 py-1 rounded border border-gray-200" id="timerDisplay">00:00</div>
+        <div id="timerDisplay" class="font-mono font-bold text-gray-500 text-xl bg-gray-100 px-3 py-1 rounded">--:--</div>
     </div>
 
-    <!-- MAIN WRAPPER -->
+    <!-- MAIN AREA -->
     <div class="flex-1 flex overflow-hidden relative">
-        
-        <!-- LINKER BEREICH (Avatar & Chat) -->
-        <div class="flex-1 flex flex-col items-center justify-center p-4 relative overflow-y-auto w-full md:w-3/5">
-            
-            <!-- Avatar -->
-            <div class="mb-6 relative">
-                <div class="w-32 h-32 md:w-40 md:h-40 rounded-full overflow-hidden border-4 border-white shadow-xl transition-all duration-300 bg-gray-200" id="avatarCircle">
-                    <img src="avatar.png" onerror="this.src='https://ui-avatars.com/api/?name=Coach&background=E0E7FF&color=4F46E5&size=256'" class="coach-avatar">
-                </div>
+        <!-- Links: Avatar & Dialog -->
+        <div class="flex-1 flex flex-col items-center justify-center p-6 w-full md:w-3/5">
+            <div class="image-frame" id="avatarCircle">
+                <img src="avatar.png" onerror="this.src='https://ui-avatars.com/api/?name=Coach&background=E0E7FF&color=4F46E5&size=256'" class="w-full h-full object-cover">
             </div>
 
-            <!-- Frage & Transkript -->
-            <div class="max-w-2xl w-full text-center mb-8 min-h-[140px]">
-                <h2 id="questionText" class="text-xl md:text-2xl font-semibold text-gray-800 leading-snug mb-4">
-                    <!-- Text kommt hier -->
-                </h2>
-                <div id="transcriptBox" class="text-indigo-600 text-lg font-medium italic min-h-[2rem] px-4 py-2 rounded-lg bg-indigo-50/50 hidden">
-                    <!-- Live Transkript -->
-                </div>
+            <div class="max-w-xl w-full text-center min-h-[140px] mb-4">
+                <h2 id="mainText" class="text-2xl font-medium text-gray-800 leading-relaxed transition-all">...</h2>
+                <div id="liveTrans" class="mt-4 text-indigo-600 font-medium italic min-h-[20px]"></div>
             </div>
 
-            <!-- Button Area -->
             <div class="flex flex-col items-center gap-3 z-10">
-                <button id="micBtn" class="mic-btn mic-disabled" onclick="handleMicClick()" disabled>
-                    <i class="fas fa-microphone"></i>
-                </button>
-                <p id="statusLabel" class="text-gray-400 text-sm font-medium">Bereit</p>
-                <button id="pauseBtn" onclick="togglePause()" class="hidden text-sm text-gray-400 font-bold uppercase hover:text-indigo-600 mt-2"><i class="fas fa-pause mr-1"></i> Pause</button>
+                <button id="micBtn" class="mic-btn mic-blocked" onclick="toggleMic()" disabled><i class="fas fa-microphone"></i></button>
+                <p id="statusLabel" class="text-xs font-bold uppercase text-gray-400 tracking-widest">Warte...</p>
             </div>
         </div>
 
-        <!-- RECHTER BEREICH (Lernhilfen) -->
-        <div id="sidePanel" class="hidden md:flex w-2/5 bg-gray-50 border-l border-gray-200 p-6 flex-col overflow-y-auto shadow-inner">
-            <h3 class="text-gray-400 font-bold uppercase text-xs mb-4">Hilfsmittel</h3>
-            
-            <div class="card p-5 mb-4">
-                <h4 class="font-bold text-gray-700 mb-2 text-sm"><i class="fas fa-tag mr-1 text-indigo-500"></i> Zielwörter</h4>
+        <!-- Rechts: Hilfen -->
+        <div id="sidePanel" class="hidden md:flex w-2/5 bg-gray-50 border-l border-gray-200 p-6 flex-col overflow-y-auto">
+            <h3 class="text-xs font-bold text-gray-400 uppercase mb-4">Hilfsmittel</h3>
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-200 mb-4">
+                <h4 class="font-bold text-sm text-gray-700 mb-2">Zielwörter</h4>
                 <div id="vocabList"></div>
             </div>
-
-            <div class="card p-5 flex-1">
-                <h4 class="font-bold text-gray-700 mb-2 text-sm"><i class="fas fa-lightbulb mr-1 text-teal-500"></i> Redemittel</h4>
-                <ul id="scaffoldList" class="text-sm text-gray-600 space-y-2"></ul>
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
+                <h4 class="font-bold text-sm text-gray-700 mb-2">Tipps</h4>
+                <ul id="scaffoldList" class="text-sm text-gray-600 space-y-2 list-disc pl-4"></ul>
             </div>
         </div>
-
     </div>
 
-    <!-- START OVERLAY (DER "ONE CLICK" FIX) -->
-    <div id="overlay" class="absolute inset-0 bg-white/95 backdrop-blur z-50 flex flex-col items-center justify-center p-6 text-center">
-        <div class="w-24 h-24 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 text-3xl mb-6 shadow-inner">
-            <i class="fas fa-headset"></i>
+    <!-- START SCREEN (Fix für Audio) -->
+    <div id="startScreen" class="absolute inset-0 bg-white/95 backdrop-blur z-50 flex flex-col items-center justify-center p-6">
+        <div class="w-20 h-20 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-600 text-3xl mb-6">
+            <i class="fas fa-play"></i>
         </div>
         <h1 class="text-3xl font-bold text-gray-900 mb-2">Willkommen</h1>
-        <p class="text-gray-500 mb-8 max-w-sm">Drücke auf Start und erlaube den Mikrofon-Zugriff, um loszulegen.</p>
-        
-        <button onclick="startTotalSystem()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-10 py-4 rounded-xl font-bold text-xl shadow-xl hover:shadow-2xl hover:scale-105 transition transform w-full max-w-xs ring-4 ring-indigo-100">
-            <i class="fas fa-play mr-2"></i> Session Starten
+        <p class="text-gray-500 mb-8">Klicke Start, um das Audio zu aktivieren.</p>
+        <button onclick="startSession()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-10 py-4 rounded-xl font-bold text-xl shadow-lg transition transform hover:scale-105">
+            Training Starten
         </button>
     </div>
 
-    <!-- LOGIC -->
     <script>
-        // GLOBALE VARIABLEN (Wichtig für Stabilität)
+        // === STATE ===
         let config = {};
+        let state = { idx: 0, recording: false, speaking: false, log: [], timer: null, time: 0 };
         let recognition = null;
-        let isRecording = false;
-        let questionIdx = 0;
-        let log = [];
-        let timer = null;
-        let timeLeft = 0;
-        let isPaused = false;
 
-        // INIT
+        // === INIT ===
         window.onload = () => {
-            const params = new URLSearchParams(window.location.search);
-            const data = params.get('config');
-            if(data) {
-                try {
-                    config = JSON.parse(decodeURIComponent(escape(atob(data))));
-                    renderUI();
-                    initSpeechAPI(); // API vorbereiten
-                } catch(e) { console.error("Config Error", e); }
+            const p = new URLSearchParams(window.location.search);
+            if(p.get('config')) {
+                config = JSON.parse(decodeURIComponent(escape(atob(p.get('config')))));
+                renderUI();
             }
         };
 
         function renderUI() {
             document.getElementById('topicDisplay').innerText = config.topic || "Coaching";
             
-            // Lernmodus Setup
             if(config.view === 'learning') {
                 document.getElementById('sidePanel').classList.remove('hidden');
                 document.getElementById('sidePanel').classList.add('flex');
                 
-                // Vokabeln
-                const vContainer = document.getElementById('vocabList');
-                (config.vocab || []).forEach(word => {
-                    let s = document.createElement('span');
-                    s.className = 'vocab-tag';
-                    s.innerText = word;
-                    s.id = 'v-' + word.toLowerCase().replace(/[^a-z0-9]/g, '');
-                    vContainer.appendChild(s);
+                let vBox = document.getElementById('vocabList');
+                (config.vocab||[]).forEach(w => {
+                    vBox.innerHTML += `<span class="vocab-tag" id="v-${w.toLowerCase().replace(/\W/g,'')}">${w}</span>`;
                 });
-
-                // Spickzettel
-                const sContainer = document.getElementById('scaffoldList');
-                (config.scaffolding || []).forEach(line => {
-                    let li = document.createElement('li');
-                    li.innerHTML = `• ${line}`;
-                    sContainer.appendChild(li);
-                });
+                let sBox = document.getElementById('scaffoldList');
+                (config.scaffolding||[]).forEach(s => sBox.innerHTML += `<li>${s}</li>`);
             } else {
-                // Exam Mode
                 document.getElementById('sidePanel').remove();
-                document.querySelector('.w-full.md\\:w-3\\/5').classList.remove('md:w-3/5');
+                document.querySelector('.md\\:w-3\\/5').classList.remove('md:w-3/5');
             }
         }
 
-        // SPEECH API SETUP (Das Herzstück)
-        function initSpeechAPI() {
-            if ('webkitSpeechRecognition' in window) {
+        // === START LOGIC ===
+        function startSession() {
+            // 1. UI Clean
+            document.getElementById('startScreen').style.display = 'none';
+            
+            // 2. Init Mic (Permission Prompt)
+            if('webkitSpeechRecognition' in window) {
                 recognition = new webkitSpeechRecognition();
-                recognition.continuous = true; 
+                recognition.continuous = true;
                 recognition.interimResults = true;
                 recognition.lang = 'de-DE';
-
-                recognition.onresult = (event) => {
-                    let final = '';
-                    let interim = '';
-                    
-                    for (let i = event.resultIndex; i < event.results.length; ++i) {
-                        if (event.results[i].isFinal) {
-                            final += event.results[i][0].transcript;
-                        } else {
-                            interim += event.results[i][0].transcript;
-                        }
+                
+                recognition.onresult = (e) => {
+                    let txt = "";
+                    for(let i=e.resultIndex; i<e.results.length; ++i) txt += e.results[i][0].transcript;
+                    document.getElementById('liveTrans').innerText = txt;
+                    // Gamification
+                    if(config.view==='learning') {
+                        (config.vocab||[]).forEach(w => {
+                            if(txt.toLowerCase().includes(w.toLowerCase())) {
+                                let el = document.getElementById(`v-${w.toLowerCase().replace(/\W/g,'')}`);
+                                if(el) el.classList.add('vocab-hit');
+                            }
+                        });
                     }
-
-                    // Text anzeigen
-                    const textBox = document.getElementById('transcriptBox');
-                    textBox.classList.remove('hidden');
-                    textBox.innerText = final + interim;
-
-                    // Vokabel Check (Live)
-                    if(config.view === 'learning') checkVocab(final + interim);
                 };
-
-                recognition.onerror = (e) => {
-                    console.error("Speech Error:", e.error);
-                    if(e.error === 'not-allowed') alert("Mikrofon Zugriff verweigert! Bitte erlauben.");
-                };
-            } else {
-                alert("Dein Browser unterstützt keine Spracherkennung (Benutze Chrome/Safari).");
+                
+                // Dummy Start um Permission zu holen
+                recognition.start();
+                setTimeout(() => { recognition.stop(); }, 100);
             }
-        }
 
-        function checkVocab(text) {
-            if(!config.vocab) return;
-            const lower = text.toLowerCase();
-            config.vocab.forEach(w => {
-                 let id = 'v-' + w.toLowerCase().replace(/[^a-z0-9]/g, '');
-                 let el = document.getElementById(id);
-                 if(el && lower.includes(w.toLowerCase())) {
-                     el.classList.add('vocab-hit');
-                 }
+            // 3. Play Intro
+            document.getElementById('mainText').innerText = "Willkommen";
+            speak(config.intro, () => {
+                nextQuestion();
             });
         }
 
-        // --- DER SUPER START (Alles auf einmal) ---
-        function startTotalSystem() {
-            // 1. UI Aufräumen
-            document.getElementById('overlay').style.display = 'none';
-
-            // 2. Hardware anfragen (Triggert Browser Prompt)
-            navigator.mediaDevices.getUserMedia({ audio: true })
-            .then(stream => {
-                // 3. Wenn OK: Intro abspielen (Browser erlaubt TTS jetzt, weil User geklickt hat!)
-                document.getElementById('questionText').innerText = "Willkommen! Hören Sie zu...";
-                speak(config.intro, () => {
-                    // 4. Dann erste Frage
-                    nextQuestion();
-                });
-            })
-            .catch(err => {
-                alert("Ohne Mikrofon geht es leider nicht. Bitte Seite neu laden und 'Zulassen' klicken.");
-            });
-        }
-
+        // === FLOW ===
         function nextQuestion() {
-            if(questionIdx >= config.questions.length) {
-                finishSession();
-                return;
-            }
+            if(state.idx >= config.questions.length) return finish();
 
-            const q = config.questions[questionIdx];
-            log.push({ speaker: "Coach", text: q });
+            let q = config.questions[state.idx];
+            state.log.push({role:"Coach", text: q});
 
-            // UI
+            // 1. Text SOFORT anzeigen
             if(config.view === 'learning') {
-                document.getElementById('questionText').innerText = q;
+                document.getElementById('mainText').innerText = q;
             } else {
-                document.getElementById('questionText').innerText = "Hören Sie zu...";
+                document.getElementById('mainText').innerText = "Hören Sie zu...";
             }
             
-            document.getElementById('transcriptBox').innerText = "";
-            document.getElementById('transcriptBox').classList.add('hidden');
-            
-            // Buttons sperren
-            let btn = document.getElementById('micBtn');
-            btn.className = 'mic-btn mic-disabled';
-            btn.disabled = true;
+            // 2. Buttons sperren
+            setMicState('blocked', "Coach spricht...");
+            document.getElementById('liveTrans').innerText = "";
 
+            // 3. Audio Starten
             speak(q, () => {
-                // Wenn fertig gesprochen -> User darf reden
-                if(config.view !== 'learning') document.getElementById('questionText').innerText = "Jetzt antworten...";
-                enableUserInput();
+                // 4. Wenn fertig -> User Mode
+                if(config.view !== 'learning') document.getElementById('mainText').innerText = "Jetzt sprechen...";
+                setMicState('ready', "Tippen zum Aufnehmen");
+                startTimer(config.timer || 60);
             });
-            
-            questionIdx++;
+
+            state.idx++;
         }
 
-        function speak(text, cb) {
-            window.speechSynthesis.cancel(); // Reset
-            
-            document.getElementById('statusLabel').innerText = "Coach spricht...";
-            document.getElementById('avatarCircle').classList.add('speaking-border');
+        function toggleMic() {
+            if(state.recording) {
+                // STOP
+                state.recording = false;
+                try { recognition.stop(); } catch(e){}
+                clearInterval(state.timer);
+                
+                let ans = document.getElementById('liveTrans').innerText.trim();
+                if(!ans) ans = "[Audio]";
+                state.log.push({role:"Student", text: ans});
+                
+                setMicState('blocked', "Gespeichert.");
+                setTimeout(nextQuestion, 1000); // Kurze Pause
+            } else {
+                // START
+                state.recording = true;
+                try { recognition.start(); } catch(e){}
+                setMicState('recording', "Aufnahme läuft... (Klick Stop)");
+            }
+        }
 
-            const u = new SpeechSynthesisUtterance(text);
+        // === HELPERS ===
+        function speak(txt, cb) {
+            window.speechSynthesis.cancel();
+            document.getElementById('avatarCircle').classList.add('speaking');
+            
+            let u = new SpeechSynthesisUtterance(txt);
             u.lang = 'de-DE';
+            u.rate = 1.0;
             
             u.onend = () => {
-                document.getElementById('avatarCircle').classList.remove('speaking-border');
+                document.getElementById('avatarCircle').classList.remove('speaking');
                 if(cb) cb();
             };
-            
-            // Safety Timeout falls TTS hängt
+            // Fallback falls onend stirbt (Chrome bug)
             setTimeout(() => {
                 if(window.speechSynthesis.speaking) {
                     window.speechSynthesis.cancel();
-                    if(cb) cb(); // Force continue
+                    if(cb) cb();
                 }
-            }, (text.length * 80) + 2000); 
+            }, (txt.length * 80) + 2000);
 
             window.speechSynthesis.speak(u);
         }
 
-        function enableUserInput() {
+        function setMicState(mode, label) {
             let btn = document.getElementById('micBtn');
-            btn.className = 'mic-btn mic-idle';
-            btn.disabled = false;
-            
-            document.getElementById('statusLabel').innerText = "Drücke Mikrofon";
-            document.getElementById('pauseBtn').classList.remove('hidden');
-
-            startTimer(config.timer || 60);
+            btn.className = `mic-btn mic-${mode}`;
+            btn.disabled = (mode === 'blocked');
+            document.getElementById('statusLabel').innerText = label;
         }
 
-        function handleMicClick() {
-            if(isRecording) {
-                // STOPPEN
-                stopRecording();
-            } else {
-                // STARTEN
-                startRecording();
-            }
-        }
-
-        function startRecording() {
-            isRecording = true;
-            let btn = document.getElementById('micBtn');
-            btn.className = 'mic-btn mic-recording'; // Rot pulsiered
+        function startTimer(sec) {
+            state.time = parseInt(sec);
+            clearInterval(state.timer);
             
-            document.getElementById('statusLabel').innerText = "Aufnahme läuft...";
+            let display = document.getElementById('timerDisplay');
             
-            try { recognition.start(); } catch(e) {}
-        }
-
-        function stopRecording() {
-            isRecording = false;
-            let btn = document.getElementById('micBtn');
-            btn.className = 'mic-btn mic-disabled'; // Grau werden
-            btn.disabled = true;
-            
-            document.getElementById('statusLabel').innerText = "Gespeichert.";
-            
-            // Timer Stop
-            clearInterval(timer);
-            
-            try { recognition.stop(); } catch(e) {}
-
-            // Text greifen
-            let text = document.getElementById('transcriptBox').innerText;
-            if(!text) text = "[Kein Audio erkannt]";
-            log.push({ speaker: "Student", text: text });
-
-            // Kurze Pause
-            setTimeout(() => {
-                nextQuestion();
-            }, 1000);
-        }
-
-        function startTimer(secs) {
-            clearInterval(timer);
-            timeLeft = parseInt(secs);
-            updateTimerDisp();
-            
-            timer = setInterval(() => {
-                if(!isPaused) {
-                    timeLeft--;
-                    updateTimerDisp();
-                    if(timeLeft <= 0) {
-                        if(isRecording) stopRecording(); // Zeit um
+            state.timer = setInterval(() => {
+                if(!state.recording) { // Nur runterzählen wenn NICHT aufgenommen wird? Oder immer?
+                    // Übliche Logik: Timer läuft für Antwortzeit.
+                    state.time--;
+                    let m = Math.floor(state.time/60);
+                    let s = state.time%60;
+                    display.innerText = `${m}:${s.toString().padStart(2,'0')}`;
+                    
+                    if(state.time <= 0) {
+                        clearInterval(state.timer);
+                        if(state.recording) toggleMic(); // Auto-Stop bei 0
                     }
                 }
             }, 1000);
         }
 
-        function updateTimerDisp() {
-            let m = Math.floor(timeLeft / 60);
-            let s = timeLeft % 60;
-            document.getElementById('timerDisplay').innerText = 
-                `${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
-        }
-
-        function togglePause() {
-            isPaused = !isPaused;
-            let btn = document.getElementById('pauseBtn');
-            if(isPaused) {
-                btn.classList.add('text-indigo-600');
-                btn.innerHTML = '<i class="fas fa-play mr-1"></i> Weiter';
-                document.getElementById('statusLabel').innerText = "Pausiert";
-                if(isRecording) recognition.stop(); // Mic aus während Pause
-            } else {
-                btn.classList.remove('text-indigo-600');
-                btn.innerHTML = '<i class="fas fa-pause mr-1"></i> Pause';
-                document.getElementById('statusLabel').innerText = isRecording ? "Aufnahme läuft..." : "Drücke Mikrofon";
-                if(isRecording) recognition.start();
-            }
-        }
-
-        function finishSession() {
-            document.getElementById('questionText').innerText = "Training Beendet!";
-            document.getElementById('micBtn').style.display = 'none';
-            document.getElementById('pauseBtn').style.display = 'none';
+        function finish() {
+            document.getElementById('mainText').innerText = "Training Beendet!";
+            document.getElementById('micBtn').style.display='none';
             document.getElementById('statusLabel').innerText = "Erstelle Protokoll...";
             
-            downloadMarkdown();
-        }
-
-        function downloadMarkdown() {
-            let md = `# Protokoll: ${config.topic}\n`;
-            md += `Datum: ${new Date().toLocaleDateString()}\n\n`;
+            // Markdown Download
+            let md = `# Protokoll: ${config.topic}\n\n`;
+            state.log.forEach(l => md += `**${l.role}:** ${l.text}\n\n`);
+            md += `\n---\n### NotebookLM Befehl:\nAnalysiere dieses Gespräch auf Fehler und Stil.`;
             
-            md += `## Verlauf\n`;
-            log.forEach(l => {
-                md += `**${l.speaker}:** ${l.text}\n\n`;
-            });
-
-            md += `\n---\n### NotebookLM Befehl:\n`;
-            md += `Analysiere das Transkript. Finde 3 Fehler und schlage 3 bessere Formulierungen vor.`;
-
-            const blob = new Blob([md], {type: 'text/markdown'});
-            const a = document.createElement('a');
+            let blob = new Blob([md], {type:'text/markdown'});
+            let a = document.createElement('a');
             a.href = URL.createObjectURL(blob);
-            a.download = `Session_${new Date().toISOString().slice(0,10)}.md`;
+            a.download = `Session_${Date.now()}.md`;
             document.body.appendChild(a);
             a.click();
         }
