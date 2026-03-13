@@ -3,16 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Tutor - Lehrer Dashboard (V2.0 Premium)</title>
+    <title>AI Tutor - Lehrer Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
         body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; padding-bottom: 80px; }
         .section-card { background: white; padding: 1.5rem; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); margin-bottom: 1.5rem; transition: transform 0.2s; }
-        .section-card:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
         .input-premium { border: 1px solid #e5e7eb; border-radius: 8px; padding: 0.75rem; width: 100%; transition: all 0.2s; }
         .input-premium:focus { border-color: #4F46E5; ring: 2px solid #4F46E5; outline: none; }
-        /* Custom Scrollbar */
         ::-webkit-scrollbar { width: 8px; }
         ::-webkit-scrollbar-track { background: #f1f1f1; }
         ::-webkit-scrollbar-thumb { background: #C7D2FE; border-radius: 4px; }
@@ -36,12 +34,12 @@
 
         <form id="configForm" onsubmit="event.preventDefault(); generateStudentLink();">
 
-        <!-- 1. KI & Audio Engine (Das Herzstück) -->
+        <!-- 1. KI & Audio Engine -->
         <div class="section-card border-l-4 border-indigo-500">
             <h2 class="text-xl font-bold mb-4 flex items-center text-gray-800"><i class="fas fa-microchip w-8 text-indigo-500"></i> Engine Konfiguration</h2>
             
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <!-- Links: KI Modell (Zukunftssicher!) -->
+                <!-- Links: KI Modell -->
                 <div class="space-y-3">
                     <label class="block text-sm font-bold text-gray-700">KI Modell (LLM)</label>
                     <select id="aiModel" class="input-premium bg-gray-50 font-medium" onchange="toggleCustomModel()">
@@ -51,7 +49,7 @@
                         <option value="custom">Benutzerdefiniert...</option> 
                     </select>
                     
-                    <div id="customModelField" class="hidden animate-fade-in">
+                    <div id="customModelField" class="hidden">
                         <input type="text" id="customModelName" class="input-premium border-indigo-300 bg-indigo-50" placeholder="Modell ID (z.B. gpt-5-preview)">
                     </div>
                     
@@ -67,7 +65,7 @@
                     </div>
                 </div>
 
-                <!-- Rechts: Audio Engine (Stimme) -->
+                <!-- Rechts: Audio Engine -->
                 <div class="space-y-3">
                     <label class="block text-sm font-bold text-gray-700">Sprachausgabe (TTS)</label>
                     <select id="audioEngine" class="input-premium bg-gray-50 font-medium" onchange="toggleAudioSettings()">
@@ -77,7 +75,7 @@
                     </select>
 
                     <!-- OpenAI Voice Settings -->
-                    <div id="openaiVoiceSettings" class="hidden p-3 bg-gray-50 rounded-lg border border-gray-200 animate-fade-in">
+                    <div id="openaiVoiceSettings" class="hidden p-3 bg-gray-50 rounded-lg border border-gray-200">
                         <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Stimme Wählen</label>
                         <select id="openaiVoice" class="w-full text-sm border-gray-300 rounded p-1.5 focus:ring-indigo-500 focus:border-indigo-500">
                             <option value="alloy">Alloy (Neutral)</option>
@@ -89,8 +87,8 @@
                         </select>
                     </div>
 
-                    <!-- ElevenLabs Settings (Dein Wunsch!) -->
-                    <div id="elevenLabsSettings" class="hidden p-3 bg-gray-50 rounded-lg border border-gray-200 space-y-2 animate-fade-in">
+                    <!-- ElevenLabs Settings -->
+                    <div id="elevenLabsSettings" class="hidden p-3 bg-gray-50 rounded-lg border border-gray-200 space-y-2">
                         <label class="block text-xs font-bold text-gray-500 uppercase mb-1">ElevenLabs Setup</label>
                         <input type="text" id="elevenApiKey" class="w-full text-sm border border-gray-300 rounded p-2 focus:ring-indigo-500" placeholder="ElevenLabs API Key">
                         <input type="text" id="elevenVoiceId" class="w-full text-sm border border-gray-300 rounded p-2 focus:ring-indigo-500" placeholder="Voice ID (z.B. 21m00Tcm4TlvDq8ikWAM)">
@@ -99,7 +97,7 @@
             </div>
         </div>
 
-        <!-- 2. Szenario & Rolle (Didaktik) -->
+        <!-- 2. Szenario & Rolle -->
         <div class="section-card">
             <h2 class="text-xl font-bold mb-4 flex items-center text-gray-800"><i class="fas fa-theater-masks w-8 text-pink-500"></i> Szenario & Rolle</h2>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
@@ -135,7 +133,7 @@
                 <h2 class="text-xl font-bold flex items-center text-gray-800"><i class="fas fa-list-ol w-8 text-blue-500"></i> Fragen (Ablauf)</h2>
             </div>
             
-            <div id="questionsContainer" class="space-y-3 mb-4 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
+            <div id="questionsContainer" class="space-y-3 mb-4 max-h-[400px] overflow-y-auto pr-2">
                 <!-- Fragen werden hier generiert -->
             </div>
             
@@ -205,7 +203,7 @@
         <!-- Footer Action -->
         <div class="sticky bottom-4 z-20">
             <button type="submit" class="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold py-4 rounded-xl shadow-xl transition transform hover:scale-[1.01] flex justify-center items-center text-lg ring-4 ring-white">
-                <i class="fas fa-rocket mr-3"></i> Schüler-Link Erstellen (Final V2)
+                <i class="fas fa-rocket mr-3"></i> Schüler-Link Erstellen
             </button>
         </div>
 
@@ -222,7 +220,7 @@
         </form>
     </div>
 
-    <!-- DAS GEHIRN DER LEHRER APP -->
+    <!-- LOGIC -->
     <script>
         // Initiale Frage
         addQuestion("Erzählen Sie mir bitte kurz etwas über sich.");
@@ -316,7 +314,6 @@
             btn.disabled = true;
 
             setTimeout(() => {
-                // Hier würden echte KI Prompts stehen. Wir simulieren intelligente Generierung.
                 const prompts = [
                     `Was genau verstehen Sie unter ${topic}?`,
                     `Welche Erfahrungen haben Sie bereits mit ${topic} gemacht?`,
@@ -336,7 +333,6 @@
         }
 
         function generateStudentLink() {
-            // Sammelt alle Daten
             const questions = Array.from(document.querySelectorAll('.question-input')).map(input => input.value).filter(v => v.trim() !== "");
             
             if(questions.length === 0) {
