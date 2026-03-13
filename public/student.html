@@ -19,6 +19,7 @@
         .mic-active { background-color: #EF4444; color: white; box-shadow: 0 0 0 8px rgba(239, 68, 68, 0.2); animation: pulse 1.5s infinite; transform: scale(1.05); }
         .mic-inactive { background-color: #FFFFFF; color: #64748B; border: 2px solid #E2E8F0; }
         .mic-inactive:hover { background-color: #F1F5F9; transform: translateY(-2px); color: #4F46E5; border-color: #4F46E5; }
+        .mic-disabled { opacity: 0.5; cursor: not-allowed; background-color: #E2E8F0; } /* Neuer Style für deaktivierten Zustand */
         
         @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); } 70% { box-shadow: 0 0 0 15px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
 
@@ -75,10 +76,10 @@
 
             <!-- CONTROLS -->
             <div class="flex flex-col items-center gap-4">
-                <button id="micBtn" class="mic-btn mic-inactive group disabled:opacity-50 disabled:grayscale" onclick="toggleRecording()" disabled>
+                <button id="micBtn" class="mic-btn mic-disabled" onclick="toggleRecording()" disabled>
                     <i class="fas fa-microphone"></i>
                 </button>
-                <p id="statusText" class="text-gray-500 font-medium text-sm bg-white px-3 py-1 rounded-full shadow-sm border border-gray-100">Bereit</p>
+                <p id="statusText" class="text-gray-500 font-medium text-sm bg-white px-3 py-1 rounded-full shadow-sm border border-gray-100">Warte auf Start...</p>
                 
                 <button id="pauseBtn" onclick="triggerPause()" class="hidden text-gray-500 hover:text-indigo-600 text-sm font-bold uppercase tracking-wide transition">
                     <i class="fas fa-pause-circle mr-1 text-lg"></i> Pause (15s)
@@ -245,7 +246,7 @@
             }
         }
 
-        // 2. START LOOP (Mit Intro)
+        // 2. START LOOP (Mit Intro Fix)
         function startLoop() {
             // Overlay ausblenden
             const overlay = document.getElementById('startOverlay');
@@ -254,6 +255,9 @@
             setTimeout(() => overlay.classList.add('hidden'), 500);
 
             // Intro vorlesen
+            // WICHTIG: Erst Text anzeigen (falls Intro als Title), hier aber nur sprechen
+            document.getElementById('mainQuestion').textContent = "Willkommen";
+            
             speakText(config.intro, () => {
                 nextQuestion();
             });
@@ -261,17 +265,19 @@
 
         function checkVocabHit(text) {
              if(!config.gamification || config.view !== 'learning') return;
-             // ... Logik wie gehabt ...
-             config.vocab.forEach(word => {
-                const cleanWord = word.toLowerCase().trim();
-                if(text.toLowerCase().includes(cleanWord)) {
-                    const id = "vocab-" + cleanWord.replace(/[^a-z0-9]/g, '-');
-                    const tag = document.getElementById(id);
-                    if(tag && !tag.classList.contains('vocab-hit')) {
-                        tag.classList.add('vocab-hit');
+             
+             if(config.vocab) {
+                 config.vocab.forEach(word => {
+                    const cleanWord = word.toLowerCase().trim();
+                    if(text.toLowerCase().includes(cleanWord)) {
+                        const id = "vocab-" + cleanWord.replace(/[^a-z0-9]/g, '-');
+                        const tag = document.getElementById(id);
+                        if(tag && !tag.classList.contains('vocab-hit')) {
+                            tag.classList.add('vocab-hit');
+                        }
                     }
-                }
-            });
+                });
+             }
         }
 
         function nextQuestion() {
@@ -282,7 +288,7 @@
                 
                 conversationLog.push({ speaker: "Coach", text: question });
 
-                // UI Text
+                // UI Text SOFORT anzeigen (Fix #2)
                 if(config.view === 'learning') {
                     document.getElementById('mainQuestion').textContent = question;
                 } else {
@@ -291,6 +297,10 @@
                 }
                 
                 document.getElementById('subText').textContent = "";
+                
+                // Button sperren während Coach spricht
+                document.getElementById('micBtn').classList.add('mic-disabled');
+                document.getElementById('micBtn').classList.remove('mic-inactive');
                 document.getElementById('micBtn').disabled = true;
 
                 speakText(question, () => {
@@ -305,7 +315,7 @@
 
         function speakText(text, callback) {
             isSpeaking = true;
-            document.getElementById('statusText').innerText = "Sprecher aktiv...";
+            document.getElementById('statusText').innerText = "Coach spricht...";
             document.getElementById('avatarCircle').classList.add('speaking');
             
             // TTS Abbruch verhindern
@@ -321,7 +331,7 @@
                 if (callback) callback();
             };
             
-            // Fallback Timer, falls TTS hängt (WICHTIG!)
+            // Fallback Timer, falls TTS hängt
             let hangTimer = setTimeout(() => {
                 if(isSpeaking) {
                     console.warn("TTS Timeout - Force next step");
@@ -330,7 +340,7 @@
                     document.getElementById('avatarCircle').classList.remove('speaking');
                     if(callback) callback();
                 }
-            }, (text.length * 100) + 3000); // Dynamische Länge + Puffer
+            }, (text.length * 100) + 3000); 
 
             utterance.onend = function() {
                 clearTimeout(hangTimer);
@@ -343,12 +353,19 @@
         }
 
         function enableInput() {
-            document.getElementById('statusText').textContent = "Sprechen...";
-            document.getElementById('micBtn').disabled = false;
+            document.getElementById('statusText').textContent = "Tippen zum Sprechen"; // Fix #3
+            
+            const btn = document.getElementById('micBtn');
+            btn.disabled = false;
+            btn.classList.remove('mic-disabled');
+            btn.classList.add('mic-inactive');
+            
             document.getElementById('pauseBtn').classList.remove('hidden'); 
             
             startTimer(config.timer || 60);
-            toggleRecording(); // Auto Start
+            
+            // KEIN Auto-Recording mehr (Fix #3)
+            // User muss klicken!
         }
 
         function startTimer(seconds) {
@@ -371,7 +388,7 @@
 
                 if(timeLeft <= 0) {
                     clearInterval(questionTimerInterval);
-                    toggleRecording(); 
+                    toggleRecording(); // Zeit abgelaufen -> Stop Aufnahme
                 }
                 timeLeft--;
             }, 1000);
@@ -399,14 +416,15 @@
             const status = document.getElementById('statusText');
 
             if (!isRecording) {
-                // Start
+                // START
                 isRecording = true;
                 btn.classList.add('mic-active');
                 btn.classList.remove('mic-inactive');
+                status.textContent = "Aufnahme läuft... (Tippen zum Beenden)";
                 try { if(recognition) recognition.start(); } catch(e){}
 
             } else {
-                // Stop -> Next
+                // STOP -> NEXT QUESTION
                 isRecording = false;
                 btn.classList.remove('mic-active');
                 btn.classList.add('mic-inactive');
@@ -414,19 +432,20 @@
                 
                 try { if(recognition) recognition.stop(); } catch(e){}
                 clearInterval(questionTimerInterval); 
+                status.textContent = "Antwort gespeichert.";
 
                 let ans = document.getElementById('subText').textContent.trim();
                 if(ans === "") ans = "[Audio Antwort]";
                 conversationLog.push({ speaker: "Student", text: ans });
                 
-                status.textContent = "Gespeichert.";
-                
+                // Kurze Pause vor nächster Frage
                 setTimeout(() => nextQuestion(), 800);
             }
         }
 
         function finishSession() {
             document.getElementById('mainQuestion').textContent = "Fertig!";
+            document.getElementById('statusText').textContent = "Protokoll wird erstellt...";
             document.getElementById('micBtn').style.display = 'none';
             document.getElementById('pauseBtn').style.display = 'none';
             generateProtocol();
@@ -469,7 +488,7 @@
             a.click();
             document.body.removeChild(a);
             
-            document.getElementById('statusText').innerText = "Protokoll gespeichert.";
+            document.getElementById('statusText').innerText = "Download gestartet.";
         }
     </script>
 </body>
