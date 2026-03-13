@@ -108,11 +108,12 @@
             </div>
         </div>
 
-        <!-- OVERLAY: Start Screen -->
+               <!-- OVERLAY: Start Screen -->
         <div id="startOverlay" class="absolute inset-0 bg-slate-900 z-50 flex flex-col items-center justify-center p-8 text-center transition-opacity duration-500">
-            <!-- Kleines Logo oben -->
-            <div class="w-16 h-16 bg-indigo-600 rounded-2xl flex items-center justify-center mb-6 shadow-lg shadow-indigo-900/50">
-                <i class="fas fa-graduation-cap text-2xl text-white"></i>
+            
+            <!-- HIER IST DAS UPDATE: DEIN FOTO STATT ICON -->
+            <div class="w-24 h-24 md:w-32 md:h-32 rounded-full overflow-hidden border-4 border-indigo-500 mb-6 shadow-2xl shadow-indigo-900/50 relative">
+                <img src="avatar.png" onerror="this.src='https://ui-avatars.com/api/?name=Coach&background=4F46E5&color=fff&size=256'" alt="Dein Coach" class="w-full h-full object-cover">
             </div>
             
             <h1 class="text-3xl md:text-4xl font-bold mb-4 text-white">Willkommen</h1>
@@ -121,9 +122,17 @@
             </p>
             
             <div id="introLoading" class="mb-6 hidden">
-                <i class="fas fa-circle-notch fa-spin text-indigo-500 text-2xl"></i>
-                <p class="text-sm text-slate-500 mt-2">Coach bereitet vor...</p>
+                <div class="flex flex-col items-center">
+                    <i class="fas fa-circle-notch fa-spin text-indigo-500 text-3xl mb-3"></i>
+                    <p class="text-sm text-indigo-300 font-medium animate-pulse">Coach bereitet vor...</p>
+                </div>
             </div>
+
+            <button id="startBtn" onclick="initSession()" class="bg-white text-slate-900 hover:bg-indigo-50 px-8 py-4 rounded-xl font-bold text-lg shadow-xl hover:shadow-2xl transition transform hover:-translate-y-1 w-full max-w-xs ring-4 ring-indigo-900">
+                Session Starten
+            </button>
+        </div>
+
 
             <button id="startBtn" onclick="initSession()" class="bg-white text-slate-900 hover:bg-indigo-50 px-8 py-4 rounded-xl font-bold text-lg shadow-xl hover:shadow-2xl transition transform hover:-translate-y-1 w-full max-w-xs ring-4 ring-indigo-900">
                 Session Starten
