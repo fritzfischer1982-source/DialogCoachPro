@@ -3,137 +3,204 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Meine Sprachübung</title>
+    <title>Mein Online Coaching</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <style>
-        body { background-color: #111827; color: white; height: 100vh; overflow: hidden; font-family: 'Inter', sans-serif; }
-        .mic-btn { width: 80px; height: 80px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 2rem; transition: all 0.3s; cursor: pointer; }
-        .mic-active { background-color: #EF4444; box-shadow: 0 0 20px #EF4444; animation: pulse 1.5s infinite; }
-        .mic-inactive { background-color: #374151; }
-        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
-        .scaffold-panel { background: rgba(255,255,255,0.05); border-right: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(10px); }
+        body { background-color: #0F172A; color: white; height: 100vh; overflow: hidden; font-family: 'Inter', sans-serif; }
+        
+        /* Mikrofon Button Styles */
+        .mic-btn { width: 90px; height: 90px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 2.5rem; transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); cursor: pointer; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5); }
+        .mic-active { background-color: #EF4444; box-shadow: 0 0 30px #EF4444; animation: pulse 1.5s infinite; transform: scale(1.1); }
+        .mic-inactive { background-color: #334155; }
+        .mic-inactive:hover { background-color: #475569; transform: translateY(-2px); }
+        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 70% { box-shadow: 0 0 0 20px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
+
+        /* Animationen */
+        .fade-in { animation: fadeIn 0.8s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Gamification Highlight */
+        .vocab-hit { background-color: #10B981 !important; color: white !important; border-color: #059669 !important; transform: scale(1.1); box-shadow: 0 0 15px #10B981; transition: all 0.3s; font-weight: bold; }
+        
+        /* Avatar Styling */
+        .coach-avatar { object-fit: cover; width: 100%; height: 100%; }
     </style>
 </head>
-<body class="flex">
+<body class="flex flex-col md:flex-row h-full">
 
-    <!-- SIDEBAR (Nur im Lern-Modus sichtbar) -->
-    <div id="scaffoldPanel" class="hidden w-1/4 h-full scaffold-panel p-6 flex-col overflow-y-auto">
-        <h3 class="text-indigo-400 font-bold uppercase tracking-wider text-xs mb-4">Lernhilfe</h3>
+    <!-- SIDEBAR (Nur sichtbar im Lern-Modus) -->
+    <div id="scaffoldPanel" class="hidden md:w-1/3 w-full bg-slate-900 border-r border-slate-800 p-6 flex-col overflow-y-auto z-20 shadow-xl">
+        <h3 class="text-indigo-400 font-bold uppercase tracking-wider text-xs mb-6 flex items-center"><i class="fas fa-book-open mr-2"></i> Deine Lernhilfen</h3>
         
-        <div class="mb-6">
-            <h4 class="font-bold mb-2">Pflichtvokabeln</h4>
-            <div id="vocabDisplay" class="flex flex-wrap gap-2">
+        <!-- Zielvokabeln -->
+        <div class="mb-8">
+            <h4 class="font-bold mb-3 text-slate-300 text-sm">Verwende diese Begriffe:</h4>
+            <div id="vocabDisplay" class="flex flex-wrap gap-2 transition-all">
                 <!-- Vokabel Tags kommen hier hin -->
             </div>
+            <p class="text-xs text-slate-500 mt-2 italic" id="gamificationHint">Sprich die Wörter laut aus!</p>
         </div>
 
+        <!-- Redemittel / Spickzettel -->
         <div class="mb-6">
-            <h4 class="font-bold mb-2">Redemittel</h4>
-            <ul class="text-sm text-gray-300 space-y-2 list-disc pl-4">
-                <li>Ich bin der Meinung, dass...</li>
-                <li>Dazu möchte ich ergänzen...</li>
-                <li>Habe ich Sie richtig verstanden?</li>
+            <h4 class="font-bold mb-3 text-slate-300 text-sm">Satzanfänge & Struktur:</h4>
+            <ul id="scaffoldDisplay" class="text-sm text-slate-400 space-y-3 pl-2 border-l-2 border-slate-700">
+                <!-- Redemittel Items -->
             </ul>
         </div>
     </div>
 
     <!-- MAIN AREA -->
-    <div class="flex-1 flex flex-col h-full relative">
+    <div class="flex-1 flex flex-col h-full relative gradient-bg">
         
-        <!-- Header -->
-        <div class="p-4 flex justify-between items-center text-gray-400 text-sm">
-            <div id="topicDisplay">Thema wird geladen...</div>
-            <div class="flex items-center gap-2">
-                <div class="w-2 h-2 rounded-full bg-green-500"></div> Online
+        <!-- Top Bar -->
+        <div class="p-4 flex justify-between items-center text-slate-400 text-sm border-b border-slate-800/50 bg-slate-900/50 backdrop-blur-sm">
+            <div id="topicDisplay" class="font-medium text-slate-200">Wird geladen...</div>
+            <div class="flex items-center gap-4">
+                <div class="flex items-center gap-2 bg-slate-800 px-3 py-1 rounded-full border border-slate-700">
+                    <i class="fas fa-clock text-indigo-400"></i>
+                    <span id="countdownDisplay" class="font-mono text-white">00:00</span>
+                </div>
             </div>
         </div>
 
         <!-- Center Stage -->
-        <div class="flex-1 flex flex-col items-center justify-center p-8 text-center">
+        <div class="flex-1 flex flex-col items-center justify-center p-4 md:p-12 text-center relative z-10">
             
-            <!-- KI Avatar / Visualizer -->
-            <div class="mb-8 relative">
-                <div class="w-32 h-32 rounded-full bg-indigo-600 flex items-center justify-center border-4 border-indigo-400 shadow-2xl">
-                    <i class="fas fa-robot text-4xl text-white"></i>
+            <!-- FOTO / AVATAR UPDATE -->
+            <!-- Zeigt avatar.png an. Wenn nicht vorhanden, Fallback auf Icon -->
+            <div class="mb-10 relative group">
+                <div class="w-32 h-32 md:w-44 md:h-44 rounded-full overflow-hidden border-4 border-slate-700 shadow-2xl transition-transform duration-500 relative z-20 bg-slate-800" id="avatarCircle">
+                    <img src="avatar.png" onerror="this.src='https://ui-avatars.com/api/?name=Coach&background=4F46E5&color=fff&size=256'" alt="Dein Coach" class="coach-avatar">
                 </div>
-                <div id="speakingIndicator" class="absolute -bottom-2 -right-2 bg-green-500 w-6 h-6 rounded-full hidden"></div>
+                <!-- Speaking Pulse Effect -->
+                <div id="speakingPulse" class="absolute inset-0 rounded-full bg-indigo-500 opacity-0 transition-opacity duration-200 blur-2xl -z-10 transform scale-110"></div>
             </div>
 
-            <!-- Chat / Frage Text -->
-            <div id="dialogArea" class="max-w-2xl min-h-[100px]">
-                <h2 id="mainQuestion" class="text-2xl font-light leading-relaxed">
-                    Warte auf Start...
+            <!-- Frage Text -->
+            <div id="dialogArea" class="max-w-2xl min-h-[120px] mb-8">
+                <h2 id="mainQuestion" class="text-2xl md:text-3xl font-light leading-relaxed text-transparent bg-clip-text bg-gradient-to-r from-white to-slate-400 fade-in">
+                    <!-- Frage erscheint hier -->
                 </h2>
-                <p id="subText" class="text-indigo-400 mt-4 text-sm font-mono"></p>
+                <!-- Transkript / Feedback -->
+                <p id="subText" class="text-indigo-400 mt-6 text-sm font-mono opacity-80 min-h-[1.5rem]"></p>
             </div>
 
-            <!-- Start Overlay -->
-            <div id="startOverlay" class="absolute inset-0 bg-gray-900/90 flex flex-col items-center justify-center z-50">
-                <h1 class="text-3xl font-bold mb-4">Willkommen zur Sprachübung</h1>
-                <p class="text-gray-400 mb-8 max-w-md text-center">Die KI wird das Gespräch führen. Bitte antworte klar und deutlich.</p>
-                <button onclick="startSession()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-8 py-3 rounded-full font-bold text-lg shadow-lg transition transform hover:scale-105">
-                    <i class="fas fa-play mr-2"></i> Ich bin bereit
+            <!-- Controls -->
+            <div class="flex flex-col items-center w-full max-w-sm">
+                
+                <!-- Mic Button -->
+                <button id="micBtn" class="mic-btn mic-inactive text-white mb-8 group disabled:opacity-50 disabled:cursor-not-allowed" onclick="toggleRecording()" disabled>
+                    <i class="fas fa-microphone group-hover:scale-110 transition-transform"></i>
                 </button>
-            </div>
 
+                <!-- Status Text & Pause Button -->
+                <div class="flex items-center gap-4">
+                    <p id="statusText" class="text-slate-500 text-sm font-medium tracking-wide">System wird gestartet...</p>
+                    
+                    <!-- Anti-Stress Pause Button -->
+                    <button id="pauseBtn" onclick="triggerPause()" class="hidden bg-slate-800 hover:bg-slate-700 text-slate-300 px-4 py-2 rounded-full text-xs transition border border-slate-700 font-bold uppercase tracking-wider">
+                        <i class="fas fa-pause mr-2"></i> Pause
+                    </button>
+                </div>
+            </div>
         </div>
 
-        <!-- Controls -->
-        <div class="p-8 flex flex-col items-center">
-            <div class="w-full max-w-md h-1 bg-gray-700 rounded-full mb-6 overflow-hidden">
-                <div id="timerBar" class="h-full bg-indigo-500 w-0 transition-all duration-1000"></div>
+        <!-- OVERLAY: Start Screen -->
+        <div id="startOverlay" class="absolute inset-0 bg-slate-900 z-50 flex flex-col items-center justify-center p-8 text-center transition-opacity duration-500">
+            <!-- Kleines Logo oben -->
+            <div class="w-16 h-16 bg-indigo-600 rounded-2xl flex items-center justify-center mb-6 shadow-lg shadow-indigo-900/50">
+                <i class="fas fa-graduation-cap text-2xl text-white"></i>
             </div>
-
-            <button id="micBtn" class="mic-btn mic-inactive text-white mb-4" onclick="toggleRecording()">
-                <i class="fas fa-microphone"></i>
-            </button>
             
-            <p id="statusText" class="text-gray-500 text-sm">Drücke START, um zu beginnen</p>
+            <h1 class="text-3xl md:text-4xl font-bold mb-4 text-white">Willkommen</h1>
+            <p class="text-slate-400 mb-8 max-w-md mx-auto leading-relaxed">
+                Dein persönliches Coaching beginnt gleich. <br>Bitte sorge für eine ruhige Umgebung.
+            </p>
+            
+            <div id="introLoading" class="mb-6 hidden">
+                <i class="fas fa-circle-notch fa-spin text-indigo-500 text-2xl"></i>
+                <p class="text-sm text-slate-500 mt-2">Coach bereitet vor...</p>
+            </div>
+
+            <button id="startBtn" onclick="initSession()" class="bg-white text-slate-900 hover:bg-indigo-50 px-8 py-4 rounded-xl font-bold text-lg shadow-xl hover:shadow-2xl transition transform hover:-translate-y-1 w-full max-w-xs ring-4 ring-indigo-900">
+                Session Starten
+            </button>
         </div>
+
     </div>
 
-        <script>
+    <!-- LOGIK -->
+    <script>
         let config = {};
         let currentQuestionIndex = 0;
         let isRecording = false;
         let isSpeaking = false;
+        let isPaused = false;
         let recognition;
-        
-        // NEU: Hier speichern wir den Dialog für das Protokoll
         let conversationLog = []; 
-        let sessionStartTime = new Date();
-
+        let questionTimerInterval;
+        let timeLeft = 0;
+        
+        // Setup beim Laden
         window.onload = function() {
             const urlParams = new URLSearchParams(window.location.search);
             const encodedConfig = urlParams.get('config');
             if (encodedConfig) {
                 try {
                     config = JSON.parse(decodeURIComponent(escape(atob(encodedConfig))));
-                    setupApp();
+                    setupUI();
                 } catch (e) {
-                    alert("Fehler beim Laden der Konfiguration.");
+                    alert("Systemfehler: Konfiguration konnte nicht geladen werden.");
                 }
+            } else {
+                document.getElementById('statusText').innerText = "Keine Konfiguration gefunden.";
             }
         };
 
-        function setupApp() {
-            document.getElementById('topicDisplay').textContent = config.topic || "Übung";
+        function setupUI() {
+            document.getElementById('topicDisplay').textContent = config.topic || "Allgemeines Training";
             
-            // Ansicht steuern
+            // Ansicht steuern (Hard/Soft Mode)
             if (config.view === 'learning') {
+                // Lernmodus: Zeige Sidebar & Text
                 document.getElementById('scaffoldPanel').classList.remove('hidden');
+                document.getElementById('scaffoldPanel').classList.add('flex');
+                
+                // Vokabeln rendern
                 const vocabContainer = document.getElementById('vocabDisplay');
-                config.vocab.forEach(word => {
-                    const tag = document.createElement('span');
-                    tag.className = "bg-indigo-900/50 text-indigo-200 px-2 py-1 rounded text-xs border border-indigo-700";
-                    tag.textContent = word;
-                    vocabContainer.appendChild(tag);
+                if(config.vocab && config.vocab.length > 0) {
+                    config.vocab.forEach(word => {
+                        const tag = document.createElement('span');
+                        tag.className = "vocab-tag bg-slate-800 text-slate-300 px-3 py-1.5 rounded-lg text-xs border border-slate-700 font-medium transition-all duration-300";
+                        tag.textContent = word;
+                        tag.id = "vocab-" + word.toLowerCase().replace(/[^a-z0-9]/g, '-');
+                        vocabContainer.appendChild(tag);
+                    });
+                }
+
+                // Spickzettel rendern
+                const scaffoldList = document.getElementById('scaffoldDisplay');
+                const scaffolds = config.scaffolding || []; 
+                scaffolds.forEach(item => {
+                    const li = document.createElement('li');
+                    li.textContent = item;
+                    scaffoldList.appendChild(li);
                 });
+
+                if(!config.gamification) {
+                    document.getElementById('gamificationHint').style.display = 'none';
+                }
+
+            } else {
+                // Prüfungsmodus: Text weg, Sidebar weg
+                document.getElementById('mainQuestion').classList.add('invisible'); 
+                document.getElementById('scaffoldPanel').remove(); 
             }
 
-            // Speech API Setup
+            // Web Speech API Init
             if ('webkitSpeechRecognition' in window) {
                 recognition = new webkitSpeechRecognition();
                 recognition.continuous = true; 
@@ -142,32 +209,75 @@
 
                 recognition.onresult = (event) => {
                     const transcript = Array.from(event.results).map(r => r[0].transcript).join('');
-                    document.getElementById('subText').textContent = transcript;
+                    if(config.view === 'learning') document.getElementById('subText').textContent = transcript;
+                    
+                    // Live Gamification Check
+                    checkVocabHit(transcript);
                 };
             }
         }
 
-        function startSession() {
-            document.getElementById('startOverlay').classList.add('hidden');
-            // Intro ins Protokoll
-            conversationLog.push({ speaker: "AI_Tutor", text: config.intro });
+        // Gamification Logic (Grünes Leuchten)
+        function checkVocabHit(text) {
+            if(!config.gamification || config.view !== 'learning') return;
             
+            config.vocab.forEach(word => {
+                const cleanWord = word.toLowerCase().trim();
+                if(text.toLowerCase().includes(cleanWord)) {
+                    // ID muss exakt matchen wie oben generiert
+                    const id = "vocab-" + cleanWord.replace(/[^a-z0-9]/g, '-');
+                    const tag = document.getElementById(id);
+                    if(tag && !tag.classList.contains('vocab-hit')) {
+                        tag.classList.add('vocab-hit');
+                        tag.innerHTML = '<i class="fas fa-check mr-1"></i> ' + word;
+                    }
+                }
+            });
+        }
+
+        // Session Start
+        function initSession() {
+            const btn = document.getElementById('startBtn');
+            const loading = document.getElementById('introLoading');
+            
+            btn.classList.add('hidden');
+            loading.classList.remove('hidden');
+
+            // 1. Zuerst Intro vorlesen
             speakText(config.intro, () => {
-                nextQuestion();
+                // 2. Overlay ausblenden
+                const overlay = document.getElementById('startOverlay');
+                overlay.style.opacity = '0';
+                setTimeout(() => {
+                    overlay.classList.add('hidden');
+                    nextQuestion(); // Start Frage 1
+                }, 500);
             });
         }
 
         function nextQuestion() {
+            clearInterval(questionTimerInterval);
+
             if (currentQuestionIndex < config.questions.length) {
                 const question = config.questions[currentQuestionIndex];
                 
-                // Frage ins Protokoll speichern
-                conversationLog.push({ speaker: "AI_Tutor", text: question });
+                // Loggen
+                conversationLog.push({ speaker: "Coach", text: question });
 
-                document.getElementById('mainQuestion').textContent = question;
-                document.getElementById('subText').textContent = "";
+                // UI Update
+                if(config.view === 'learning') {
+                    document.getElementById('mainQuestion').textContent = question;
+                } else {
+                    document.getElementById('mainQuestion').classList.remove('invisible');
+                    document.getElementById('mainQuestion').textContent = "Hören Sie genau zu..."; 
+                }
                 
+                document.getElementById('subText').textContent = "";
+                document.getElementById('micBtn').disabled = true;
+
+                // Audio Ausgabe
                 speakText(question, () => {
+                    if(config.view !== 'learning') document.getElementById('mainQuestion').textContent = "..."; // Wieder ausblenden
                     enableInput();
                 });
                 currentQuestionIndex++;
@@ -176,18 +286,21 @@
             }
         }
 
+        // AUDIO ENGINE LOGIK (Standard: Browser)
         function speakText(text, callback) {
             isSpeaking = true;
-            document.getElementById('speakingIndicator').classList.remove('hidden');
-            document.getElementById('statusText').textContent = "KI spricht...";
-            
+            document.getElementById('statusText').textContent = "Sprecher aktiv...";
+            document.getElementById('speakingPulse').style.opacity = '1';
+
+            // Hier kommt der Code für OpenAI / ElevenLabs Fetch
+            // Fallback auf Browser TTS
             const utterance = new SpeechSynthesisUtterance(text);
             utterance.lang = "de-DE";
-            utterance.rate = parseFloat(config.speed) || 1.0;
+            utterance.rate = 1.0; 
             
             utterance.onend = () => {
                 isSpeaking = false;
-                document.getElementById('speakingIndicator').classList.add('hidden');
+                document.getElementById('speakingPulse').style.opacity = '0';
                 if (callback) callback();
             };
             
@@ -195,10 +308,58 @@
         }
 
         function enableInput() {
-            document.getElementById('statusText').textContent = config.mode === 'manual' ? "Tippen zum Aufnehmen" : "Sprechen Sie jetzt...";
-            if (config.mode === 'auto') {
-                toggleRecording(); 
-            }
+            document.getElementById('statusText').textContent = "Jetzt sprechen";
+            document.getElementById('micBtn').disabled = false;
+            document.getElementById('pauseBtn').classList.remove('hidden'); 
+
+            // Timer Start aus Config (Default 60s)
+            startTimer(config.timer || 60);
+
+            // Automatische Aufnahme starten
+            toggleRecording(); 
+        }
+
+        function startTimer(seconds) {
+            timeLeft = parseInt(seconds);
+            const display = document.getElementById('countdownDisplay');
+            
+            questionTimerInterval = setInterval(() => {
+                if(isPaused) return; 
+
+                const mins = Math.floor(timeLeft / 60);
+                const secs = timeLeft % 60;
+                display.textContent = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+                
+                if(timeLeft <= 10) display.classList.add('text-red-500');
+
+                if(timeLeft <= 0) {
+                    clearInterval(questionTimerInterval);
+                    toggleRecording(); // Zeit um -> Aufnahme stopp
+                }
+                timeLeft--;
+            }, 1000);
+        }
+
+        // PAUSE BUTTON LOGIK (15s Anti-Stress)
+        function triggerPause() {
+            if(isPaused) return;
+            isPaused = true;
+            const btn = document.getElementById('pauseBtn');
+            const originalText = btn.innerHTML;
+            
+            btn.innerHTML = '<i class="fas fa-hourglass-half fa-spin"></i> Pause...';
+            btn.classList.add('bg-yellow-600', 'text-white');
+            
+            if(isRecording && recognition) recognition.stop();
+            document.getElementById('statusText').innerText = "Pausiert (15s)";
+
+            setTimeout(() => {
+                isPaused = false;
+                btn.innerHTML = originalText;
+                btn.classList.remove('bg-yellow-600', 'text-white');
+                document.getElementById('statusText').innerText = "Aufnahme läuft weiter...";
+                if(isRecording && recognition) recognition.start();
+            }, 15000);
         }
 
         function toggleRecording() {
@@ -213,84 +374,92 @@
                 btn.classList.add('mic-active');
                 btn.classList.remove('mic-inactive');
                 
-                status.textContent = config.mode === 'manual' ? "Aufnahme läuft... (Tippen zum Beenden)" : "Höre zu...";
+                status.textContent = "Aufnahme läuft... (Tippen zum senden)";
                 if(recognition) recognition.start();
-                document.getElementById('timerBar').style.width = "100%";
 
             } else {
-                // STOP (Hier erfassen wir die Antwort des Schülers)
+                // STOP
                 isRecording = false;
                 btn.classList.remove('mic-active');
                 btn.classList.add('mic-inactive');
+                document.getElementById('pauseBtn').classList.add('hidden');
+                
                 if(recognition) recognition.stop();
-                
-                // *** WICHTIG: Antwort simulieren oder echt erfassen ***
-                // Da Speech-to-Text im Browser ohne Server oft abbricht, 
-                // nehmen wir für den Test an, der Text im "subText" Feld ist die Antwort.
-                // Falls leer (Simulation), schreiben wir einen Platzhalter.
+                clearInterval(questionTimerInterval); 
+
+                // Antwort speichern
                 let studentAnswer = document.getElementById('subText').textContent;
-                if(studentAnswer.trim() === "") studentAnswer = "[Audio-Antwort des Schülers]";
-                
-                // Antwort ins Protokoll speichern
+                if(studentAnswer.trim() === "") studentAnswer = "[Audio-Antwort]";
                 conversationLog.push({ speaker: "Student", text: studentAnswer });
 
-                document.getElementById('timerBar').style.width = "0%";
-                document.getElementById('statusText').textContent = "Antwort verarbeitet...";
-
+                status.textContent = "Verarbeite Antwort...";
+                
+                // Simulierte Denkpause
                 setTimeout(() => {
                     nextQuestion();
                 }, 1000);
             }
         }
 
-        // *** HIER PASSIERT DIE MAGIE FÜR DEIN BUSINESS ***
+        // MONEYMAKER: PROTOKOLL GENERIERUNG (Mit Prompt am Ende!)
         function finishSession() {
-            document.getElementById('mainQuestion').textContent = "Übung abgeschlossen!";
-            document.getElementById('subText').textContent = "Dein Protokoll wird heruntergeladen...";
+            document.getElementById('mainQuestion').textContent = "Training Beendet";
+            document.getElementById('subText').textContent = "Das Protokoll wird erstellt...";
             document.getElementById('micBtn').classList.add('hidden');
-            document.getElementById('statusText').classList.add('hidden');
+            document.getElementById('pauseBtn').classList.add('hidden');
+            document.getElementById('countdownDisplay').textContent = "FIN";
 
-            // 1. Vokabel-Check Logik
+            generateProtocol();
+        }
+
+        function generateProtocol() {
+            // Vokabel Analyse für Protokoll
             let vocabCheck = "";
             let fullText = conversationLog.map(e => e.text).join(" ").toLowerCase();
             
-            config.vocab.forEach(word => {
-                const used = fullText.includes(word.toLowerCase());
-                vocabCheck += `- [${used ? 'x' : ' '}] ${word}\n`;
-            });
+            if(config.vocab) {
+                config.vocab.forEach(word => {
+                    const used = fullText.includes(word.toLowerCase());
+                    vocabCheck += `- [${used ? 'x' : ' '}] ${word}\n`;
+                });
+            }
 
-            // 2. Markdown Datei erstellen (Optimiert für NotebookLM)
+            // Markdown Content mit integriertem Analyse-Prompt
             let mdContent = `# Protokoll: ${config.topic}\n`;
-            mdContent += `Datum: ${new Date().toLocaleDateString()} | Modus: ${config.view}\n\n`;
+            mdContent += `Datum: ${new Date().toLocaleDateString()} | Zeit: ${new Date().toLocaleTimeString()} | Level: ${config.level}\n`;
+            mdContent += `Rolle KI: ${config.role}\n\n`;
             
-            mdContent += `## 1. Vokabel-Monitoring\n`;
-            mdContent += `Zielbegriffe:\n${vocabCheck}\n\n`;
+            mdContent += `## 1. Vokabel-Check (Zielbegriffe)\n`;
+            mdContent += `${vocabCheck}\n\n`;
 
-            mdContent += `## 2. Gesprächsverlauf\n`;
+            mdContent += `## 2. Vollständiges Transkript (Rohdaten)\n`;
             conversationLog.forEach(entry => {
                 mdContent += `**${entry.speaker}:** ${entry.text}\n\n`;
             });
 
-            mdContent += `\n---\n*Generiert durch AI Tutor Pro für ${config.model} Analyse*`;
+            mdContent += `\n---\n`;
+            mdContent += `### 🤖 ANWEISUNG FÜR KI-ANALYSE (NotebookLM):\n`;
+            mdContent += `Bitte analysiere das obige Transkript präzise auf C1-Niveau:\n`;
+            mdContent += `1. **Identifiziere 3 Schlüsselsätze** des Schülers, die grammatikalisch okay, aber stilistisch schwach waren.\n`;
+            mdContent += `2. **Erstelle für jeden Satz 3 bessere Alternativen** (Elegant / Professionell / Idiomatisch).\n`;
+            mdContent += `3. **Erkläre kurz**, warum die Alternative besser wirkt (z.B. "klingt souveräner").\n`;
+            mdContent += `4. **Prüfe die Vokabeln:** Wurden alle Zielbegriffe aus Abschnitt 1 korrekt verwendet? Wenn nein, gib ein Beispiel mit dem fehlenden Begriff.\n`;
+            mdContent += `\n---\n*Generiert mit DialogCoach Pro*`;
 
-            // 3. Download erzwingen
             const blob = new Blob([mdContent], { type: 'text/markdown' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            // Dateiname Format: YYYY-MM-DD_Thema_Student.md
             const filename = `${new Date().toISOString().slice(0,10)}_${config.topic.replace(/\s+/g, '_')}_Protokoll.md`;
             a.download = filename;
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
             
-            // UI Feedback
             setTimeout(() => {
-                 document.getElementById('subText').innerHTML = `<span class="text-green-400">Protokoll gespeichert: ${filename}</span><br>Bitte sende diese Datei an deinen Coach.`;
+                 document.getElementById('subText').innerHTML = `<span class="text-green-400 font-bold">✅ Datei heruntergeladen!</span><br>Bitte sende '${filename}' zur Analyse.`;
             }, 1000);
         }
-
     </script>
 </body>
 </html>
