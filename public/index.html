@@ -3,231 +3,495 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Tutor - Lehrer Dashboard (Secure V3)</title>
+    <title>DialogCoach Pro - Dashboard</title>
+    
+    <!-- Design System -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
     <style>
-        body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; padding-bottom: 80px; }
-        .section-card { background: white; padding: 1.5rem; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); margin-bottom: 1.5rem; transition: transform 0.2s; }
-        .input-premium { border: 1px solid #e5e7eb; border-radius: 8px; padding: 0.75rem; width: 100%; transition: all 0.2s; }
-        .input-premium:focus { border-color: #4F46E5; ring: 2px solid #4F46E5; outline: none; }
+        /* === GLOBAL STYLE === */
+        body { font-family: 'Inter', sans-serif; background-color: #F8FAFC; padding-bottom: 120px; }
+        
+        /* Karten & Container */
+        .card { background: white; padding: 1.5rem; border-radius: 16px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); border: 1px solid #E2E8F0; margin-bottom: 1.5rem; }
+        .section-title { font-size: 1.1rem; font-weight: 700; color: #1E293B; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem; }
+        
+        /* Inputs & Buttons */
+        .input-pro { width: 100%; padding: 0.6rem 1rem; border: 1px solid #CBD5E1; border-radius: 10px; font-size: 0.95rem; transition: all 0.2s; }
+        .input-pro:focus { border-color: #4F46E5; box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1); outline: none; }
+        
+        .btn { cursor: pointer; padding: 0.6rem 1.2rem; border-radius: 10px; font-weight: 600; transition: all 0.2s; display: inline-flex; align-items: center; gap: 0.5rem; justify-content: center; }
+        .btn-primary { background: #4F46E5; color: white; border: none; }
+        .btn-primary:hover { background: #4338CA; transform: translateY(-1px); }
+        .btn-outline { background: white; border: 1px solid #E2E8F0; color: #475569; }
+        .btn-outline:hover { border-color: #4F46E5; color: #4F46E5; }
+        .btn-icon { padding: 0.5rem; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border-radius: 8px; color: #64748B; background: #F1F5F9; }
+        .btn-icon:hover { background: #E2E8F0; color: #334155; }
+
+        /* Vokabel Tags (Chips) */
+        .chip { display: inline-flex; align-items: center; gap: 0.5rem; background: #EEF2FF; color: #4F46E5; padding: 0.3rem 0.8rem; border-radius: 99px; font-size: 0.85rem; font-weight: 500; border: 1px solid #E0E7FF; }
+        .chip button { color: #818CF8; cursor: pointer; display: flex; align-items: center; }
+        .chip button:hover { color: #EF4444; }
+
+        /* Frage-Items */
+        .question-item { display: flex; gap: 0.8rem; align-items: center; margin-bottom: 0.8rem; background: #F8FAFC; padding: 0.5rem; border-radius: 10px; border: 1px solid #E2E8F0; }
+        .question-item:hover { border-color: #CBD5E1; background: white; }
+        
+        /* Toggle Switch */
+        .toggle-checkbox:checked { right: 0; border-color: #68D391; }
+        .toggle-checkbox:checked + .toggle-label { background-color: #68D391; }
     </style>
 </head>
-<body class="p-4 md:p-8">
+<body class="p-4 md:p-8 max-w-5xl mx-auto">
 
-    <div class="max-w-5xl mx-auto">
-        
-        <!-- Header -->
-        <div class="flex justify-between items-center mb-8 bg-[#f3f4f6] py-4 border-b border-gray-200">
-            <div>
-                <h1 class="text-3xl font-extrabold text-gray-900 tracking-tight">DialogCoach <span class="text-indigo-600">Enterprise</span></h1>
-                <p class="text-gray-500 text-sm">Sicherer Server-Modus aktiv.</p>
-            </div>
-            <div class="bg-green-100 text-green-800 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide border border-green-200">
-                <i class="fas fa-lock mr-1"></i> Secure Backend
+    <!-- HEADER -->
+    <div class="flex justify-between items-center mb-8">
+        <div>
+            <h1 class="text-3xl font-extrabold text-gray-900 tracking-tight">DialogCoach <span class="text-indigo-600">Pro</span></h1>
+            <p class="text-gray-500 text-sm">Dashboard & Szenario-Generator</p>
+        </div>
+        <a href="" class="btn btn-outline text-xs"><i class="fas fa-history"></i> Reset</a>
+    </div>
+
+    <form id="configForm" onsubmit="event.preventDefault(); generateStudentLink();">
+
+        <!-- 1. KI ENGINE & AUDIO -->
+        <div class="card border-l-4 border-indigo-500">
+            <h2 class="section-title"><i class="fas fa-microchip text-indigo-500"></i> Engine & Verbindung</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- LLM -->
+                <div class="space-y-3">
+                    <label class="block text-sm font-bold text-gray-700">KI Modell</label>
+                    <div class="flex gap-2">
+                        <select id="aiModel" class="input-pro appearance-none bg-white" onchange="toggleCustomModel()">
+                            <option value="gpt-4o">GPT-4o (Empfohlen)</option>
+                            <option value="gpt-4-turbo">GPT-4 Turbo</option>
+                            <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
+                            <option value="custom">Manuelle Eingabe...</option>
+                        </select>
+                    </div>
+                    <input type="text" id="customModelName" class="input-pro hidden mt-2 bg-indigo-50" placeholder="z.B. gpt-5-preview">
+                    
+                    <div>
+                        <label class="block text-sm font-bold text-gray-700 mb-1">OpenAI API Key</label>
+                        <div class="flex gap-2 relative">
+                            <input type="password" id="apiKey" class="input-pro pr-10" placeholder="sk-..." required>
+                            <button type="button" onclick="verifyApiKey()" class="absolute right-1 top-1 bottom-1 text-gray-400 hover:text-gray-600 px-3">
+                                <i class="fas fa-search"></i>
+                            </button>
+                        </div>
+                        <div id="apiStatus" class="text-xs mt-2 font-medium h-4"></div>
+                    </div>
+                </div>
+
+                <!-- AUDIO -->
+                <div class="space-y-3">
+                    <label class="block text-sm font-bold text-gray-700">Audio Stimme (TTS)</label>
+                    <select id="audioEngine" class="input-pro" onchange="toggleAudioSettings()">
+                        <option value="browser">Browser Standard (Gratis)</option>
+                        <option value="openai">OpenAI HD (Premium Quali)</option>
+                        <option value="elevenlabs">ElevenLabs (High-End)</option>
+                    </select>
+
+                    <!-- OpenAI Sub-Settings -->
+                    <div id="openaiVoiceSettings" class="hidden p-3 bg-gray-50 rounded-lg border border-gray-200">
+                        <label class="text-xs text-gray-500 font-bold uppercase">Stimme</label>
+                        <select id="openaiVoice" class="w-full text-sm mt-1 p-1 rounded border-gray-300">
+                            <option value="alloy">Alloy (Neutral)</option>
+                            <option value="echo">Echo (Männlich)</option>
+                            <option value="shimmer">Shimmer (Weiblich)</option>
+                        </select>
+                    </div>
+
+                    <!-- ElevenLabs Sub-Settings -->
+                    <div id="elevenLabsSettings" class="hidden space-y-2 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                        <input type="text" id="elevenApiKey" class="input-pro text-xs" placeholder="ElevenLabs API Key">
+                        <input type="text" id="elevenVoiceId" class="input-pro text-xs" placeholder="Voice ID">
+                    </div>
+                </div>
             </div>
         </div>
 
-        <form id="configForm" onsubmit="event.preventDefault(); generateStudentLink();">
-
-        <!-- 1. Szenario (Kein API Key Feld mehr nötig!) -->
-        <div class="section-card border-l-4 border-indigo-500">
-            <h2 class="text-xl font-bold mb-4 flex items-center text-gray-800"><i class="fas fa-theater-masks w-8 text-pink-500"></i> Szenario & Rolle</h2>
+        <!-- 2. SZENARIO & ROLLE -->
+        <div class="card">
+            <h2 class="section-title"><i class="fas fa-theater-masks text-pink-500"></i> Szenario & Kontext</h2>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700">Thema der Stunde</label>
-                    <input type="text" id="topic" class="input-premium" placeholder="z.B. Hotelbuchung" required>
+                    <label class="block text-sm font-medium text-gray-700">Thema</label>
+                    <input type="text" id="topic" class="input-pro" placeholder="z.B. Umweltschutz" required>
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700">Rolle des Gesprächspartners</label>
-                    <input type="text" id="roleDesc" class="input-premium" placeholder="z.B. Genervter Rezeptionist..." required>
+                    <label class="block text-sm font-medium text-gray-700">Rolle (KI)</label>
+                    <input type="text" id="roleDesc" class="input-pro" placeholder="z.B. Skeptischer Journalist" required>
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700">Niveau</label>
-                    <select id="level" class="input-premium">
-                        <option value="A1">A1 (Anfänger)</option>
+                    <select id="level" class="input-pro">
                         <option value="A2">A2 (Grundlagen)</option>
                         <option value="B1">B1 (Mittelstufe)</option>
                         <option value="B2">B2 (Fortgeschritten)</option>
-                        <option value="C1">C1 (Fachkundig)</option>
-                        <option value="C2">C2 (Muttersprachler)</option>
+                        <option value="C1">C1 (Proficient)</option>
                     </select>
                 </div>
             </div>
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Intro-Text (Wird beim Start vorgelesen)</label>
-                <textarea id="introText" rows="2" class="input-premium" placeholder="Begrüßungstext...">Hallo! Ich bin dein Coach. Wir üben heute eine Hotelbuchung.</textarea>
+            
+            <div class="mt-4">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Begrüßungstext ("Du"-Form)</label>
+                <textarea id="introText" rows="2" class="input-pro text-gray-600">Hallo! Ich bin dein Coach. Heute unterhalten wir uns über dein Thema. Bist du bereit?</textarea>
             </div>
         </div>
 
-        <!-- 2. Audio Settings -->
-        <div class="section-card">
-            <h2 class="text-xl font-bold mb-4 flex items-center text-gray-800"><i class="fas fa-volume-up w-8 text-indigo-500"></i> Audio Engine</h2>
-            
-            <select id="audioEngine" class="input-premium bg-gray-50 font-medium">
-                <option value="browser">Browser Native (Kostenlos)</option>
-                <!-- ElevenLabs/OpenAI Frontend Keys hier optional, wenn gewünscht -->
-            </select>
-            <p class="text-xs text-gray-400 mt-2">Hinweis: Fragen-Generierung läuft jetzt über den sicheren Server.</p>
-        </div>
-
-        <!-- 3. Fragen Generator (Mit Server-Anbindung) -->
-        <div class="section-card">
+        <!-- 3. FRAGEN MANAGER -->
+        <div class="card">
             <div class="flex justify-between items-center mb-4">
-                <h2 class="text-xl font-bold flex items-center text-gray-800"><i class="fas fa-list-ol w-8 text-blue-500"></i> Fragen</h2>
-            </div>
-            
-            <div id="questionsContainer" class="space-y-3 mb-4 max-h-[400px] overflow-y-auto pr-2">
-                <!-- Fragen erscheinen hier -->
-            </div>
-            
-            <div class="flex gap-4 border-t pt-4 border-gray-100 items-center">
-                <button type="button" onclick="addQuestion()" class="text-indigo-600 font-bold hover:text-indigo-800 text-sm flex items-center"><i class="fas fa-plus-circle mr-2"></i> Manuell</button>
-                
-                <div class="ml-auto flex items-center gap-2">
-                    <button type="button" onclick="generateSecureQuestions()" id="genBtn" class="text-white font-bold text-sm flex items-center bg-gray-900 px-4 py-2 rounded-lg hover:bg-black transition shadow-lg">
-                        <i class="fas fa-magic mr-2"></i> Via Netlify Server Generieren
+                <h2 class="section-title mb-0"><i class="fas fa-list-ol text-blue-500"></i> Fragen</h2>
+                <div class="flex items-center gap-2">
+                    <input type="number" id="qCount" value="5" min="1" max="10" class="w-16 p-1 border rounded text-center text-sm">
+                    <button type="button" onclick="generateAIQuestions()" class="btn text-blue-600 bg-blue-50 text-sm hover:bg-blue-100">
+                        <i class="fas fa-magic"></i> Auto-Generieren
                     </button>
                 </div>
             </div>
-        </div>
 
-        <!-- 4. Lernhilfen -->
-        <div class="section-card">
-            <h2 class="text-xl font-bold mb-4 flex items-center text-gray-800"><i class="fas fa-life-ring w-8 text-green-500"></i> Hilfen</h2>
-            
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Pflichtvokabeln</label>
-                    <textarea id="vocabList" rows="3" class="input-premium" placeholder="Zimmer, Frühstück, Reservierung..."></textarea>
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Redemittel</label>
-                    <textarea id="scaffoldList" rows="3" class="input-premium" placeholder="Ich möchte gerne..."></textarea>
-                </div>
-            </div>
-            
+            <!-- Liste der Fragen -->
+            <div id="questionsContainer" class="space-y-2"></div>
+
             <div class="mt-4 pt-4 border-t border-gray-100">
-                <label class="block text-sm font-bold text-gray-700 mb-2">Ansicht:</label>
-                <select id="studentViewMode" class="input-premium bg-white">
-                    <option value="learning">Lern-Modus (Sichtbar)</option>
-                    <option value="exam">Prüfungs-Modus (Blind)</option>
-                </select>
+                <button type="button" onclick="addQuestion()" class="text-sm font-bold text-gray-500 hover:text-indigo-600 flex items-center gap-2">
+                    <i class="fas fa-plus-circle"></i> Leere Frage hinzufügen
+                </button>
             </div>
         </div>
 
-        <!-- Action -->
-        <div class="sticky bottom-4 z-20">
-            <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 rounded-xl shadow-xl transition">
-                <i class="fas fa-rocket mr-3"></i> Link Erstellen
-            </button>
-        </div>
+        <!-- 4. LERNHILFEN & TOOLS -->
+        <div class="card">
+            <h2 class="section-title"><i class="fas fa-toolbox text-green-500"></i> Tools & Hilfen</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <!-- Vokabeln -->
+                <div>
+                    <label class="block text-sm font-bold text-gray-700 mb-2">Pflichtvokabeln</label>
+                    <div class="flex gap-2 mb-2">
+                        <input type="text" id="newVocab" class="input-pro flex-1" placeholder="Wort..." onkeypress="handleEnter(event, addVocab)">
+                        <button type="button" onclick="addVocab()" class="btn btn-outline"><i class="fas fa-plus"></i></button>
+                    </div>
+                    <div id="vocabList" class="flex flex-wrap gap-2 min-h-[40px]"></div>
+                </div>
 
-        <!-- Result -->
-        <div id="resultArea" class="hidden mt-6 bg-green-50 p-6 rounded-xl border border-green-200 shadow-sm">
-            <h3 class="text-green-800 font-bold mb-2">Fertig!</h3>
-            <div class="flex items-center gap-2 bg-white p-2 rounded border border-green-300">
-                <input type="text" id="studentLink" readonly class="flex-1 text-sm text-gray-600 font-mono bg-transparent" value="...">
-                <button type="button" onclick="copyLink()" class="bg-green-100 text-green-700 px-4 py-2 rounded font-bold">Kopieren</button>
-                <a id="openLinkBtn" href="#" target="_blank" class="bg-indigo-100 text-indigo-700 px-4 py-2 rounded font-bold">Öffnen</a>
+                <!-- Redemittel -->
+                <div>
+                    <label class="block text-sm font-bold text-gray-700 mb-2">Redemittel</label>
+                    <div class="flex gap-2 mb-2">
+                        <input type="text" id="newScaffold" class="input-pro flex-1" placeholder="Satzanfang..." onkeypress="handleEnter(event, addScaffold)">
+                        <button type="button" onclick="addScaffold()" class="btn btn-outline"><i class="fas fa-plus"></i></button>
+                    </div>
+                    <div id="scaffoldList" class="block space-y-1 min-h-[40px]"></div>
+                </div>
+            </div>
+
+            <!-- Einstellungen -->
+            <div class="mt-6 pt-6 border-t border-gray-100 grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Timer -->
+                <div>
+                    <div class="flex justify-between items-center mb-2">
+                        <label class="text-sm font-bold text-gray-700">Timer pro Frage</label>
+                        <div class="flex items-center">
+                            <input type="checkbox" id="timerToggle" class="mr-2" checked onchange="toggleTimerUI()">
+                            <span class="text-xs text-gray-500">Aktiv</span>
+                        </div>
+                    </div>
+                    <div id="timerContainer">
+                        <input type="range" id="questionTimer" min="30" max="300" step="10" value="60" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-indigo-600" oninput="document.getElementById('timerVal').innerText = this.value + 's'">
+                        <div class="text-right text-xs text-indigo-600 font-bold mt-1" id="timerVal">60s</div>
+                    </div>
+                </div>
+
+                <!-- Ansicht -->
+                <div>
+                    <label class="block text-sm font-bold text-gray-700 mb-2">Schüler Ansicht</label>
+                    <select id="studentViewMode" class="input-pro">
+                        <option value="learning">Lern-Modus (Text & Hilfen sichtbar)</option>
+                        <option value="exam">Prüfungs-Modus (Blind / Nur Audio)</option>
+                    </select>
+                    
+                    <div class="mt-3 flex items-center gap-2">
+                        <input type="checkbox" id="gamificationEnabled" checked class="rounded text-indigo-600 focus:ring-indigo-500">
+                        <span class="text-sm text-gray-600">Gamification (Vokabeln leuchten)</span>
+                    </div>
+                </div>
             </div>
         </div>
 
-        </form>
-    </div>
+        <!-- ACTION FOOTER -->
+        <div class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 z-50">
+            <div class="max-w-5xl mx-auto flex gap-4">
+                <button type="submit" class="flex-1 btn btn-primary py-4 text-lg shadow-xl shrink-0">
+                    <i class="fas fa-rocket"></i> App Starten
+                </button>
+            </div>
+        </div>
 
+        <!-- ERGEBNIS LINK (Sticky) -->
+        <div id="resultArea" class="hidden fixed bottom-24 left-1/2 transform -translate-x-1/2 bg-gray-900 text-white p-4 rounded-xl shadow-2xl z-50 flex items-center gap-4 w-96 animate-bounce">
+            <div class="flex-1 overflow-hidden">
+                <p class="text-xs text-gray-400">Schüler-Link:</p>
+                <input type="text" id="studentLink" readonly class="bg-transparent border-none text-green-400 text-sm w-full focus:ring-0 p-0 truncate">
+            </div>
+            <button type="button" onclick="copyLink()" class="text-sm font-bold bg-white text-black px-3 py-1 rounded">KOPIEREN</button>
+            <a id="openLinkBtn" href="#" target="_blank" class="text-white hover:text-green-400"><i class="fas fa-external-link-alt"></i></a>
+        </div>
+
+    </form>
+
+    <!-- LOGIQ -->
     <script>
         // Init
-        addQuestion("Begrüße mich Situation-gerecht.");
+        addQuestion("Erzähl mir bitte kurz etwas über dich.");
+        let prompts = [];
 
-        function addQuestion(text = "") {
-            const container = document.getElementById('questionsContainer');
-            const id = Date.now();
-            const html = `
-                <div class="flex gap-2 items-center bg-gray-50 p-2 rounded border border-gray-200 mb-2" id="q-${id}">
-                    <span class="text-gray-400 font-mono text-xs w-6">Q:</span>
-                    <input type="text" value="${text}" class="question-input flex-1 bg-transparent border-none text-sm focus:ring-0 placeholder-gray-400" placeholder="...">
-                    <button type="button" onclick="document.getElementById('q-${id}').remove()" class="text-red-400 hover:text-red-600"><i class="fas fa-trash"></i></button>
-                </div>`;
-            container.insertAdjacentHTML('beforeend', html);
-        }
+        // === 1. API VERIFICATION (REAL CHECK) ===
+        async function verifyApiKey() {
+            const apiKey = document.getElementById('apiKey').value;
+            const statusDiv = document.getElementById('apiStatus');
+            
+            if(!apiKey.startsWith('sk-')) {
+                statusDiv.innerHTML = '<span class="text-red-500"><i class="fas fa-times-circle"></i> Format falsch (startet nicht mit sk-)</span>';
+                return;
+            }
 
-        // === LEVEL 3 SECURITY: CALL NETLIFY FUNCTION ===
-        async function generateSecureQuestions() {
-            const topic = document.getElementById('topic').value;
-            const role = document.getElementById('roleDesc').value;
-            const level = document.getElementById('level').value;
+            statusDiv.innerHTML = '<span class="text-gray-500"><i class="fas fa-spinner fa-spin"></i> Verbinde mit OpenAI...</span>';
 
-            if (!topic) return alert("Bitte erst ein Thema eingeben!");
-
-            const btn = document.getElementById('genBtn');
-            const oldText = btn.innerHTML;
-            btn.innerHTML = '<i class="fas fa-circle-notch fa-spin mr-2"></i> Frage Server...';
-            btn.disabled = true;
-
+            // Echter minimaler Request an Models Endpoint (kostet nichts/kaum was)
             try {
-                // Hier rufen wir DEINEN Server auf
-                const response = await fetch('/.netlify/functions/generate', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ topic, role, level })
+                const response = await fetch('https://api.openai.com/v1/models', {
+                    method: 'GET',
+                    headers: { 'Authorization': `Bearer ${apiKey}` }
                 });
 
-                if (!response.ok) throw new Error("Server Fehler");
-
-                const data = await response.json();
-                
-                // Wir nehmen an, die KI antwortet Text oder JSON. 
-                // Wir parsen simpel:
-                const cleanText = data.result.replace(/```json/g, '').replace(/```/g, '');
-                
-                // Versuchen als JSON Liste zu lesen
-                try {
-                    const qArray = JSON.parse(cleanText);
-                    if(Array.isArray(qArray)){
-                       qArray.forEach(q => addQuestion(typeof q === 'string' ? q : q.question)); 
-                    }
-                } catch(e) {
-                    // Falls KI Text schickt, einfach splitten
-                    const lines = cleanText.split('\n').filter(l => l.includes('?'));
-                    lines.forEach(l => addQuestion(l.replace(/^- /, '').trim()));
+                if (response.ok) {
+                    statusDiv.innerHTML = '<span class="text-green-600 font-bold"><i class="fas fa-check-circle"></i> Verbunden! Guthaben & Key aktiv.</span>';
+                } else {
+                    const err = await response.json();
+                    statusDiv.innerHTML = `<span class="text-red-500 font-bold"><i class="fas fa-exclamation-triangle"></i> Fehler: ${err.error?.code || 'Unauthorized'}</span>`;
                 }
-
-            } catch (err) {
-                alert("Fehler: " + err.message + "\nIst der API Key in Netlify hinterlegt?");
-            } finally {
-                btn.innerHTML = oldText;
-                btn.disabled = false;
+            } catch (error) {
+                statusDiv.innerHTML = '<span class="text-red-500">Netzwerkfehler (Internet prüfen)</span>';
             }
         }
 
-        function generateStudentLink() {
-            const questions = Array.from(document.querySelectorAll('.question-input')).map(input => input.value).filter(v => v.trim() !== "");
+        // === 2. DYNAMIC LISTS (Tags & Questions) ===
+        
+        // Vokabeln / Redemittel
+        function handleEnter(e, func) { if(e.key === 'Enter') { e.preventDefault(); func(); } }
+
+        function addVocab() {
+            const val = document.getElementById('newVocab').value.trim();
+            if(!val) return;
+            createChip('vocabList', val, 'v');
+            document.getElementById('newVocab').value = '';
+        }
+
+        function addScaffold() {
+            const val = document.getElementById('newScaffold').value.trim();
+            if(!val) return;
+            createChip('scaffoldList', val, 's', true); // true = full width style
+            document.getElementById('newScaffold').value = '';
+        }
+
+        function createChip(containerId, text, type, fullWidth = false) {
+            const container = document.getElementById(containerId);
+            const div = document.createElement('div');
             
-            if(questions.length === 0) return alert("Keine Fragen!");
+            if (fullWidth) {
+                div.className = "flex justify-between items-center w-full bg-gray-50 p-2 rounded border border-gray-200 text-sm text-gray-700 scaffold-item";
+                div.innerHTML = `<span>${text}</span> <button type="button" onclick="this.parentElement.remove()" class="text-red-400 hover:text-red-600"><i class="fas fa-times"></i></button>`;
+            } else {
+                div.className = "chip vocab-item";
+                div.innerHTML = `<span>${text}</span> <button type="button" onclick="this.parentElement.remove()"><i class="fas fa-times"></i></button>`;
+            }
+            container.appendChild(div);
+        }
+
+        // Fragen Manager (Add/Edit/Move)
+        function addQuestion(text = "") {
+            const container = document.getElementById('questionsContainer');
+            const id = 'q-' + Date.now() + Math.random().toString(16).slice(2);
+            
+            const div = document.createElement('div');
+            div.className = 'question-item group';
+            div.id = id;
+            div.innerHTML = `
+                <div class="flex flex-col gap-1 items-center">
+                    <button type="button" onclick="moveUp(this)" class="text-gray-300 hover:text-indigo-600 text-xs"><i class="fas fa-chevron-up"></i></button>
+                    <span class="text-gray-400 text-xs font-mono">Q</span>
+                    <button type="button" onclick="moveDown(this)" class="text-gray-300 hover:text-indigo-600 text-xs"><i class="fas fa-chevron-down"></i></button>
+                </div>
+                <input type="text" class="question-input flex-1 bg-transparent border-none focus:ring-0 text-gray-700" value="${text}" placeholder="Frage eingeben...">
+                <button type="button" onclick="document.getElementById('${id}').remove()" class="text-gray-300 hover:text-red-500 px-2"><i class="fas fa-trash"></i></button>
+            `;
+            container.appendChild(div);
+        }
+
+        function moveUp(btn) {
+            const item = btn.closest('.question-item');
+            if (item.previousElementSibling) {
+                item.parentNode.insertBefore(item, item.previousElementSibling);
+            }
+        }
+
+        function moveDown(btn) {
+            const item = btn.closest('.question-item');
+            if (item.nextElementSibling) {
+                item.parentNode.insertBefore(item.nextElementSibling, item);
+            }
+        }
+
+        // === 3. KI GENERATOR (Mit deinem Prompt) ===
+        async function generateAIQuestions() {
+            const apiKey = document.getElementById('apiKey').value;
+            const topic = document.getElementById('topic').value;
+            const role = document.getElementById('roleDesc').value;
+            const level = document.getElementById('level').value;
+            const count = document.getElementById('qCount').value;
+
+            if(!apiKey) return alert("API Key fehlt!");
+            if(!topic) return alert("Thema fehlt!");
+
+            const btn = document.querySelector('button[onclick="generateAIQuestions()"]');
+            const oldText = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Generiere...';
+            btn.disabled = true;
+
+            // Der "Sokratische Prompt" für die Generierung
+            const sysPrompt = `
+                Du bist ein hochqualifizierter KI-Tutor für Deutsch (Niveau ${level}).
+                Thema: ${topic}. Rolle: ${role}.
+                Methode: Sokratisch. Gib keine Lösungen, stelle Fragen.
+                Aufgabe: Erstelle eine Liste von ${count} aufeinanderfolgenden Interview-Fragen für den Schüler, 
+                um das Thema zu erkunden. Die Fragen sollen logisch aufeinander aufbauen.
+                Format: Gib NUR die Fragen aus, eine pro Zeile. Keine Nummerierung.
+            `;
+
+            try {
+                const res = await fetch('https://api.openai.com/v1/chat/completions', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${apiKey}`
+                    },
+                    body: JSON.stringify({
+                        model: "gpt-4-turbo-preview", // Smart für Generierung
+                        messages: [{ role: "system", content: sysPrompt }, { role: "user", content: "Leg los." }]
+                    })
+                });
+
+                if(res.ok) {
+                    const data = await res.json();
+                    const text = data.choices[0].message.content;
+                    const lines = text.split('\n').filter(l => l.trim() !== "");
+                    
+                    document.getElementById('questionsContainer').innerHTML = ''; // Clear old
+                    lines.forEach(line => addQuestion(line.replace(/^\d+\.\s*/, ''))); // Remove numbering
+                } else {
+                    alert("KI Fehler. Key prüfen?");
+                }
+            } catch(e) {
+                console.error(e);
+                alert("Verbindungsfehler.");
+            }
+
+            btn.innerHTML = oldText;
+            btn.disabled = false;
+        }
+
+        // === 4. UI HELPER ===
+        function toggleTimerUI() {
+            const active = document.getElementById('timerToggle').checked;
+            const container = document.getElementById('timerContainer');
+            if(active) {
+                container.style.opacity = "1";
+                container.style.pointerEvents = "auto";
+            } else {
+                container.style.opacity = "0.3";
+                container.style.pointerEvents = "none";
+            }
+        }
+
+        function toggleCustomModel() {
+            const val = document.getElementById('aiModel').value;
+            document.getElementById('customModelName').style.display = (val === 'custom') ? 'block' : 'none';
+        }
+
+        function toggleAudioSettings() {
+            const eng = document.getElementById('audioEngine').value;
+            document.getElementById('openaiVoiceSettings').style.display = (eng === 'openai') ? 'block' : 'none';
+            document.getElementById('elevenLabsSettings').style.display = (eng === 'elevenlabs') ? 'block' : 'none';
+        }
+
+        // === 5. LINK GENERATOR (Config Packer) ===
+        function generateStudentLink() {
+            // Sammeln
+            const qList = Array.from(document.querySelectorAll('.question-input')).map(i => i.value).filter(v=>v.trim());
+            const vList = Array.from(document.querySelectorAll('.vocab-item span')).map(s => s.innerText);
+            const sList = Array.from(document.querySelectorAll('.scaffold-item span')).map(s => s.innerText);
+            
+            if(qList.length === 0) return alert("Brauche mindestens 1 Frage!");
+
+            // Dein System Prompt (wird ins Protokoll integriert)
+            const socraticPrompt = `
+### ROLLE
+Du bist ein hochqualifizierter KI-Tutor für Deutsch (Sokratische Methode).
+Ziel: Flüssiger, intelligenter Dialog.
+
+### DIALOG-REGELN
+1. GIB NIEMALS DIE LÖSUNG VOR. Stelle Rückfragen.
+2. KONTEXT: Nutze ${document.getElementById('topic').value} als Rahmen.
+3. ADAPTIV: Passe dich Fehlerfreiheit an.
+4. Sei menschlich, reagiere auf Inhalt.
+`;
 
             const config = {
+                model: document.getElementById('aiModel').value === 'custom' ? document.getElementById('customModelName').value : document.getElementById('aiModel').value,
+                apiKey: document.getElementById('apiKey').value,
+                
                 audioEngine: document.getElementById('audioEngine').value,
+                openaiVoice: document.getElementById('openaiVoice').value,
+                elevenApiKey: document.getElementById('elevenApiKey').value,
+                elevenVoiceId: document.getElementById('elevenVoiceId').value,
+
                 topic: document.getElementById('topic').value,
                 role: document.getElementById('roleDesc').value,
                 level: document.getElementById('level').value,
                 intro: document.getElementById('introText').value,
-                questions: questions,
-                vocab: document.getElementById('vocabList').value.split(',').map(s => s.trim()).filter(s => s),
-                scaffolding: document.getElementById('scaffoldList').value.split('\n').map(s => s.trim()).filter(s => s),
-                view: document.getElementById('studentViewMode').value
+                
+                questions: qList,
+                vocab: vList,
+                scaffolding: sList,
+
+                view: document.getElementById('studentViewMode').value,
+                timer: document.getElementById('timerToggle').checked ? document.getElementById('questionTimer').value : null,
+                gamification: document.getElementById('gamificationEnabled').checked,
+                
+                // HIDDEN GEM für NotebookLM:
+                systemPrompt: socraticPrompt 
             };
 
-            const encodedConfig = btoa(unescape(encodeURIComponent(JSON.stringify(config)))); 
+            const jsonString = JSON.stringify(config);
+            const encodedConfig = btoa(unescape(encodeURIComponent(jsonString))); 
             const url = `${window.location.origin}/student.html?config=${encodedConfig}`;
             
-            document.getElementById('studentLink').value = url;
+            const field = document.getElementById('studentLink');
+            field.value = url;
             document.getElementById('openLinkBtn').href = url;
             document.getElementById('resultArea').classList.remove('hidden');
         }
 
         function copyLink() {
-            const t = document.getElementById("studentLink"); t.select(); navigator.clipboard.writeText(t.value);
+            navigator.clipboard.writeText(document.getElementById('studentLink').value);
+            alert("Link kopiert!");
         }
     </script>
 </body>
