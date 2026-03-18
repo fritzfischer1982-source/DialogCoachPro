@@ -145,18 +145,19 @@
                 </div>
             </div>
 
-            <!-- Bottom Controls -->
-            <div class="absolute bottom-8 left-0 right-0 flex flex-col items-center justify-end z-30 pointer-events-none">
+                        <!-- Bottom Controls (Korrigiert für Klickbarkeit) -->
+            <div class="absolute bottom-8 w-full flex flex-col items-center justify-end z-50">
                 
-                <div id="statusBadge" class="mb-4 px-4 py-1.5 rounded-full bg-slate-900/10 dark:bg-black/40 backdrop-blur font-semibold text-xs uppercase tracking-wide opacity-0 transition-opacity">
+                <div id="statusBadge" class="mb-4 px-4 py-1.5 rounded-full bg-slate-900/10 dark:bg-black/40 backdrop-blur font-semibold text-xs uppercase tracking-wide opacity-0 transition-opacity pointer-events-none">
                     Zuhören...
                 </div>
 
-                <button id="micBtn" class="mic-fab mic-disabled pointer-events-auto" disabled onclick="toggleRecording()">
+                <!-- WICHTIG: Die z-index Werte und cursor-pointer garantieren Klickbarkeit -->
+                <button id="micBtn" class="mic-fab mic-disabled z-[100] cursor-pointer" disabled onclick="toggleRecording()">
                     <i class="fas fa-microphone"></i>
                 </button>
             </div>
-        </div>
+
 
         <!-- === RIGHT SIDEBAR (Lernhilfen) === -->
         <div id="sidePanel" class="hidden md:flex w-80 bg-white dark:bg-darkpanel border-l border-slate-200 dark:border-slate-800 flex-col z-10 shadow-lg">
