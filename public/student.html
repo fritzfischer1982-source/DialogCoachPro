@@ -124,7 +124,7 @@
     <!-- LOGIK -->
     <script>
         let C = null; 
-        let S = { step: 0, recording: false, speaking: false, log: [], timer: null, timeLeft: 0 };
+        let S = { step: 0, recording: false, speaking: false, log: [], timer: null, timeLeft: 0, tempTranscription: "" };
         let recognition = null;
         let conversationHistory = []; 
 
@@ -145,6 +145,11 @@
             document.getElementById('themeIcon').className = isDark ? 'fas fa-sun text-yellow-400' : 'fas fa-moon text-slate-500';
         }
 
+        function clean(str) { 
+            // Entfernt alle typischen Satzzeichen und macht alles klein für Gamification-Treffer
+            return str.toLowerCase().replace(/[.,!??"'();:]/g, '').trim(); 
+        }
+
         function renderUI() {
             document.getElementById('topicDisplay').innerText = C.topic || "Sitzung";
             document.getElementById('welcomeName').innerText = C.studentName || 'Schüler';
@@ -152,22 +157,22 @@
             if(C.hasTimer) document.getElementById('countdownWrapper').classList.remove('hidden');
 
             let panelActive = false;
+            // Vokabeln parsen (inklusive Spaces entfernen für sicheres HTML-ID Mapping)
             if(C.showVocab && C.vocab && C.vocab.length > 0) {
                 panelActive = true; document.getElementById('vocabSection').classList.remove('hidden');
                 C.vocab.forEach(word => {
-                    document.getElementById('vocabList').innerHTML += `<span class="vocab-chip" id="v-${clean(word)}">${word}</span>`;
+                    document.getElementById('vocabList').innerHTML += `<span class="vocab-chip" id="v-${clean(word).replace(/\s+/g, '')}">${word}</span>`;
                 });
             }
+            // Redemittel parsen
             if(C.showScaffolds && C.scaffolds && C.scaffolds.length > 0) {
                 panelActive = true; document.getElementById('scaffoldSection').classList.remove('hidden');
                 C.scaffolds.forEach(s => {
-                    document.getElementById('scaffoldList').innerHTML += `<li class="text-sm dark:text-slate-300 pl-3 border-l-2 border-indigo-200 dark:border-indigo-800">${s}</li>`;
+                    document.getElementById('scaffoldList').innerHTML += `<li class="text-sm dark:text-slate-300 pl-3 border-l-2 border-indigo-200 dark:border-indigo-800 transition-colors duration-300">${s}</li>`;
                 });
             }
             if(panelActive) document.getElementById('sidePanel').style.display = 'flex';
         }
-
-        function clean(str) { return str.toLowerCase().replace(/[^a-z0-9äöüß]/g, ''); }
 
         function buildSocraticPrompt() {
             let prompt = `### ROLLE\nDu bist ein hochqualifizierter KI-Tutor für ${C.language} als Fremdsprache, spezialisiert auf die "Sokratische Methode".\n`;
@@ -187,28 +192,26 @@
             conversationHistory.push({ role: "system", content: prompt });
         }
 
-        // --- DER KUGELSICHERE UNLOCK PROZESS ---
         async function unlockEverything() {
             const btn = document.querySelector('#startOverlay button');
             const originalText = btn.innerHTML;
             btn.innerHTML = '<i class="fas fa-circle-notch fa-spin mr-2"></i> Fordere Mikrofon an...';
 
             try {
-                // 1. Mikrofon-Erlaubnis via Browser Popup erzwingen!
+                // 1. Popup forcieren
                 const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
                 
-                // 2. TTS Audio Context wecken
+                // 2. Audio Context wecken
                 const ac = new (window.AudioContext || window.webkitAudioContext)();
                 await ac.resume(); 
                 speechSynthesis.speak(new SpeechSynthesisUtterance(''));
 
-                // 3. Wenn Erlaubnis gewährt -> Engine bauen
+                // 3. Engine Setup
                 setupRecognition();
 
-                // 4. Den permanenten Lausch-Stream wieder killen (sonst leuchtet der rote Tab-Punkt dauerhaft)
+                // 4. Temporären Stream kappen
                 stream.getTracks().forEach(t => t.stop());
 
-                // Visuell umschalten & Starten
                 document.getElementById('startOverlay').style.opacity = '0';
                 setTimeout(() => { 
                     document.getElementById('startOverlay').style.display = 'none'; 
@@ -217,7 +220,7 @@
 
             } catch(err) { 
                 console.error("Mic Access Error:", err);
-                alert("Mikrofon wurde blockiert! Du musst oben links neben der URL-Leiste (Schloss-Symbol) auf 'Zulassen' klicken und die Seite neu laden."); 
+                alert("Mikrofon wurde blockiert! Du musst in der URL-Leiste (Schloss-Symbol) das Mikrofon zulassen."); 
                 btn.innerHTML = originalText;
             }
         }
@@ -229,46 +232,80 @@
             }
             
             recognition = new webkitSpeechRecognition();
+            // Continuous = true ist wichtig, damit er bei langen Sätzen / Pausen den Faden nicht verliert!
             recognition.continuous = true; 
-            // WICHTIG: Interim Results müssen an sein für den Live-Text
             recognition.interimResults = true; 
             recognition.lang = C.language === 'Englisch' ? 'en-US' : (C.language === 'Spanisch' ? 'es-ES' : 'de-DE');
-
-            recognition.onstart = function() {
-                console.log("Recognition Engine gestartet.");
-            };
 
             recognition.onerror = function(event) {
                 console.error("Recognition Fehler:", event.error);
                 if(event.error === 'not-allowed') {
-                    alert("Mikrofon-Zugriff verweigert während der Aufnahme.");
+                    alert("Mikrofon-Zugriff verweigert.");
                     if(S.recording) stopRec();
                 }
             };
 
             recognition.onresult = (e) => {
-                let final = '';
+                let currentTranscriptPart = '';
+                
+                // Wir sammeln das aktuelle Ergebnis zusammen
                 for (let i = e.resultIndex; i < e.results.length; ++i) {
-                    if(e.results[i].isFinal) {
-                        final += e.results[i][0].transcript;
-                    } else {
-                        // Interim / Live Text (was er gerade hört)
-                        final += e.results[i][0].transcript; 
-                    }
+                    currentTranscriptPart += e.results[i][0].transcript;
                 }
                 
-                if(final.trim() !== '') {
+                if(currentTranscriptPart.trim() !== '') {
+                    // Update der temporären Hauptvariable mit dem neuen Text-Schnipsel
+                    let fullTextToShow = (S.tempTranscription + " " + currentTranscriptPart).trim();
+                    
+                    // Live UI Update
                     let transNode = document.getElementById('liveTrans');
                     if(!transNode) {
-                        addChatBubble('Student', final, 'liveTrans');
+                        addChatBubble('Student', fullTextToShow, 'liveTrans');
                     } else {
-                        transNode.querySelector('div').innerText = final;
+                        transNode.querySelector('div').innerText = fullTextToShow;
                         const box = document.getElementById('chatHistory');
                         box.scrollTo({ top: box.scrollHeight, behavior: 'smooth' });
                     }
-                    checkVocab(final);
+                    
+                    // Wenn der Browser sagt "dieser Satzfetzen ist final" - speichern wir ihn hart in die Variable.
+                    for (let i = e.resultIndex; i < e.results.length; ++i) {
+                        if (e.results[i].isFinal) {
+                            S.tempTranscription += " " + e.results[i][0].transcript;
+                            checkVocab(S.tempTranscription); // Prüfe Gamification
+                        }
+                    }
                 }
             };
+        }
+
+        function checkVocab(fullText) {
+            if(!C.vocab && !C.scaffolds) return; 
+            
+            const cleanText = clean(fullText);
+            
+            // Vokabeln abgleichen
+            if(C.vocab) {
+                C.vocab.forEach(w => {
+                    if(cleanText.includes(clean(w))) {
+                        const el = document.getElementById('v-'+clean(w).replace(/\s+/g, ''));
+                        if(el && !el.classList.contains('vocab-hit')) el.classList.add('vocab-hit');
+                    }
+                });
+            }
+
+            // Redemittel abgleichen
+            if(C.scaffolds) {
+                C.scaffolds.forEach((s, ix) => {
+                    if(cleanText.includes(clean(s))) {
+                        const listItems = document.getElementById('scaffoldList').getElementsByTagName('li');
+                        if(listItems[ix]) {
+                           listItems[ix].classList.remove('text-slate-300', 'dark:text-slate-300');
+                           listItems[ix].classList.add('text-brand-600', 'dark:text-brand-400', 'font-bold');
+                           listItems[ix].style.borderColor = '#14b8a6';
+                        }
+                    }
+                });
+            }
         }
 
         function addChatBubble(sender, text, id = null) {
@@ -361,12 +398,12 @@
 
         function startRec() {
             S.recording = true; 
+            S.tempTranscription = ""; // Leere alten Text bei Start!
+            
             try { 
                 recognition.start(); 
-                console.log("Aufnahme Befehl gesendet.");
-            } catch(e){ 
-                console.error("Mic start Fehler", e); 
-            }
+            } catch(e){ console.error("Mic start Fehler", e); }
+            
             const btn = document.getElementById('micBtn');
             btn.className = 'mic-fab mic-recording'; btn.innerHTML = '<i class="fas fa-stop"></i>';
             setStatus('Aufnahme läuft...', true);
@@ -382,7 +419,13 @@
             setStatus('Coach überlegt...', true);
 
             let transNode = document.getElementById('liveTrans');
-            let studentText = transNode ? transNode.querySelector('div').innerText.trim() : "";
+            // Wir nehmen das, was sicher gesammelt wurde
+            let studentText = S.tempTranscription.trim(); 
+            
+            // Fallback, falls beim Sammeln was schief ging, nehmen wir das was auf dem Bildschirm stand
+            if(studentText === '' && transNode) {
+                studentText = transNode.querySelector('div').innerText.trim();
+            }
             
             if(studentText === '') studentText = "*(Hat den Knopf gedrückt, aber nichts gesagt)*";
 
@@ -398,10 +441,11 @@
 
         async function askGPT() {
             let messagesToSend = [...conversationHistory];
+            // Die Magie des Lehrer-Fokus
             if(S.step < C.questions.length) {
                 messagesToSend.push({ role: "developer", content: `Beziehe dich sokratisch auf die letzte Nachricht. Beende deine Antwort dann UNBEDINGT organisch in deiner Rolle, indem du genau folgende nächste Frage einleitest/stellst: "${C.questions[S.step]}".` });
             } else {
-                messagesToSend.push({ role: "developer", content: "Letzter Zug. Beende das Training freundlich in deiner Rolle. Nutze keine Leitfragen mehr." });
+                messagesToSend.push({ role: "developer", content: "Letzter Zug. Beende das Training freundlich in deiner Rolle. Keine Fragen mehr." });
             }
 
             try {
@@ -413,7 +457,7 @@
                 const indicator = document.getElementById('typingIndicator');
                 if(indicator) indicator.remove();
 
-                if(!response.ok) throw new Error("API Limit oder Auth Fehler");
+                if(!response.ok) throw new Error("API Limit oder Fehler");
 
                 const aiReply = (await response.json()).choices[0].message.content;
                 S.log.push({ s: 'Coach', t: aiReply });
