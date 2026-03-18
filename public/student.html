@@ -83,6 +83,7 @@
                 <div id="statusBadge" class="mb-3 px-4 py-1 rounded-full bg-slate-900/10 dark:bg-black/40 backdrop-blur font-semibold text-[11px] uppercase tracking-wide opacity-0 transition-opacity">
                     Zuhören...
                 </div>
+                <!-- MIC BUTTON -->
                 <button id="micBtn" class="mic-fab mic-disabled" disabled onclick="toggleRecording()">
                     <i class="fas fa-microphone"></i>
                 </button>
@@ -110,16 +111,17 @@
     <div id="startOverlay" class="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-slate-900/80 backdrop-blur-sm transition-opacity duration-500">
         <div class="bg-white dark:bg-darkpanel w-full max-w-md p-8 rounded-2xl shadow-2xl text-center">
             <div class="w-16 h-16 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-full flex items-center justify-center mx-auto mb-6 text-2xl">
-                <i class="fas fa-headphones"></i>
+                <i class="fas fa-microphone-alt"></i>
             </div>
             <h1 class="text-2xl font-bold mb-2">Bereit, <span id="welcomeName"></span>?</h1>
-            <p class="text-slate-500 dark:text-slate-400 mb-8 text-sm">Bitte erlaube den Mikrofonzugriff im Browser.</p>
-            <button onclick="unlockAudioAndStart()" class="w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-lg transition transform hover:-translate-y-1 inline-flex justify-center items-center">
-                <span>Session Starten</span> <i class="fas fa-arrow-right ml-2"></i>
+            <p class="text-slate-500 dark:text-slate-400 mb-8 text-sm">Bitte erlaube gleich deinem Browser den Mikrofonzugriff, um starten zu können.</p>
+            <button onclick="unlockEverything()" class="w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-lg transition transform hover:-translate-y-1 inline-flex justify-center items-center">
+                <span>Mikrofon erlauben & Starten</span>
             </button>
         </div>
     </div>
 
+    <!-- LOGIK -->
     <script>
         let C = null; 
         let S = { step: 0, recording: false, speaking: false, log: [], timer: null, timeLeft: 0 };
@@ -144,7 +146,7 @@
         }
 
         function renderUI() {
-            document.getElementById('topicDisplay').innerText = C.topic;
+            document.getElementById('topicDisplay').innerText = C.topic || "Sitzung";
             document.getElementById('welcomeName').innerText = C.studentName || 'Schüler';
 
             if(C.hasTimer) document.getElementById('countdownWrapper').classList.remove('hidden');
@@ -172,40 +174,41 @@
             prompt += `### SCHÜLER\n- Name: ${C.studentName || 'Schüler'}\n- Thema: ${C.topic}\n- Niveau: ${C.level}\n- Deine Simulierte Rolle: ${C.role}\n\n`;
             
             prompt += `### REGELN (STRENG EINHALTEN)\n`;
-            prompt += `1. ANREDE: Verwende IMMER und AUSSCHLIESSLICH das informelle "Du" (du, dir, dein). Niemals das formelle "Sie"!\n`;
+            prompt += `1. ANREDE: Verwende IMMER und AUSSCHLIESSLICH das informelle "Du" (du, dir, Dein). Niemals das formelle "Sie"!\n`;
             
             if(C.correction === 'immediate') prompt += `2. KORREKTUR: GIB NIEMALS DIE LÖSUNG VOR. Stelle stattdessen eine zielführende pädagogische Rückfrage zu Fehlern.\n`;
             else if(C.correction === 'end') prompt += `2. KORREKTUR: Korrigiere WÄHREND des Dialogs NICHT. Ignoriere Grammatikfehler, antworte nur auf den Inhalt.\n`;
             else prompt += `2. KORREKTUR: Keine Grammatik-Hinweise. Fokus auf Sprechfluss.\n`;
 
             prompt += `3. KONTEXTUELLE INTELLIGENZ: Nutze das Thema "${C.topic}" und bleibe in der Rolle als "${C.role}".\n`;
-            prompt += `4. SPRACHE: Alles findet auf ${C.language} statt.\n`;
+            prompt += `4. SPRACHE: Alles findet strikt auf ${C.language} statt.\n`;
             
-            if(C.followUp) prompt += `5. DYNAMISCHES NACHHAKEN: Wenn der Schüler nur extrem kurz antwortet (z.B. "Ja"), hake in deiner Rolle fordernd nach.\n`;
+            if(C.followUp) prompt += `5. DYNAMISCHES NACHHAKEN: Wenn der Schüler nur extrem kurz antwortet, hake in deiner Rolle fordernd nach.\n`;
             conversationHistory.push({ role: "system", content: prompt });
         }
 
-        async function unlockAudioAndStart() {
+        // --- DER KUGELSICHERE UNLOCK PROZESS ---
+        async function unlockEverything() {
             const btn = document.querySelector('#startOverlay button');
             const originalText = btn.innerHTML;
-            btn.innerHTML = '<i class="fas fa-circle-notch fa-spin mr-2"></i> Initialisiere...';
+            btn.innerHTML = '<i class="fas fa-circle-notch fa-spin mr-2"></i> Fordere Mikrofon an...';
 
             try {
-                // 1. Audio für TTS freischalten
+                // 1. Mikrofon-Erlaubnis via Browser Popup erzwingen!
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                
+                // 2. TTS Audio Context wecken
                 const ac = new (window.AudioContext || window.webkitAudioContext)();
                 await ac.resume(); 
                 speechSynthesis.speak(new SpeechSynthesisUtterance(''));
 
-                // 2. Explizite Mikrofon-Erlaubnis erzwingen
-                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                
-                // 3. Speech Recognition SOFORT nach der Erlaubnis aufsetzen
+                // 3. Wenn Erlaubnis gewährt -> Engine bauen
                 setupRecognition();
 
-                // 4. Stream wieder freigeben (damit kein roter Punkt im Browser bleibt, bis man klickt)
+                // 4. Den permanenten Lausch-Stream wieder killen (sonst leuchtet der rote Tab-Punkt dauerhaft)
                 stream.getTracks().forEach(t => t.stop());
 
-                // Overlay ausblenden und starten
+                // Visuell umschalten & Starten
                 document.getElementById('startOverlay').style.opacity = '0';
                 setTimeout(() => { 
                     document.getElementById('startOverlay').style.display = 'none'; 
@@ -213,31 +216,32 @@
                 }, 500);
 
             } catch(err) { 
-                console.error("Mikrofonfehler:", err);
-                alert("Mikrofon blockiert! Bitte erlaube den Mikrofonzugriff in deinem Browser."); 
+                console.error("Mic Access Error:", err);
+                alert("Mikrofon wurde blockiert! Du musst oben links neben der URL-Leiste (Schloss-Symbol) auf 'Zulassen' klicken und die Seite neu laden."); 
                 btn.innerHTML = originalText;
             }
         }
 
         function setupRecognition() {
             if(!('webkitSpeechRecognition' in window)) {
-                alert("Dein Browser unterstützt keine automatische Spracherkennung. Bitte Google Chrome nutzen.");
+                alert("Dein Browser unterstützt diese Spracherkennung nicht. Bitte nutze Google Chrome oder Edge.");
                 return;
             }
             
             recognition = new webkitSpeechRecognition();
             recognition.continuous = true; 
-            recognition.interimResults = true;
+            // WICHTIG: Interim Results müssen an sein für den Live-Text
+            recognition.interimResults = true; 
             recognition.lang = C.language === 'Englisch' ? 'en-US' : (C.language === 'Spanisch' ? 'es-ES' : 'de-DE');
 
             recognition.onstart = function() {
-                console.log("Mikrofon lauscht...");
+                console.log("Recognition Engine gestartet.");
             };
 
             recognition.onerror = function(event) {
-                console.error("Speech Recognition Error:", event.error);
+                console.error("Recognition Fehler:", event.error);
                 if(event.error === 'not-allowed') {
-                    alert("Mikrofon-Berechtigung verweigert.");
+                    alert("Mikrofon-Zugriff verweigert während der Aufnahme.");
                     if(S.recording) stopRec();
                 }
             };
@@ -245,9 +249,15 @@
             recognition.onresult = (e) => {
                 let final = '';
                 for (let i = e.resultIndex; i < e.results.length; ++i) {
-                    if(e.results[i].isFinal) final += e.results[i][0].transcript;
+                    if(e.results[i].isFinal) {
+                        final += e.results[i][0].transcript;
+                    } else {
+                        // Interim / Live Text (was er gerade hört)
+                        final += e.results[i][0].transcript; 
+                    }
                 }
-                if(final) {
+                
+                if(final.trim() !== '') {
                     let transNode = document.getElementById('liveTrans');
                     if(!transNode) {
                         addChatBubble('Student', final, 'liveTrans');
@@ -351,7 +361,12 @@
 
         function startRec() {
             S.recording = true; 
-            try { recognition.start(); } catch(e){ console.error("Mic start verweigert", e); }
+            try { 
+                recognition.start(); 
+                console.log("Aufnahme Befehl gesendet.");
+            } catch(e){ 
+                console.error("Mic start Fehler", e); 
+            }
             const btn = document.getElementById('micBtn');
             btn.className = 'mic-fab mic-recording'; btn.innerHTML = '<i class="fas fa-stop"></i>';
             setStatus('Aufnahme läuft...', true);
@@ -367,10 +382,9 @@
             setStatus('Coach überlegt...', true);
 
             let transNode = document.getElementById('liveTrans');
-            let studentText = transNode ? transNode.querySelector('div').innerText.trim() : "*Hat geschwiegen*";
+            let studentText = transNode ? transNode.querySelector('div').innerText.trim() : "";
             
-            // Wenn der Text nur minimal war (z.B. falsche Stille-Aufnahme), erzwingen wir einen Inhalt
-            if(studentText.length === 0) studentText = "*Hat geschwiegen*";
+            if(studentText === '') studentText = "*(Hat den Knopf gedrückt, aber nichts gesagt)*";
 
             if(transNode) transNode.removeAttribute('id'); 
             else addChatBubble('Student', studentText);
@@ -387,7 +401,7 @@
             if(S.step < C.questions.length) {
                 messagesToSend.push({ role: "developer", content: `Beziehe dich sokratisch auf die letzte Nachricht. Beende deine Antwort dann UNBEDINGT organisch in deiner Rolle, indem du genau folgende nächste Frage einleitest/stellst: "${C.questions[S.step]}".` });
             } else {
-                messagesToSend.push({ role: "developer", content: "Letzter Zug. Beende das Training freundlich in deiner Rolle." });
+                messagesToSend.push({ role: "developer", content: "Letzter Zug. Beende das Training freundlich in deiner Rolle. Nutze keine Leitfragen mehr." });
             }
 
             try {
@@ -398,6 +412,8 @@
                 
                 const indicator = document.getElementById('typingIndicator');
                 if(indicator) indicator.remove();
+
+                if(!response.ok) throw new Error("API Limit oder Auth Fehler");
 
                 const aiReply = (await response.json()).choices[0].message.content;
                 S.log.push({ s: 'Coach', t: aiReply });
@@ -410,7 +426,9 @@
                 });
 
             } catch (err) {
-                 alert("Fehler mit der KI."); nextTeacherQuestion();
+                 alert("Fehler mit der KI."); 
+                 console.error(err);
+                 nextTeacherQuestion();
             }
         }
 
