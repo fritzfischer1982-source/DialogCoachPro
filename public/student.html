@@ -2,381 +2,635 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Voice Coach</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Dialog Coaching - Student App</title>
     
-    <!-- Design & Fonts -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     
+    <script>
+        tailwind.config = {
+            darkMode: 'class', // Aktiviert den Dark Mode Support
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['"Plus Jakarta Sans"', 'sans-serif'] },
+                    colors: {
+                        brand: { 50: '#f0fdfa', 100: '#ccfbf1', 500: '#14b8a6', 600: '#0d9488', 900: '#134e4a' },
+                        darkbg: '#0f172a',
+                        darkpanel: '#1e293b'
+                    }
+                }
+            }
+        }
+    </script>
+
     <style>
-        /* Modernes, ruhiges Design */
-        body { background-color: #F1F5F9; color: #334155; font-family: 'Segoe UI', system-ui, sans-serif; height: 100vh; overflow: hidden; }
+        body { 
+            height: 100vh; overflow: hidden; 
+            transition: background-color 0.3s, color 0.3s;
+        }
         
-        /* Karten-Layout */
-        .glass-card { background: white; border-radius: 20px; box-shadow: 0 10px 30px -10px rgba(0,0,0,0.1); border: 1px solid #E2E8F0; }
-        
-        /* Das große Mikrofon */
-        .mic-btn { width: 90px; height: 90px; border-radius: 50%; border: none; font-size: 2.5rem; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        
-        .mic-idle { background: #FFFFFF; color: #CBD5E1; border: 2px solid #E2E8F0; }
-        .mic-idle:hover { border-color: #4F46E5; color: #4F46E5; transform: translateY(-2px); }
-        
-        .mic-active { background: #EF4444; color: white; animation: pulse 1.5s infinite; box-shadow: 0 0 0 8px rgba(239, 68, 68, 0.2); }
-        .mic-blocked { background: #E2E8F0; color: #94A3B8; cursor: not-allowed; }
+        .avatar-ring {
+            position: absolute; inset: -4px; border-radius: 50%; border: 2px solid transparent;
+            transition: all 0.3s ease;
+        }
+        .is-speaking .avatar-ring { 
+            border-color: #14b8a6; 
+            box-shadow: 0 0 0 4px rgba(20, 184, 166, 0.2); 
+            animation: breathe 2s infinite; 
+        }
+        @keyframes breathe { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.05); opacity: 0.7; } }
 
-        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
+        .mic-fab {
+            width: 80px; height: 80px; border-radius: 50%; 
+            display: flex; align-items: center; justify-content: center;
+            font-size: 28px; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative; z-index: 50; border: none; outline: none;
+            box-shadow: 0 10px 25px -5px rgba(0,0,0,0.15);
+        }
+        .mic-fab:active { transform: scale(0.95); }
+        
+        .mic-idle { background: #14b8a6; color: white; }
+        .mic-idle:hover { background: #0d9488; transform: translateY(-2px); }
+        
+        .mic-recording { 
+            background: #ef4444; color: white; 
+            box-shadow: 0 0 0 8px rgba(239, 68, 68, 0.2);
+            animation: pulse-red 1.5s infinite; 
+        }
+        @keyframes pulse-red { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); } 70% { box-shadow: 0 0 0 15px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
 
-        /* Avatar */
-        .avatar-container { width: 120px; height: 120px; border-radius: 50%; border: 4px solid white; box-shadow: 0 10px 20px rgba(0,0,0,0.1); overflow: hidden; margin: 0 auto; background: #E0E7FF; }
-        .avatar-img { width: 100%; height: 100%; object-fit: cover; }
-        .avatar-speaking { border-color: #4F46E5; box-shadow: 0 0 0 8px rgba(79, 70, 229, 0.2); transition: 0.3s; }
+        .mic-disabled { background: #94a3b8; color: #f1f5f9; cursor: not-allowed; }
+        .dark .mic-disabled { background: #334155; color: #64748b; }
 
-        /* Sidebar Tags */
-        .tag { display: inline-block; background: #F8FAFC; padding: 6px 12px; border-radius: 12px; font-size: 0.85rem; color: #475569; border: 1px solid #E2E8F0; margin: 3px; }
-        .tag-hit { background: #D1FAE5; color: #065F46; border-color: #34D399; font-weight: bold; }
+        .scroll-hide::-webkit-scrollbar { display: none; }
+        .scroll-hide { -ms-overflow-style: none; scrollbar-width: none; }
+
+        .vocab-chip {
+            border: 1px solid #e2e8f0; padding: 6px 14px;
+            border-radius: 99px; font-size: 0.9rem; font-weight: 500;
+            transition: all 0.4s ease; display: inline-block; margin: 3px;
+        }
+        .dark .vocab-chip { border-color: #334155; background: #1e293b; color: #cbd5e1; }
+        
+        .vocab-hit {
+            background: #ccfbf1 !important; border-color: #14b8a6 !important; color: #0f766e !important;
+            transform: scale(1.05); box-shadow: 0 2px 10px rgba(20, 184, 166, 0.1);
+        }
+        .dark .vocab-hit {
+            background: #115e59 !important; border-color: #14b8a6 !important; color: #ccfbf1 !important;
+        }
+
+        /* Timer Warnung Animation */
+        .timer-warning {
+            color: #ef4444 !important;
+            border-color: #ef4444 !important;
+            animation: timer-pulse 1s infinite alternate;
+        }
+        @keyframes timer-pulse {
+            from { box-shadow: 0 0 5px rgba(239, 68, 68, 0.2); transform: scale(1); }
+            to { box-shadow: 0 0 15px rgba(239, 68, 68, 0.6); transform: scale(1.05); }
+        }
     </style>
 </head>
-<body class="flex flex-col h-full">
+<body class="flex flex-col bg-slate-50 dark:bg-darkbg text-slate-800 dark:text-slate-100 transition-colors duration-300">
 
-    <!-- === SCREEN 1: INTRO & SETUP (Das Wichtigste!) === -->
-    <div id="screenIntro" class="fixed inset-0 z-50 bg-[#F1F5F9] flex flex-col items-center justify-center p-6 transition-opacity duration-500">
-        
-        <!-- 1. Dein Avatar -->
-        <div class="avatar-container mb-6">
-            <img src="avatar.png" onerror="this.src='https://ui-avatars.com/api/?name=Coach&background=4F46E5&color=fff&size=256'" class="avatar-img">
-        </div>
-
-        <!-- 2. Die Nachricht (Schriftlich) -->
-        <div class="glass-card max-w-md w-full p-8 text-center mb-8 relative">
-            <div class="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-indigo-600 text-white px-4 py-1 rounded-full text-xs font-bold uppercase tracking-wider">Nachricht vom Coach</div>
-            <h1 class="text-2xl font-bold text-slate-800 mb-4" id="introTopic">Thema wird geladen...</h1>
-            <p class="text-slate-600 leading-relaxed text-lg" id="introText">
-                Bitte warten, Lernsitzung wird vorbereitet...
-            </p>
-        </div>
-
-        <!-- 3. Hardware Button -->
-        <button onclick="startSession()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 px-10 rounded-xl shadow-xl text-lg flex items-center gap-3 transition transform hover:scale-105">
-            <i class="fas fa-microphone"></i>
-            <span>Bereit & Mikrofon Starten</span>
-        </button>
-        <p class="text-slate-400 text-xs mt-4">Klicken Sie "Zulassen", wenn der Browser fragt.</p>
-    </div>
-
-
-    <!-- === SCREEN 2: MAIN SESSION (Versteckt bis Start) === -->
-    <div id="screenSession" class="flex-1 flex overflow-hidden hidden">
-        
-        <!-- LINKER BEREICH: Dialog -->
-        <div class="flex-1 flex flex-col relative w-full md:w-3/5">
-            <!-- Header -->
-            <div class="h-16 flex items-center justify-between px-6 border-b border-slate-200 bg-white">
-                <span class="font-bold text-slate-700"><i class="fas fa-graduation-cap text-indigo-600 mr-2"></i> Coaching</span>
-                <span id="timerDisplay" class="font-mono font-bold text-indigo-600 bg-indigo-50 px-3 py-1 rounded">00:00</span>
+    <!-- TOP HEADER -->
+    <header class="h-16 flex items-center justify-between px-6 bg-white dark:bg-darkpanel border-b border-slate-200 dark:border-slate-800 z-20 shadow-sm">
+        <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded-lg bg-indigo-600 text-white flex items-center justify-center font-bold text-sm">
+                <i class="fas fa-layer-group"></i>
             </div>
+            <div>
+                <h1 id="topicDisplay" class="font-bold text-sm leading-tight">Wird geladen...</h1>
+                <p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">DialogCoach Active</p>
+            </div>
+        </div>
+        <div class="flex items-center gap-4">
+            <!-- Timer Display -->
+            <div id="countdownWrapper" class="hidden font-mono font-bold w-16 text-center text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-700 px-3 py-1.5 rounded-md text-sm border border-slate-200 dark:border-slate-600 transition-all">
+                <span id="countdown">--:--</span>
+            </div>
+            <!-- Dark Mode Toggle -->
+            <button onclick="toggleDarkMode()" class="text-slate-400 hover:text-indigo-500 transition border border-slate-200 dark:border-slate-600 rounded-full w-8 h-8 flex items-center justify-center">
+                <i id="themeIcon" class="fas fa-moon"></i>
+            </button>
+        </div>
+    </header>
 
-            <!-- Stage -->
-            <div class="flex-1 flex flex-col items-center justify-center p-6 overflow-y-auto">
-                <div class="avatar-container mb-8" id="sessionAvatar">
-                    <img src="avatar.png" onerror="this.src='https://ui-avatars.com/api/?name=Coach&background=4F46E5&color=fff&size=256'" class="avatar-img">
+    <!-- CONTENT WRAPPER -->
+    <main class="flex-1 relative flex overflow-hidden">
+        
+        <!-- === CENTER STAGE (CHAT) === -->
+        <div class="flex-1 flex flex-col relative w-full md:w-2/3 mx-auto max-w-3xl">
+            
+            <div class="flex-1 overflow-y-auto scroll-hide p-6 pb-36 flex flex-col items-center justify-center text-center">
+                
+                <!-- Avatar Visual (Dein avatar.png) -->
+                <div class="relative w-32 h-32 mb-8">
+                    <div class="avatar-ring"></div>
+                    <img id="avatarImg" src="avatar.png" onerror="this.src='https://ui-avatars.com/api/?name=KI&background=4F46E5&color=fff'" 
+                         class="w-full h-full rounded-full object-cover border-4 border-white dark:border-slate-800 shadow-xl relative z-10 bg-slate-100">
                 </div>
 
-                <div class="text-center w-full max-w-xl">
-                    <h2 id="questionText" class="text-2xl font-medium text-slate-800 mb-6 transition-all duration-500">
-                        Lädt Frage...
+                <div class="w-full max-w-xl transition-all duration-500" id="questionContainer">
+                    <h2 id="mainQuestion" class="text-2xl md:text-3xl font-bold leading-tight tracking-tight mb-4">
+                        Warte auf Verbindung...
                     </h2>
                     
-                    <!-- Hier landet der Text vom Schüler -->
-                    <div id="transcriptBox" class="min-h-[60px] p-4 rounded-xl bg-slate-100 border border-slate-200 text-slate-600 italic">
-                        ...
+                    <!-- Live Transkript User -->
+                    <div id="liveTranscript" class="hidden mt-4 p-4 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 italic text-left w-full shadow-sm text-lg text-slate-600 dark:text-slate-300">
                     </div>
                 </div>
             </div>
 
-            <!-- Controls Footer -->
-            <div class="h-32 bg-white border-t border-slate-200 flex flex-col items-center justify-center relative shadow-lg z-10">
-                <button id="micBtn" class="mic-btn mic-idle" onclick="toggleMic()" disabled>
+            <!-- Bottom Controls -->
+            <div class="absolute bottom-8 left-0 right-0 flex flex-col items-center justify-end z-30 pointer-events-none">
+                
+                <div id="statusBadge" class="mb-4 px-4 py-1.5 rounded-full bg-slate-900/10 dark:bg-black/40 backdrop-blur font-semibold text-xs uppercase tracking-wide opacity-0 transition-opacity">
+                    Zuhören...
+                </div>
+
+                <button id="micBtn" class="mic-fab mic-disabled pointer-events-auto" disabled onclick="toggleRecording()">
                     <i class="fas fa-microphone"></i>
                 </button>
-                <div id="statusText" class="text-xs font-bold text-slate-400 uppercase mt-3 tracking-widest">Warten...</div>
             </div>
         </div>
 
-        <!-- RECHTER BEREICH: Hilfen (Nur Lernmodus) -->
-        <div id="sidebar" class="hidden md:flex w-2/5 bg-slate-50 border-l border-slate-200 p-8 flex-col overflow-y-auto">
-            <h3 class="font-bold text-slate-400 text-xs uppercase mb-4">Lernhilfen</h3>
+        <!-- === RIGHT SIDEBAR (Lernhilfen) === -->
+        <div id="sidePanel" class="hidden md:flex w-80 bg-white dark:bg-darkpanel border-l border-slate-200 dark:border-slate-800 flex-col z-10 shadow-lg">
+            <div class="p-6 border-b border-slate-100 dark:border-slate-700">
+                <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Lernhilfen</h3>
+                <p class="text-sm text-slate-500">Integriere dies in deine Antworten.</p>
+            </div>
             
-            <div class="bg-white p-5 rounded-xl border border-slate-200 mb-6 shadow-sm">
-                <h4 class="font-bold text-slate-700 mb-3"><i class="fas fa-check text-green-500 mr-2"></i> Pflichtvokabeln</h4>
-                <div id="vocabList"></div>
-            </div>
+            <div class="flex-1 overflow-y-auto p-6 space-y-8">
+                <div id="vocabSection" class="hidden">
+                    <h4 class="font-bold text-sm mb-3 flex items-center gap-2"><i class="fas fa-star text-brand-500"></i> Vokabeln</h4>
+                    <div id="vocabList" class="flex flex-wrap flex-row gap-1"></div>
+                </div>
 
-            <div class="bg-white p-5 rounded-xl border border-slate-200 flex-1 shadow-sm">
-                <h4 class="font-bold text-slate-700 mb-3"><i class="fas fa-lightbulb text-yellow-500 mr-2"></i> Tipps</h4>
-                <ul id="scaffoldList" class="space-y-2 text-sm text-slate-600"></ul>
+                <div id="scaffoldSection" class="hidden">
+                    <h4 class="font-bold text-sm mb-3 flex items-center gap-2"><i class="fas fa-quote-right text-brand-500"></i> Redemittel</h4>
+                    <ul id="scaffoldList" class="space-y-3"></ul>
+                </div>
             </div>
+        </div>
+    </main>
+
+    <!-- START OVERLAY -->
+    <div id="startOverlay" class="fixed inset-0 z-50 flex items-center justify-center p-6 bg-slate-900/60 backdrop-blur-md transition-opacity duration-500">
+        <div class="bg-white dark:bg-darkpanel w-full max-w-md p-8 rounded-2xl shadow-2xl text-center transform scale-100">
+            <div class="w-20 h-20 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-full flex items-center justify-center mx-auto mb-6 text-3xl">
+                <i class="fas fa-headphones"></i>
+            </div>
+            <h1 class="text-2xl font-bold mb-2">Bereit, <span id="welcomeName"></span>?</h1>
+            <p class="text-slate-500 dark:text-slate-400 mb-8 text-sm">Bitte aktiviere dein Mikrofon und stelle die Lautstärke ein.</p>
+            <button onclick="unlockAudioAndStart()" class="w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-lg transition-transform hover:-translate-y-1">
+                Session Starten <i class="fas fa-arrow-right ml-2"></i>
+            </button>
         </div>
     </div>
 
-    <!-- === LOGIC === -->
+    <!-- MAIN SYSTEM LOGIC -->
     <script>
-        // GLOBALS
-        let config = {};
-        let state = { index: 0, recording: false, log: [], timer: null, seconds: 0 };
+        // CORE STATE
+        let C = null; // Config Obj
+        let S = { step: 0, recording: false, speaking: false, log: [], timer: null, timeLeft: 0 };
         let recognition = null;
+        let conversationHistory = []; 
 
-        // 1. INIT: Lade Config aus URL
-        window.onload = function() {
-            const params = new URLSearchParams(window.location.search);
-            const raw = params.get('config');
-            if(raw) {
+        // --- INIT & CONFIG PARSING ---
+        window.onload = () => {
+            // Dark Mode check
+            if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) toggleDarkMode(true);
+
+            const p = new URLSearchParams(location.search);
+            const d = p.get('config');
+            if(d) {
                 try {
-                    config = JSON.parse(decodeURIComponent(escape(atob(raw))));
-                    setupIntroScreen();
-                } catch(e) {
-                    document.body.innerHTML = "<h1 style='padding:50px'>Fehler: Link ist ungültig.</h1>";
-                }
+                    C = JSON.parse(decodeURIComponent(escape(atob(decodeURIComponent(d)))));
+                    renderUI();
+                    buildSocraticPrompt();
+                } catch(e) { alert("Konfiguration defekt. Bitte Link vom Lehrer neu kopieren."); console.error(e);}
             } else {
-                document.body.innerHTML = "<h1 style='padding:50px'>Keine Konfiguration gefunden. Bitte über Lehrer-App starten.</h1>";
+                alert("Kein Session-Code gefunden.");
             }
         };
 
-        function setupIntroScreen() {
-            document.getElementById('introTopic').innerText = config.topic || "Coaching Session";
-            document.getElementById('introText').innerText = config.intro || "Willkommen. Bitte klicken Sie unten.";
-            
-            // Lernmodus Sidebar Setup
-            if(config.view === 'learning') {
-                document.getElementById('sidebar').classList.add('flex');
-                document.getElementById('sidebar').classList.remove('hidden');
-                
-                // Vokabeln rendern
-                const vList = document.getElementById('vocabList');
-                (config.vocab || []).forEach(w => {
-                    let s = document.createElement('span'); s.className = 'tag'; s.innerText = w;
-                    s.id = 'v-' + w.toLowerCase().replace(/[^a-z0-9]/g,'');
-                    vList.appendChild(s);
-                });
-                
-                // Tipps rendern
-                const sList = document.getElementById('scaffoldList');
-                (config.scaffolding || []).forEach(t => {
-                    let li = document.createElement('li'); li.innerHTML = `• ${t}`; 
-                    sList.appendChild(li);
-                });
-            } else {
-                // Prüfungsmodus (Clean)
-                document.getElementById('sidebar').remove();
-                document.querySelector('.md\\:w-3\\/5').classList.remove('md:w-3/5'); // Volle Breite
-            }
+        function toggleDarkMode(forceDark = null) {
+            const isDark = forceDark !== null ? forceDark : !document.documentElement.classList.contains('dark');
+            document.documentElement.classList.toggle('dark', isDark);
+            document.getElementById('themeIcon').className = isDark ? 'fas fa-sun text-yellow-400' : 'fas fa-moon text-slate-500';
         }
 
-        // 2. START: Der "sichere Klick"
-        async function startSession() {
+        function renderUI() {
+            document.getElementById('topicDisplay').innerText = C.topic;
+            document.getElementById('welcomeName').innerText = C.studentName || 'Schüler';
+
+            // Timer UI
+            if(C.hasTimer) document.getElementById('countdownWrapper').classList.remove('hidden');
+
+            // Side Panel Rendern (Lernhilfen)
+            let panelActive = false;
+
+            if(C.showVocab && C.vocab && C.vocab.length > 0) {
+                panelActive = true;
+                const sec = document.getElementById('vocabSection');
+                const list = document.getElementById('vocabList');
+                sec.classList.remove('hidden');
+                C.vocab.forEach(word => {
+                    list.innerHTML += `<span class="vocab-chip bg-white text-slate-600" id="v-${clean(word)}">${word}</span>`;
+                });
+            }
+
+            if(C.showScaffolds && C.scaffolds && C.scaffolds.length > 0) {
+                panelActive = true;
+                const sec = document.getElementById('scaffoldSection');
+                const list = document.getElementById('scaffoldList');
+                sec.classList.remove('hidden');
+                C.scaffolds.forEach(s => {
+                    list.innerHTML += `<li class="text-sm dark:text-slate-300 pl-3 border-l-2 border-indigo-200 dark:border-indigo-800">${s}</li>`;
+                });
+            }
+
+            if(panelActive) document.getElementById('sidePanel').style.display = 'flex';
+        }
+
+        function clean(str) { return str.toLowerCase().replace(/[^a-z0-9äöüß]/g, ''); }
+
+        // --- DER SOKRATISCHE MEISTER PROMPT ---
+        function buildSocraticPrompt() {
+            let prompt = `### ROLLE\nDu bist ein hochqualifizierter KI-Tutor für ${C.language} als Fremdsprache, spezialisiert auf die "Sokratische Methode". Deine Aufgabe ist es, einen flüssigen, intelligenten und motivierenden Dialog zu führen.\n\n`;
+            
+            prompt += `### SCHÜLER-PROFIL\n- Name: ${C.studentName || 'Schüler'}\n- Fokus-Thema: ${C.topic}\n- Niveau: ${C.level}\n- Hauptziel: ${C.focus} (z.B. Flüssigkeit, Vokabular oder Grammatik)\n- Deine simulierte Rolle im Dialog: ${C.role}\n\n`;
+            
+            prompt += `### DIALOG-REGELN (STRENGSTENS EINZUHALTEN)\n`;
+            
+            // Reagiert auf Dropdown "Korrektur-Modus" vom Lehrer
+            if(C.correction === 'immediate') {
+                prompt += `1. KORREKTUR (SOFORT): GIB NIEMALS DIE LÖSUNG VOR: Wenn der Schüler einen Fehler macht, gib keine direkte Korrektur. Stelle stattdessen eine zielführende pädagogische Rückfrage, die den Schüler selbst auf den Fehler aufmerksam macht.\n`;
+            } else if(C.correction === 'end') {
+                prompt += `1. KORREKTUR (NUR AM ENDE): Korrigiere den Schüler WÄHREND des Dialogs überhaupt NICHT. Lass den Flow ungestört. Ignoriere Grammatikfehler in der Antwort, gehe nur inhaltlich auf das Gesagte ein.\n`;
+            } else {
+                prompt += `1. KORREKTUR (KEINE): Der Fokus liegt zu 100% auf Sprechfluss. Es gibt keine Grammatik-Hinweise.\n`;
+            }
+
+            prompt += `2. KONTEXTUELLE INTELLIGENZ: Nutze das Thema "${C.topic}" für alle Beispiele. Bleibe streng in deiner Rolle als "${C.role}".\n`;
+            prompt += `3. ADAPTIVE SCHWIERIGKEIT: Passe dein Vokabular strikt an das Niveau (${C.level}) an.\n`;
+            prompt += `4. REALISTISCHE REAKTIONEN: Reagiere wie ein echter Mensch auf die letzte Aussage des Schülers. Geh inhaltlich kurz darauf ein.\n`;
+            prompt += `5. SPRACHE: Der gesamte Dialog findet AUSSCHLIESSLICH auf ${C.language} statt!\n\n`;
+
+            if(C.followUp) {
+                prompt += `6. DYNAMISCHES NACHHAKEN: Wenn der Schüler extrem kurze Antworten gibt (z.B. nur "Ja"), hake fordernd aus deiner Rolle heraus nach.\n`;
+            }
+
+            conversationHistory.push({ role: "system", content: prompt });
+        }
+
+
+        // --- ENGINE UNLOCK & START ---
+        async function unlockAudioAndStart() {
             try {
-                // A) Mikrofon Erlaubnis holen (Browser Prompt)
+                const ac = new (window.AudioContext || window.webkitAudioContext)();
+                await ac.resume();
+                speechSynthesis.speak(new SpeechSynthesisUtterance(''));
+
                 const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                
-                // B) Speech Engine vorbereiten (Chrome braucht das)
-                if('webkitSpeechRecognition' in window) {
-                    recognition = new webkitSpeechRecognition();
-                    recognition.continuous = true;
-                    recognition.interimResults = true;
-                    recognition.lang = 'de-DE';
-                    
-                    recognition.onresult = (e) => {
-                        let txt = "";
-                        for(let i=e.resultIndex; i<e.results.length; ++i) txt += e.results[i][0].transcript;
-                        document.getElementById('transcriptBox').innerText = txt;
-                        
-                        // Gamification Highlight
-                        if(config.view === 'learning') checkVocab(txt);
-                    };
-                } else {
-                    alert("Achtung: Dieser Browser unterstützt keine Spracherkennung. Bitte Chrome nutzen.");
-                }
+                stream.getTracks().forEach(t => t.stop());
 
-                // C) UI Wechseln
-                document.getElementById('screenIntro').style.display = 'none';
-                document.getElementById('screenSession').classList.remove('hidden');
-                document.getElementById('screenSession').classList.add('flex');
+                setupRecognition();
 
-                // D) Erste Frage starten (kleine Verzögerung für Übergang)
-                setTimeout(nextQuestion, 500);
+                document.getElementById('startOverlay').style.opacity = '0';
+                setTimeout(() => {
+                    document.getElementById('startOverlay').style.display = 'none';
+                    startSessionFlow();
+                }, 500);
 
             } catch(err) {
-                alert("Fehler: Mikrofon-Zugriff verweigert. Bitte erlauben Sie den Zugriff oben in der Adressleiste.");
+                alert("Mikrofon blockiert! Bitte zulassen und Seite neu laden.");
             }
         }
 
-        // 3. GAMELOOP
-        function nextQuestion() {
-            // Check ob Ende
-            if(state.index >= config.questions.length) return finishSession();
-
-            const text = config.questions[state.index];
-            state.log.push({ speaker: "Coach", text: text });
-
-            // UI Reset
-            document.getElementById('transcriptBox').innerText = "...";
-            document.getElementById('statusText').innerText = "COACH SPRICHT...";
+        // --- GAME LOOP ---
+        function startSessionFlow() {
+            const intro = C.intro || "Die Simulation beginnt jetzt.";
+            S.log.push({ s: 'Coach', t: intro });
+            conversationHistory.push({ role: "assistant", content: intro });
             
-            // Text anzeigen
-            if(config.view === 'learning') {
-                document.getElementById('questionText').innerText = text;
-            } else {
-                document.getElementById('questionText').innerText = "Hören Sie genau zu...";
-            }
+            setStatus('Coach spricht...', true);
+            updateMainText(intro);
+            
+            playTTS(intro, () => {
+                setTimeout(nextTeacherQuestion, 500);
+            });
+        }
 
-            // Button sperren
-            let btn = document.getElementById('micBtn');
-            btn.className = "mic-btn mic-blocked";
-            btn.disabled = true;
+        function nextTeacherQuestion() {
+            if(S.step >= C.questions.length) return finish();
 
-            // Sprechen (TTS)
-            speak(text, () => {
-                // Wenn fertig gesprochen:
-                btn.className = "mic-btn mic-idle";
-                btn.disabled = false;
-                document.getElementById('statusText').innerText = "BEREIT ZUM SPRECHEN";
-                if(config.view !== 'learning') document.getElementById('questionText').innerText = "Jetzt antworten...";
-                
-                startTimer(config.timer || 60);
+            const text = C.questions[S.step];
+            S.log.push({ s: 'Coach (Leitfrage)', t: text });
+            
+            // Sync with history
+            conversationHistory.push({ role: "assistant", content: text });
+
+            updateMainText(text);
+            hideTranscript();
+            lockMic(true);
+
+            playTTS(text, () => {
+                unlockMic();
+                startTimer();
             });
 
-            state.index++;
+            S.step++;
         }
 
-        // 4. TTS (Reden)
-        function speak(text, callback) {
-            window.speechSynthesis.cancel(); // Clean start
-            document.getElementById('sessionAvatar').classList.add('avatar-speaking');
+        // --- AUDIO ENGINE (TTS Multiplexer) ---
+        async function playTTS(text, callback) {
+            S.speaking = true;
+            document.body.classList.add('is-speaking');
+            
+            // 1. ELEVENLABS
+            if(C.audioEngine === 'elevenlabs' && C.elevenApiKey && C.elevenVoiceId) {
+                try {
+                    const res = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${C.elevenVoiceId}`, {
+                        method: 'POST',
+                        headers: { 
+                            'xi-api-key': C.elevenApiKey, 
+                            'Content-Type': 'application/json' 
+                        },
+                        body: JSON.stringify({ text: text, model_id: "eleven_multilingual_v2" })
+                    });
+                    if(!res.ok) throw new Error();
+                    const blob = await res.blob();
+                    playAudioBlob(blob, callback); return;
+                } catch(e) { console.warn("ElevenLabs Error, Fallback zu Browser"); }
+            }
 
-            let u = new SpeechSynthesisUtterance(text);
-            u.lang = 'de-DE';
-            u.rate = 1.0;
+            // 2. OPENAI HD VOICES
+            if(C.audioEngine === 'openai' && C.apiKey) {
+                try {
+                    const res = await fetch("https://api.openai.com/v1/audio/speech", {
+                        method: "POST",
+                        headers: { "Authorization": `Bearer ${C.apiKey}`, "Content-Type": "application/json" },
+                        body: JSON.stringify({ model: "tts-1", input: text, voice: C.openaiVoice || "alloy" })
+                    });
+                    if(!res.ok) throw new Error();
+                    const blob = await res.blob();
+                    playAudioBlob(blob, callback); return;
+                } catch(e) { console.warn("OpenAI Audio Error, Fallback zu Browser"); }
+            }
 
-            u.onend = () => {
-                document.getElementById('sessionAvatar').classList.remove('avatar-speaking');
+            // 3. Fallback (Browser)
+            speechSynthesis.cancel();
+            const u = new SpeechSynthesisUtterance(text);
+            
+            // Sprach-Mapping für Browser Fallback
+            let langCode = 'de-DE';
+            if(C.language === 'Englisch') langCode = 'en-US';
+            if(C.language === 'Französisch') langCode = 'fr-FR';
+            if(C.language === 'Spanisch') langCode = 'es-ES';
+            u.lang = langCode;
+            
+            u.onend = () => { S.speaking = false; document.body.classList.remove('is-speaking'); if(callback) callback(); };
+            setTimeout(() => { if(S.speaking) { speechSynthesis.cancel(); if(callback) callback(); } }, text.length * 100 + 4000); 
+            speechSynthesis.speak(u);
+        }
+
+        function playAudioBlob(blob, callback) {
+            const url = URL.createObjectURL(blob);
+            const audio = new Audio(url);
+            audio.onended = () => {
+                S.speaking = false; document.body.classList.remove('is-speaking'); 
                 if(callback) callback();
             };
-
-            // Notfall-Timer falls TTS hängt (WICHTIG!)
-            setTimeout(() => {
-                if(window.speechSynthesis.speaking) {
-                    window.speechSynthesis.cancel();
-                    if(callback) callback();
-                }
-            }, (text.length * 100) + 3000);
-
-            window.speechSynthesis.speak(u);
+            audio.play();
         }
 
-        // 5. MIKROFON STEUERUNG
-        function toggleMic() {
-            let btn = document.getElementById('micBtn');
+        // --- STT (Spracherkennung) ---
+        function setupRecognition() {
+            if(!('webkitSpeechRecognition' in window)) return;
+            recognition = new webkitSpeechRecognition();
+            recognition.continuous = true;
+            recognition.interimResults = true;
             
-            if(!state.recording) {
-                // START
-                state.recording = true;
-                btn.className = "mic-btn mic-active"; // Rot pulsierend
-                document.getElementById('statusText').innerText = "AUFNAHME LÄUFT... (KLICK ZUM BEENDEN)";
-                try { recognition.start(); } catch(e){}
+            let langCode = 'de-DE';
+            if(C.language === 'Englisch') langCode = 'en-US';
+            if(C.language === 'Französisch') langCode = 'fr-FR';
+            if(C.language === 'Spanisch') langCode = 'es-ES';
+            recognition.lang = langCode;
+
+            recognition.onresult = (e) => {
+                let final = '';
+                for (let i = e.resultIndex; i < e.results.length; ++i) {
+                    if (e.results[i].isFinal) final += e.results[i][0].transcript;
+                }
+                if(final) {
+                    const box = document.getElementById('liveTranscript');
+                    box.classList.remove('hidden');
+                    box.innerText = final;
+                    checkVocab(final);
+                }
+            };
+        }
+
+        function checkVocab(txt) {
+            if(!C.vocab) return;
+            txt = txt.toLowerCase();
+            C.vocab.forEach(w => {
+                if(txt.includes(clean(w))) {
+                    const el = document.getElementById('v-'+clean(w));
+                    if(el && !el.classList.contains('vocab-hit')) el.classList.add('vocab-hit');
+                }
+            });
+        }
+
+        // --- MIC / RECORDING CONTROLS ---
+        function toggleRecording() {
+            if(S.recording) stopRec(); else startRec();
+        }
+
+        function startRec() {
+            S.recording = true;
+            try { recognition.start(); } catch(e){}
+            
+            const btn = document.getElementById('micBtn');
+            btn.className = 'mic-fab mic-recording';
+            btn.innerHTML = '<i class="fas fa-stop"></i>';
+            setStatus('Aufnahme läuft...', true);
+            updateMainText("Du bist dran. Sprich jetzt frei.");
+        }
+
+        async function stopRec() {
+            S.recording = false;
+            try { recognition.stop(); } catch(e){}
+            clearInterval(S.timer);
+            document.getElementById('countdownWrapper').classList.remove('timer-warning');
+
+            const btn = document.getElementById('micBtn');
+            btn.className = 'mic-fab mic-disabled';
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            btn.disabled = true;
+            
+            setStatus('Coach analysiert...', true);
+            updateMainText("Verarbeite Antwort...");
+
+            let studentText = document.getElementById('liveTranscript').innerText.trim();
+            if(!studentText || studentText.length < 2) studentText = "*Hat genickt oder geschwiegen*";
+
+            S.log.push({ s: C.studentName || 'Student', t: studentText });
+            conversationHistory.push({ role: "user", content: studentText });
+
+            await askGPT();
+        }
+
+        // --- CORE GPT CALL ---
+        async function askGPT() {
+            let messagesToSend = [...conversationHistory];
+            
+            // DIE INJECTION: Lehrer-Leitfrage hinten anhängen
+            if(S.step < C.questions.length) {
+                const nextQ = C.questions[S.step];
+                messagesToSend.push({
+                    role: "developer", 
+                    content: `INSTRUCTION FÜR DIESEN TURN: Beziehe dich sokratisch auf die letzte Nachricht. ABER beende deine Antwort UNBEDINGT organisch in deiner Sprecherrolle, indem du als nächstes genau folgende Frage einleitest/stellst: "${nextQ}".`
+                });
             } else {
-                // STOP
-                state.recording = false;
-                btn.className = "mic-btn mic-blocked";
-                btn.disabled = true;
-                document.getElementById('statusText').innerText = "GESPEICHERT.";
+                messagesToSend.push({
+                    role: "developer",
+                    content: "Letzter Zug. Beende das Training freundlich und aus deiner Rolle heraus."
+                });
+            }
+
+            try {
+                const response = await fetch('https://api.openai.com/v1/chat/completions', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${C.apiKey}` },
+                    body: JSON.stringify({
+                        model: C.model || "gpt-4o",
+                        messages: messagesToSend,
+                        temperature: 0.7,
+                        max_tokens: 350
+                    })
+                });
+
+                if(!response.ok) throw new Error("API Fehler");
                 
-                clearInterval(state.timer);
-                try { recognition.stop(); } catch(e){}
+                const result = await response.json();
+                const aiReply = result.choices[0].message.content;
 
-                // Speichern Text
-                let ans = document.getElementById('transcriptBox').innerText;
-                if(ans === "...") ans = "[Keine Antwort erfasst]";
-                state.log.push({ speaker: "Student", text: ans });
+                S.log.push({ s: 'Coach', t: aiReply });
+                conversationHistory.push({ role: "assistant", content: aiReply });
 
-                // Weiter nach kurzer Pause
-                setTimeout(nextQuestion, 1500);
+                updateMainText(aiReply);
+                hideTranscript();
+
+                playTTS(aiReply, () => {
+                    if(S.step >= C.questions.length) {
+                         setTimeout(finish, 1000);
+                    } else {
+                        S.step++;
+                        unlockMic();
+                        startTimer();
+                    }
+                });
+
+            } catch (err) {
+                console.error(err);
+                alert("Fehler mit der KI-Verbindung. Fahren manuell fort.");
+                nextTeacherQuestion();
             }
         }
 
-        // 6. HELFER
-        function startTimer(seconds) {
-            clearInterval(state.timer);
-            state.seconds = parseInt(seconds);
-            updateTimerDisplay();
+        // --- TIMER & UI UTILS ---
+        function startTimer() {
+            if(!C.hasTimer) return;
             
-            state.timer = setInterval(() => {
-                state.seconds--;
-                updateTimerDisplay();
-                if(state.seconds <= 0) {
-                    // Zeit abgelaufen -> Auto Stop wenn Aufnahme läuft
-                    if(state.recording) toggleMic();
-                    else {
-                        // Wenn nicht aufgenommen -> direkt weiter (als Timeout)
-                        clearInterval(state.timer);
-                        alert("Zeit abgelaufen!");
-                        nextQuestion();
-                    }
+            S.timeLeft = parseInt(C.timer || 60);
+            updTimeUI();
+            
+            clearInterval(S.timer);
+            S.timer = setInterval(() => {
+                S.timeLeft--;
+                updTimeUI();
+                
+                const box = document.getElementById('countdownWrapper');
+                
+                // Warnung bei 10 Sekunden
+                if(S.timeLeft <= 10 && S.timeLeft > 0) {
+                    box.classList.add('timer-warning');
+                } else {
+                    box.classList.remove('timer-warning');
+                }
+
+                if(S.timeLeft <= 0) { 
+                    clearInterval(S.timer);
+                    if(S.recording) stopRec(); // Auto Stop
                 }
             }, 1000);
         }
 
-        function updateTimerDisplay() {
-            let m = Math.floor(state.seconds / 60);
-            let s = state.seconds % 60;
-            document.getElementById('timerDisplay').innerText = 
-                `${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
+        function updTimeUI() {
+            const m = Math.floor(S.timeLeft/60);
+            const s = S.timeLeft%60;
+            document.getElementById('countdown').innerText = `${m}:${s<10?'0'+s:s}`;
         }
 
-        function checkVocab(txt) {
-            if(!config.vocab) return;
-            let t = txt.toLowerCase();
-            config.vocab.forEach(w => {
-                let clean = w.toLowerCase().trim();
-                let el = document.getElementById('v-' + clean.replace(/[^a-z0-9]/g,''));
-                if(el && t.includes(clean)) el.classList.add('tag-hit');
-            });
+        function lockMic(lock) {
+            const btn = document.getElementById('micBtn');
+            if(lock) {
+                btn.className = 'mic-fab mic-disabled';
+                btn.disabled = true;
+            }
         }
 
-        // 7. ABSCHLUSS & PROTOKOLL MIT PROMPT
-        function finishSession() {
-            document.getElementById('questionText').innerText = "Training Beendet!";
-            document.getElementById('micBtn').style.display = 'none';
-            document.getElementById('statusText').innerText = "Erstelle Protokoll...";
+        function unlockMic() {
+            const btn = document.getElementById('micBtn');
+            btn.className = 'mic-fab mic-idle';
+            btn.innerHTML = '<i class="fas fa-microphone"></i>';
+            btn.disabled = false;
+            setStatus('Tippen für Antwort', true);
+            updateMainText("Du bist dran. Denk nach und starte das Mikrofon.");
+        }
 
-            // Markdown bauen
-            let md = `# Protokoll: ${config.topic}\n`;
-            md += `Datum: ${new Date().toLocaleDateString()} | Level: ${config.level}\n\n`;
+        function updateMainText(txt) {
+            const el = document.getElementById('mainQuestion');
+            el.style.opacity = 0;
+            setTimeout(() => { el.innerText = txt; el.style.opacity = 1; }, 200);
+        }
+
+        function hideTranscript() {
+            document.getElementById('liveTranscript').innerHTML = '';
+            document.getElementById('liveTranscript').classList.add('hidden');
+        }
+
+        function setStatus(msg, visible) {
+            const b = document.getElementById('statusBadge');
+            b.innerText = msg;
+            b.style.opacity = visible ? 1 : 0;
+        }
+
+        // --- EXPORT ---
+        function finish() {
+            updateMainText("Hervorragend! Das Training ist beendet.");
+            document.getElementById('micBtn').style.display='none';
+            document.getElementById('countdownWrapper').style.display='none';
+            setStatus('Protokoll wird geladen...', true);
             
-            md += `## Verlauf\n`;
-            state.log.forEach(entry => {
-                md += `**${entry.speaker}:** ${entry.text}\n\n`;
-            });
+            let md = `# Sprechprotokoll: ${C.topic}\nSchüler: ${C.studentName}\nDatum: ${new Date().toLocaleDateString()}\n\n---\n`;
+            S.log.forEach(r => { md += `**${r.s}:**\n${r.t}\n\n`; });
+            
+            if(C.correction === 'end') md += `\n---\n### PÄDAGOGISCHES FEEDBACK\n*(Nutze dieses Protokoll, um zusammen mit deinem Lehrer Fehler zu besprechen)*`;
 
-            // *** DER NOTEBOOK LM PROMPT ***
-            md += `\n---\n`;
-            md += `### 🤖 ANWEISUNG FÜR KI-ANALYSE:\n`;
-            md += `Bitte fungiere als professioneller Sprach-Coach und analysiere dieses Transkript.\n`;
-            md += `1. **Fehler-Analyse:** Identifiziere die 3 gravierendsten Grammatik- oder Ausdrucksfehler des Schülers.\n`;
-            md += `2. **Korrektur:** Zeige für jeden Fehler die korrekte Version.\n`;
-            md += `3. **Stil-Upgrade:** Nimm 2 korrekte, aber einfache Sätze des Schülers und formuliere sie auf C1-Niveau um (eleganter/idiomatischer).\n`;
-            md += `4. **Wortschatz:** Wurden Fachbegriffe zum Thema '${config.topic}' verwendet? Wenn nein, schlage 5 passende Begriffe vor.\n`;
-
-            // Download
-            const blob = new Blob([md], { type: 'text/markdown' });
-            const url = URL.createObjectURL(blob);
+            const blob = new Blob([md], {type:'text/markdown'});
             const a = document.createElement('a');
-            a.href = url;
-            a.download = `Session_${new Date().toISOString().slice(0,10)}.md`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
+            a.href = URL.createObjectURL(blob);
+            a.download = `Sprechtraining_${C.studentName}_${Date.now()}.md`;
             
-            document.getElementById('statusText').innerText = "Datei heruntergeladen.";
+            setTimeout(() => a.click(), 1500);
         }
     </script>
 </body>
