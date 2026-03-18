@@ -43,9 +43,23 @@
 
         @keyframes fade-up { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .bubble-anim { animation: fade-up 0.4s ease-out forwards; }
+
+        /* Success Screen Flash */
+        #successFlash {
+            position: fixed; inset: 0; pointer-events: none; z-index: 9999;
+            box-shadow: inset 0 0 0 0 rgba(20, 184, 166, 0);
+            transition: box-shadow 0.5s ease-out;
+        }
+        .flash-active {
+            box-shadow: inset 0 0 50px 10px rgba(20, 184, 166, 0.4) !important;
+            transition: none !important;
+        }
     </style>
 </head>
-<body class="flex flex-col bg-slate-50 dark:bg-darkbg text-slate-800 dark:text-slate-100">
+<body class="flex flex-col bg-slate-50 dark:bg-darkbg text-slate-800 dark:text-slate-100 relative">
+
+    <!-- Unsichtbares Overlay für das grüne Aufleuchten -->
+    <div id="successFlash"></div>
 
     <header class="h-16 flex items-center justify-between px-6 bg-white dark:bg-darkpanel border-b border-slate-200 dark:border-slate-800 z-20 shadow-sm flex-shrink-0">
         <div class="flex items-center gap-3">
@@ -124,7 +138,7 @@
     <!-- LOGIK -->
     <script>
         let C = null; 
-        let S = { step: 0, recording: false, speaking: false, log: [], timer: null, timeLeft: 0, tempTranscription: "" };
+        let S = { step: 0, recording: false, speaking: false, log: [], timer: null, timeLeft: 0, tempTranscription: "", usedVocab: new Set(), usedScaffolds: new Set() };
         let recognition = null;
         let conversationHistory = []; 
 
@@ -146,7 +160,6 @@
         }
 
         function clean(str) { 
-            // Entfernt alle typischen Satzzeichen und macht alles klein für Gamification-Treffer
             return str.toLowerCase().replace(/[.,!??"'();:]/g, '').trim(); 
         }
 
@@ -157,14 +170,12 @@
             if(C.hasTimer) document.getElementById('countdownWrapper').classList.remove('hidden');
 
             let panelActive = false;
-            // Vokabeln parsen (inklusive Spaces entfernen für sicheres HTML-ID Mapping)
             if(C.showVocab && C.vocab && C.vocab.length > 0) {
                 panelActive = true; document.getElementById('vocabSection').classList.remove('hidden');
                 C.vocab.forEach(word => {
                     document.getElementById('vocabList').innerHTML += `<span class="vocab-chip" id="v-${clean(word).replace(/\s+/g, '')}">${word}</span>`;
                 });
             }
-            // Redemittel parsen
             if(C.showScaffolds && C.scaffolds && C.scaffolds.length > 0) {
                 panelActive = true; document.getElementById('scaffoldSection').classList.remove('hidden');
                 C.scaffolds.forEach(s => {
@@ -198,18 +209,12 @@
             btn.innerHTML = '<i class="fas fa-circle-notch fa-spin mr-2"></i> Fordere Mikrofon an...';
 
             try {
-                // 1. Popup forcieren
                 const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                
-                // 2. Audio Context wecken
                 const ac = new (window.AudioContext || window.webkitAudioContext)();
                 await ac.resume(); 
                 speechSynthesis.speak(new SpeechSynthesisUtterance(''));
 
-                // 3. Engine Setup
                 setupRecognition();
-
-                // 4. Temporären Stream kappen
                 stream.getTracks().forEach(t => t.stop());
 
                 document.getElementById('startOverlay').style.opacity = '0';
@@ -220,9 +225,15 @@
 
             } catch(err) { 
                 console.error("Mic Access Error:", err);
-                alert("Mikrofon wurde blockiert! Du musst in der URL-Leiste (Schloss-Symbol) das Mikrofon zulassen."); 
+                alert("Mikrofon wurde blockiert! Du musst oben in der URL-Leiste das Mikrofon zulassen."); 
                 btn.innerHTML = originalText;
             }
+        }
+
+        function triggerFlash() {
+            const flash = document.getElementById('successFlash');
+            flash.classList.add('flash-active');
+            setTimeout(() => { flash.classList.remove('flash-active'); }, 100);
         }
 
         function setupRecognition() {
@@ -232,13 +243,11 @@
             }
             
             recognition = new webkitSpeechRecognition();
-            // Continuous = true ist wichtig, damit er bei langen Sätzen / Pausen den Faden nicht verliert!
             recognition.continuous = true; 
             recognition.interimResults = true; 
             recognition.lang = C.language === 'Englisch' ? 'en-US' : (C.language === 'Spanisch' ? 'es-ES' : 'de-DE');
 
             recognition.onerror = function(event) {
-                console.error("Recognition Fehler:", event.error);
                 if(event.error === 'not-allowed') {
                     alert("Mikrofon-Zugriff verweigert.");
                     if(S.recording) stopRec();
@@ -248,16 +257,13 @@
             recognition.onresult = (e) => {
                 let currentTranscriptPart = '';
                 
-                // Wir sammeln das aktuelle Ergebnis zusammen
                 for (let i = e.resultIndex; i < e.results.length; ++i) {
                     currentTranscriptPart += e.results[i][0].transcript;
                 }
                 
                 if(currentTranscriptPart.trim() !== '') {
-                    // Update der temporären Hauptvariable mit dem neuen Text-Schnipsel
                     let fullTextToShow = (S.tempTranscription + " " + currentTranscriptPart).trim();
                     
-                    // Live UI Update
                     let transNode = document.getElementById('liveTrans');
                     if(!transNode) {
                         addChatBubble('Student', fullTextToShow, 'liveTrans');
@@ -267,11 +273,10 @@
                         box.scrollTo({ top: box.scrollHeight, behavior: 'smooth' });
                     }
                     
-                    // Wenn der Browser sagt "dieser Satzfetzen ist final" - speichern wir ihn hart in die Variable.
                     for (let i = e.resultIndex; i < e.results.length; ++i) {
                         if (e.results[i].isFinal) {
                             S.tempTranscription += " " + e.results[i][0].transcript;
-                            checkVocab(S.tempTranscription); // Prüfe Gamification
+                            checkVocab(S.tempTranscription);
                         }
                     }
                 }
@@ -280,23 +285,27 @@
 
         function checkVocab(fullText) {
             if(!C.vocab && !C.scaffolds) return; 
-            
             const cleanText = clean(fullText);
+            let hitFound = false;
             
-            // Vokabeln abgleichen
             if(C.vocab) {
                 C.vocab.forEach(w => {
-                    if(cleanText.includes(clean(w))) {
-                        const el = document.getElementById('v-'+clean(w).replace(/\s+/g, ''));
+                    const cleanW = clean(w);
+                    if(cleanText.includes(cleanW) && !S.usedVocab.has(cleanW)) {
+                        S.usedVocab.add(cleanW); 
+                        hitFound = true;
+                        const el = document.getElementById('v-'+cleanW.replace(/\s+/g, ''));
                         if(el && !el.classList.contains('vocab-hit')) el.classList.add('vocab-hit');
                     }
                 });
             }
 
-            // Redemittel abgleichen
             if(C.scaffolds) {
                 C.scaffolds.forEach((s, ix) => {
-                    if(cleanText.includes(clean(s))) {
+                    const cleanS = clean(s);
+                    if(cleanText.includes(cleanS) && !S.usedScaffolds.has(cleanS)) {
+                        S.usedScaffolds.add(cleanS); 
+                        hitFound = true;
                         const listItems = document.getElementById('scaffoldList').getElementsByTagName('li');
                         if(listItems[ix]) {
                            listItems[ix].classList.remove('text-slate-300', 'dark:text-slate-300');
@@ -306,13 +315,15 @@
                     }
                 });
             }
+
+            if(hitFound) triggerFlash();
         }
 
         function addChatBubble(sender, text, id = null) {
             const isCoach = sender === 'Coach';
             let displayText = text;
             
-            if(isCoach && C.textMode === 'hidden') displayText = "🔊 <i>Höre genau zu...</i>";
+            if(isCoach && C.textMode === 'hidden' && text !== '...') displayText = "🔊 <i>Höre genau zu...</i>";
             if(text === '...') displayText = '<i class="fas fa-ellipsis-h animate-pulse"></i>';
 
             const align = isCoach ? 'justify-start' : 'justify-end';
@@ -398,11 +409,9 @@
 
         function startRec() {
             S.recording = true; 
-            S.tempTranscription = ""; // Leere alten Text bei Start!
+            S.tempTranscription = ""; 
             
-            try { 
-                recognition.start(); 
-            } catch(e){ console.error("Mic start Fehler", e); }
+            try { recognition.start(); } catch(e){}
             
             const btn = document.getElementById('micBtn');
             btn.className = 'mic-fab mic-recording'; btn.innerHTML = '<i class="fas fa-stop"></i>';
@@ -419,21 +428,31 @@
             setStatus('Coach überlegt...', true);
 
             let transNode = document.getElementById('liveTrans');
-            // Wir nehmen das, was sicher gesammelt wurde
-            let studentText = S.tempTranscription.trim(); 
+            let studentTextOriginal = S.tempTranscription.trim(); 
             
-            // Fallback, falls beim Sammeln was schief ging, nehmen wir das was auf dem Bildschirm stand
-            if(studentText === '' && transNode) {
-                studentText = transNode.querySelector('div').innerText.trim();
-            }
-            
-            if(studentText === '') studentText = "*(Hat den Knopf gedrückt, aber nichts gesagt)*";
+            if(studentTextOriginal === '' && transNode) studentTextOriginal = transNode.querySelector('div').innerText.trim();
+            if(studentTextOriginal === '') studentTextOriginal = "*(Hat den Knopf gedrückt, aber nichts gesagt)*";
 
             if(transNode) transNode.removeAttribute('id'); 
-            else addChatBubble('Student', studentText);
+            else addChatBubble('Student', studentTextOriginal);
 
-            S.log.push({ s: C.studentName || 'Student', t: studentText });
-            conversationHistory.push({ role: "user", content: studentText });
+            // Fetch formatting
+            let studentTextFormatted = studentTextOriginal;
+            if(C.vocab) {
+                C.vocab.forEach(w => {
+                    const regex = new RegExp(`(${w})`, 'gi');
+                    studentTextFormatted = studentTextFormatted.replace(regex, '**$1**');
+                });
+            }
+            if(C.scaffolds) {
+                C.scaffolds.forEach(s => {
+                    const regex = new RegExp(`(${s})`, 'gi');
+                    studentTextFormatted = studentTextFormatted.replace(regex, '**$1**');
+                });
+            }
+
+            S.log.push({ s: C.studentName || 'Student', t: studentTextFormatted });
+            conversationHistory.push({ role: "user", content: studentTextOriginal });
 
             addChatBubble('Coach', '...', 'typingIndicator');
             await askGPT();
@@ -441,11 +460,10 @@
 
         async function askGPT() {
             let messagesToSend = [...conversationHistory];
-            // Die Magie des Lehrer-Fokus
             if(S.step < C.questions.length) {
                 messagesToSend.push({ role: "developer", content: `Beziehe dich sokratisch auf die letzte Nachricht. Beende deine Antwort dann UNBEDINGT organisch in deiner Rolle, indem du genau folgende nächste Frage einleitest/stellst: "${C.questions[S.step]}".` });
             } else {
-                messagesToSend.push({ role: "developer", content: "Letzter Zug. Beende das Training freundlich in deiner Rolle. Keine Fragen mehr." });
+                messagesToSend.push({ role: "developer", content: "Letzter Zug. Beende das Training freundlich in deiner Rolle." });
             }
 
             try {
@@ -457,7 +475,7 @@
                 const indicator = document.getElementById('typingIndicator');
                 if(indicator) indicator.remove();
 
-                if(!response.ok) throw new Error("API Limit oder Fehler");
+                if(!response.ok) throw new Error();
 
                 const aiReply = (await response.json()).choices[0].message.content;
                 S.log.push({ s: 'Coach', t: aiReply });
@@ -469,11 +487,7 @@
                     else { S.step++; unlockMic(); startTimer(); }
                 });
 
-            } catch (err) {
-                 alert("Fehler mit der KI."); 
-                 console.error(err);
-                 nextTeacherQuestion();
-            }
+            } catch (err) { alert("Netzwerkfehler."); nextTeacherQuestion(); }
         }
 
         function startTimer() {
@@ -515,13 +529,24 @@
             setStatus('Protokoll wird geladen...', true);
             addChatBubble('Coach', "🟢 *Das Training wurde erfolgreich beendet. Lade Protokoll herunter...*");
             
-            let md = `# Sprechprotokoll: ${C.topic}\nSchüler: ${C.studentName}\n\n---\n`;
+            const dateStr = new Date().toISOString().split('T')[0]; 
+            let vocabTotal = C.vocab ? C.vocab.length : 0;
+            let scaffTotal = C.scaffolds ? C.scaffolds.length : 0;
+            
+            let md = `# Sprachtraining: ${C.topic}\n`;
+            md += `**Schüler:** ${C.studentName}\n**Datum:** ${dateStr}\n**Niveau:** ${C.level}\n\n`;
+            
+            md += `### 📊 Lernziel-Auswertung\n`;
+            if(vocabTotal > 0) md += `- **Pflichtvokabeln:** ${S.usedVocab.size} von ${vocabTotal} verwendet.\n`;
+            if(scaffTotal > 0) md += `- **Redemittel:** ${S.usedScaffolds.size} von ${scaffTotal} verwendet.\n`;
+            md += `\n---\n### 💬 Dialog-Verlauf\n\n`;
+
             S.log.forEach(r => { md += `**${r.s}:**\n${r.t}\n\n`; });
             if(C.correction === 'end') md += `\n---\n### PÄDAGOGISCHES FEEDBACK\n*(Nutze dieses Protokoll, um Fehler mit dem Lehrer zu besprechen)*`;
 
             const blob = new Blob([md], {type:'text/markdown'});
             const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
-            a.download = `Sprechtraining_${C.studentName}_${Date.now()}.md`;
+            a.download = `Dialog_${C.studentName}_${dateStr}.md`;
             setTimeout(() => a.click(), 1500);
         }
     </script>
