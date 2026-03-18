@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Tutor - Lehrer Dashboard (V3.0 Premium)</title>
+    <title>AI Tutor - Lehrer Dashboard (V3.1 Premium)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
@@ -11,23 +11,19 @@
         .section-card { background: white; padding: 1.5rem; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); margin-bottom: 1.5rem; }
         .input-premium { border: 1px solid #e5e7eb; border-radius: 8px; padding: 0.75rem; width: 100%; transition: all 0.2s; }
         .input-premium:focus { border-color: #4F46E5; box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.2); outline: none; }
-        .chip { display: inline-flex; items-center gap-1; background: #e0e7ff; color: #3730a3; padding: 4px 12px; border-radius: 999px; font-size: 0.875rem; margin: 4px; }
-        .chip button { color: #4338ca; hover:text-indigo-900; }
+        .chip { display: inline-flex; items-center; gap: 4px; background: #e0e7ff; color: #3730a3; padding: 4px 12px; border-radius: 999px; font-size: 0.875rem; margin: 4px; }
         ::-webkit-scrollbar { width: 8px; }
         ::-webkit-scrollbar-track { background: #f1f1f1; }
         ::-webkit-scrollbar-thumb { background: #C7D2FE; border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: #818CF8; }
     </style>
 </head>
 <body class="p-4 md:p-8">
 
     <div class="max-w-5xl mx-auto">
-        
-        <!-- Header -->
         <div class="flex justify-between items-center mb-8 sticky top-0 bg-[#f3f4f6] z-10 py-4 border-b border-gray-200">
             <div>
                 <h1 class="text-3xl font-extrabold text-gray-900 tracking-tight">DialogCoach <span class="text-indigo-600">Pro</span></h1>
-                <p class="text-gray-500 text-sm">Präzise Lernszenarien (V3.0)</p>
+                <p class="text-gray-500 text-sm">Präzise Lernszenarien (V3.1)</p>
             </div>
         </div>
 
@@ -38,7 +34,6 @@
             <h2 class="text-xl font-bold mb-4 flex items-center text-gray-800"><i class="fas fa-microchip w-8 text-indigo-500"></i> Engine Konfiguration</h2>
             
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <!-- Links: KI Modell -->
                 <div class="space-y-3">
                     <label class="block text-sm font-bold text-gray-700">KI Modell (LLM)</label>
                     <select id="aiModel" class="input-premium bg-gray-50 font-medium" onchange="toggleCustomModel()">
@@ -48,7 +43,7 @@
                         <option value="custom">Benutzerdefiniert (z.B. GPT-5)...</option> 
                     </select>
                     
-                    <div id="customModelField" class="hidden animate-fade-in">
+                    <div id="customModelField" class="hidden">
                         <input type="text" id="customModelName" class="input-premium border-indigo-300 bg-indigo-50" placeholder="Exakte Modell-ID eingeben">
                     </div>
                     
@@ -56,7 +51,7 @@
                         <label class="block text-sm font-bold text-gray-700 mb-1">OpenAI API Key <span class="text-red-500">*</span></label>
                         <div class="flex gap-2">
                             <input type="password" id="apiKey" class="input-premium" placeholder="sk-..." required>
-                            <button type="button" onclick="testRealConnection()" id="testBtn" class="bg-gray-800 text-white px-4 py-2 rounded-lg hover:bg-gray-900 shadow-md transition">
+                            <button type="button" onclick="testRealConnection()" id="testBtn" class="bg-gray-800 text-white px-4 py-2 rounded-lg hover:bg-gray-900 shadow-md">
                                 <i class="fas fa-plug mr-1"></i> Test
                             </button>
                         </div>
@@ -64,7 +59,6 @@
                     </div>
                 </div>
 
-                <!-- Rechts: Audio Engine -->
                 <div class="space-y-3">
                     <label class="block text-sm font-bold text-gray-700">Sprachausgabe (TTS)</label>
                     <select id="audioEngine" class="input-premium bg-gray-50 font-medium" onchange="toggleAudioSettings()">
@@ -84,7 +78,6 @@
                     </div>
 
                     <div id="elevenLabsSettings" class="hidden p-3 bg-gray-50 rounded-lg border border-gray-200 space-y-2">
-                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">ElevenLabs Setup</label>
                         <input type="text" id="elevenApiKey" class="w-full text-sm border border-gray-300 rounded p-2 focus:ring-indigo-500" placeholder="ElevenLabs API Key">
                         <input type="text" id="elevenVoiceId" class="w-full text-sm border border-gray-300 rounded p-2 focus:ring-indigo-500" placeholder="Voice ID (z.B. pNInz6obpgDQGcFmaJcg)">
                     </div>
@@ -114,12 +107,8 @@
                 <div>
                     <label class="block text-sm font-medium text-gray-700">Niveau (GER)</label>
                     <select id="level" class="input-premium">
-                        <option value="A1">A1 (Anfänger)</option>
-                        <option value="A2">A2 (Grundlagen)</option>
-                        <option value="B1">B1 (Mittelstufe)</option>
-                        <option value="B2">B2 (Fortgeschritten)</option>
-                        <option value="C1">C1 (Fachkundig)</option>
-                        <option value="C2">C2 (Muttersprachler)</option>
+                        <option value="A1">A1</option><option value="A2">A2</option><option value="B1">B1</option>
+                        <option value="B2">B2</option><option value="C1">C1</option><option value="C2">C2</option>
                     </select>
                 </div>
             </div>
@@ -131,25 +120,32 @@
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700">Rolle der KI</label>
-                    <input type="text" id="roleDesc" class="input-premium" placeholder="z.B. Strenger Chef, Geduldige Oma..." required oninput="generateAutoIntro()">
+                    <input type="text" id="roleDesc" class="input-premium" placeholder="z.B. Strenger Chef" required oninput="generateAutoIntro()">
                 </div>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4 p-4 bg-gray-50 rounded-lg">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4 p-4 bg-gray-50 rounded-lg">
                 <div>
                     <label class="block text-sm font-bold text-gray-700">Pädagogischer Fokus</label>
                     <select id="pedagogicFocus" class="w-full text-sm border-gray-300 rounded p-2 focus:ring-indigo-500">
-                        <option value="fluency">Flüssigkeit (Gespräch am Laufen halten)</option>
-                        <option value="vocabulary">Wortschatz-Ausbau (Neue Synonyme anbieten)</option>
-                        <option value="accuracy">Grammatik-Präzision (Strikter)</option>
+                        <option value="fluency">Flüssigkeit</option>
+                        <option value="vocabulary">Wortschatz-Ausbau</option>
+                        <option value="accuracy">Grammatik-Präzision</option>
                     </select>
                 </div>
                 <div>
                     <label class="block text-sm font-bold text-gray-700">Korrektur-Modus</label>
                     <select id="correctionMode" class="w-full text-sm border-gray-300 rounded p-2 focus:ring-indigo-500">
-                        <option value="immediate">Sofort nach jedem Sprechzug</option>
-                        <option value="end">Nur am Ende im PDF-Protokoll</option>
-                        <option value="none">Keine Korrektur (freies Sprechen)</option>
+                        <option value="immediate">Sofort (sokratisch)</option>
+                        <option value="end">Am Ende (PDF)</option>
+                        <option value="none">Keine Korrektur</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-bold text-indigo-700">Text-Modus (Schüler-Sicht)</label>
+                    <select id="textMode" class="w-full text-sm border-indigo-300 bg-indigo-50 rounded p-2 focus:ring-indigo-500">
+                        <option value="visible">Mitlesen (Sprechblasen zeigen KI Text)</option>
+                        <option value="hidden">Blindflug (Text der KI bleibt verborgen)</option>
                     </select>
                 </div>
             </div>
@@ -163,24 +159,19 @@
             </div>
         </div>
 
-        <!-- 3. Echte KI-Fragen Generator -->
+        <!-- 3. KI-Fragen -->
         <div class="section-card border-l-4 border-blue-500">
             <div class="flex justify-between items-center mb-4">
-                <h2 class="text-xl font-bold flex items-center text-gray-800"><i class="fas fa-list-ol w-8 text-blue-500"></i> Gezielte Fragen (Gesprächsleitfaden)</h2>
+                <h2 class="text-xl font-bold flex items-center text-gray-800"><i class="fas fa-list-ol w-8 text-blue-500"></i> Gesprächsleitfaden</h2>
             </div>
-            
-            <div id="questionsContainer" class="space-y-3 mb-4 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
-                <!-- Fragen Liste -->
-            </div>
-            
+            <div id="questionsContainer" class="space-y-3 mb-4 max-h-[400px] overflow-y-auto pr-2"></div>
             <div class="flex gap-4 border-t pt-4 border-gray-100 items-center">
                 <button type="button" onclick="addQuestionUI('')" class="text-indigo-600 font-bold hover:text-indigo-800 text-sm flex items-center"><i class="fas fa-plus-circle mr-2"></i> Leere Frage hinzufügen</button>
-                
                 <div class="ml-auto flex items-center gap-2 bg-blue-50 p-2 rounded-lg border border-blue-100">
                     <span class="text-xs font-bold text-blue-800">API-Generierung:</span>
                     <input type="number" id="questionCount" min="1" max="10" value="4" class="w-12 border border-blue-300 rounded text-center text-sm">
-                    <button type="button" onclick="generateRealAIQuestions()" id="genQuestionsBtn" class="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700 font-bold shadow-sm transition flex items-center">
-                        <i class="fas fa-brain mr-2"></i> Sinnvolle Leitfragen generieren
+                    <button type="button" onclick="generateRealAIQuestions()" id="genQuestionsBtn" class="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700 font-bold">
+                        <i class="fas fa-brain mr-2"></i> Generieren
                     </button>
                 </div>
             </div>
@@ -189,12 +180,9 @@
         <!-- 4. Lernhilfen -->
         <div class="section-card border-l-4 border-green-500">
             <h2 class="text-xl font-bold mb-4 flex items-center text-gray-800"><i class="fas fa-graduation-cap w-8 text-green-500"></i> Hilfen & Layout</h2>
-            
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                
-                <!-- Links: Content Listen -->
+                <!-- Links: Content -->
                 <div class="space-y-4">
-                    <!-- Vokabeln -->
                     <div>
                         <label class="flex justify-between items-center text-sm font-medium text-gray-700 mb-1">
                             <span>Pflichtvokabeln</span>
@@ -204,45 +192,40 @@
                         </label>
                         <div class="flex gap-2 mb-2">
                             <input type="text" id="vocabInput" class="input-premium py-1.5" placeholder="Neues Wort..." onkeypress="if(event.key === 'Enter') { event.preventDefault(); addItem('vocab'); }">
-                            <button type="button" onclick="addItem('vocab')" class="bg-indigo-100 text-indigo-700 px-3 rounded hover:bg-indigo-200"><i class="fas fa-plus"></i></button>
+                            <button type="button" onclick="addItem('vocab')" class="bg-indigo-100 text-indigo-700 px-3 rounded"><i class="fas fa-plus"></i></button>
                         </div>
                         <div id="vocabTags" class="flex flex-wrap p-2 min-h-[40px] bg-gray-50 rounded border border-gray-200"></div>
                     </div>
-
-                    <!-- Redemittel -->
                     <div>
                         <label class="flex justify-between items-center text-sm font-medium text-gray-700 mb-1">
-                            <span>Redemittel / Chunking</span>
+                            <span>Redemittel</span>
                             <label class="flex items-center space-x-2 text-xs text-gray-500 cursor-pointer">
                                 <input type="checkbox" id="showScaffolds" checked class="rounded text-indigo-600"> <span>Schüler zeigen</span>
                             </label>
                         </label>
                         <div class="flex gap-2 mb-2">
                             <input type="text" id="scaffoldInput" class="input-premium py-1.5" placeholder="Satzanfang..." onkeypress="if(event.key === 'Enter') { event.preventDefault(); addItem('scaffold'); }">
-                            <button type="button" onclick="addItem('scaffold')" class="bg-indigo-100 text-indigo-700 px-3 rounded hover:bg-indigo-200"><i class="fas fa-plus"></i></button>
+                            <button type="button" onclick="addItem('scaffold')" class="bg-indigo-100 text-indigo-700 px-3 rounded"><i class="fas fa-plus"></i></button>
                         </div>
                         <div id="scaffoldTags" class="flex flex-col gap-1 p-2 min-h-[40px] bg-gray-50 rounded border border-gray-200"></div>
                     </div>
                 </div>
 
-                <!-- Rechts: Timer & UI -->
+                <!-- Rechts: Timer -->
                 <div class="space-y-6 bg-gray-50 p-4 rounded-lg border border-gray-200">
-                    
                     <div>
                         <label class="flex items-center space-x-3 cursor-pointer mb-3">
                             <input type="checkbox" id="timerEnabled" class="h-4 w-4 text-indigo-600 rounded" onchange="document.getElementById('timerSettings').classList.toggle('opacity-50', !this.checked)">
                             <span class="font-bold text-gray-800">Timer Limit setzen</span>
                         </label>
-                        
                         <div id="timerSettings" class="opacity-50 transition-opacity">
                             <label class="block text-sm text-gray-700 mb-2 flex justify-between">
                                 <span>Sekunden pro Antwort:</span>
                                 <span id="timerValue" class="text-indigo-600 bg-indigo-100 px-2 rounded font-mono">60s</span>
                             </label>
-                            <input type="range" id="questionTimer" min="30" max="300" step="10" value="60" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-indigo-600" oninput="document.getElementById('timerValue').textContent = this.value + 's'">
+                            <input type="range" id="questionTimer" min="30" max="300" step="10" value="60" class="w-full h-2 bg-gray-200 rounded-lg accent-indigo-600" oninput="document.getElementById('timerValue').textContent = this.value + 's'">
                         </div>
                     </div>
-
                     <div class="pt-4 border-t border-gray-200">
                         <label class="flex items-center space-x-3 cursor-pointer">
                             <input type="checkbox" id="aiFollowUp" checked class="h-4 w-4 text-indigo-600 border-gray-300 rounded">
@@ -253,277 +236,133 @@
             </div>
         </div>
 
-        <!-- Footer Action -->
         <div class="sticky bottom-4 z-20">
-            <button type="submit" class="w-full bg-gradient-to-r from-indigo-800 to-indigo-600 hover:from-indigo-900 hover:to-indigo-700 text-white font-bold py-4 rounded-xl shadow-xl transition transform hover:-translate-y-1 flex justify-center items-center text-lg ring-4 ring-white">
-                <i class="fas fa-link mr-3"></i> Schüler-Tool Generieren (Secure Link)
+            <button type="submit" class="w-full bg-gradient-to-r from-indigo-800 to-indigo-600 hover:from-indigo-900 hover:to-indigo-700 text-white font-bold py-4 rounded-xl shadow-xl transition transform hover:-translate-y-1 flex justify-center items-center text-lg">
+                <i class="fas fa-link mr-3"></i> Schüler-Tool Generieren
             </button>
         </div>
 
-        <!-- Result Area -->
-        <div id="resultArea" class="hidden mt-6 bg-green-50 p-6 rounded-xl border border-green-200 shadow-sm animate-fade-in">
+        <div id="resultArea" class="hidden mt-6 bg-green-50 p-6 rounded-xl border border-green-200 shadow-sm">
             <h3 class="text-green-800 font-bold mb-2 flex items-center"><i class="fas fa-check-circle mr-2"></i> Session bereit für Schüler!</h3>
             <div class="flex items-center gap-2 bg-white p-2 text-sm rounded border border-green-300">
                 <input type="text" id="studentLink" readonly class="flex-1 text-gray-600 font-mono outline-none bg-transparent" value="...">
                 <button type="button" onclick="copyLink()" class="bg-green-100 text-green-700 px-3 py-2 rounded font-bold hover:bg-green-200 uppercase">Kopieren</button>
-                <a id="openLinkBtn" href="#" target="_blank" class="bg-indigo-100 text-indigo-700 px-3 py-2 rounded font-bold hover:bg-indigo-200 uppercase"><i class="fas fa-external-link-alt"></i> Testen</a>
+                <a id="openLinkBtn" href="#" target="_blank" class="bg-indigo-100 text-indigo-700 px-3 py-2 rounded font-bold hover:bg-indigo-200 uppercase"><i class="fas fa-external-link-alt"></i></a>
             </div>
         </div>
-
         </form>
     </div>
 
     <script>
-        // --- DATA STATE ---
-        let vocabList = [];
-        let scaffoldList = [];
+        let vocabList = []; let scaffoldList = [];
+        window.onload = () => { addQuestionUI("Konnten Sie das Vorbereitungsmaterial durchlesen?"); }
 
-        // --- INIT ---
-        window.onload = () => {
-             addQuestionUI("Konnten Sie das Vorbereitungsmaterial durchlesen?");
-        }
-
-        // --- UI TOGGLES ---
         function toggleCustomModel() {
-            const s = document.getElementById('aiModel').value === 'custom';
-            document.getElementById('customModelField').classList.toggle('hidden', !s);
+            document.getElementById('customModelField').classList.toggle('hidden', document.getElementById('aiModel').value !== 'custom');
         }
-
         function toggleAudioSettings() {
             const e = document.getElementById('audioEngine').value;
             document.getElementById('openaiVoiceSettings').classList.toggle('hidden', e !== 'openai');
             document.getElementById('elevenLabsSettings').classList.toggle('hidden', e !== 'elevenlabs');
         }
 
-        // --- CORE: REAL API TEST ---
         async function testRealConnection() {
             const key = document.getElementById('apiKey').value;
             const status = document.getElementById('connectionStatus');
             const btn = document.getElementById('testBtn');
-
-            if(!key || !key.startsWith('sk-')) {
-                status.innerHTML = '<span class="text-red-500"><i class="fas fa-exclamation-triangle"></i> Ungültiges Key-Format!</span>';
-                return;
-            }
-
+            if(!key || !key.startsWith('sk-')) { status.innerHTML = '<span class="text-red-500">Ungültiges Key-Format!</span>'; return; }
             btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
-            status.innerHTML = '<span class="text-gray-500">Prüfe Verfizierung bei OpenAI...</span>';
-
+            status.innerHTML = '<span class="text-gray-500">Prüfe...</span>';
             try {
-                // Wir fragen die verfügbaren Modelle ab - ein leichter, kostenloser Call um Auth zu prüfen
-                const response = await fetch('https://api.openai.com/v1/models', {
-                    method: 'GET',
-                    headers: { 'Authorization': `Bearer ${key}` }
-                });
-
-                if(response.ok) {
-                    status.innerHTML = '<span class="text-green-600 font-bold"><i class="fas fa-check-circle"></i> Key ist gültig & aktiv!</span>';
-                } else {
-                    const err = await response.json();
-                    status.innerHTML = `<span class="text-red-500 font-bold"><i class="fas fa-times-circle"></i> Fehler: ${err.error.message}</span>`;
-                }
-            } catch(e) {
-                status.innerHTML = '<span class="text-red-500 font-bold"><i class="fas fa-wifi"></i> Netzwerkfehler.</span>';
-            }
+                const response = await fetch('https://api.openai.com/v1/models', { method: 'GET', headers: { 'Authorization': `Bearer ${key}` } });
+                if(response.ok) { status.innerHTML = '<span class="text-green-600 font-bold"><i class="fas fa-check-circle"></i> Key gültig!</span>'; } 
+                else { const err = await response.json(); status.innerHTML = `<span class="text-red-500">Fehler: ${err.error.message}</span>`; }
+            } catch(e) { status.innerHTML = '<span class="text-red-500">Netzwerkfehler.</span>'; }
             btn.innerHTML = '<i class="fas fa-plug mr-1"></i> Test';
         }
 
-        // --- CORE: AUTO INTRO ---
         function generateAutoIntro() {
             const name = document.getElementById('studentName').value || "[Name]";
             const topic = document.getElementById('topic').value || "[Thema]";
             const role = document.getElementById('roleDesc').value || "dein Gesprächspartner";
-            const lang = document.getElementById('targetLanguage').value;
-
-            // In echter App könnte man hier je nach Zielsprache den String anpassen. 
-            // Vorerst Deutsch generiert, KI spricht es dann mit richtigem Akzent.
-            document.getElementById('introText').value = `Hallo ${name}! Schön, dass du da bist. Ich bin heute ${role} und wir trainieren gemeinsam die Situation: ${topic}. Wenn du bereit bist, lass uns anfangen!`;
+            document.getElementById('introText').value = `Hallo ${name}! Schön, dass du da bist. Ich bin heute ${role} und wir trainieren gemeinsam das Thema: ${topic}. Wenn du bereit bist, lass uns anfangen!`;
         }
 
-        // --- CORE: REAL AI QUESTIONS (Gesprächsleitfaden) ---
         function addQuestionUI(text = "") {
-            const container = document.getElementById('questionsContainer');
             const id = 'q-' + Date.now() + Math.floor(Math.random() * 100);
-            
             const html = `
-                <div class="flex gap-2 items-center bg-white p-3 rounded border border-gray-200 shadow-sm group hover:border-blue-400 transition mb-2" id="${id}">
-                    <i class="fas fa-grip-lines text-gray-300 cursor-move" title="Verschieben"></i>
-                    <span class="text-blue-500 font-bold text-xs w-4">Q:</span>
-                    <input type="text" value="${text}" class="question-input flex-1 bg-transparent border border-gray-100 rounded p-1 text-sm focus:ring-1 focus:ring-blue-500 focus:outline-none" placeholder="Definiere die Leitfrage...">
-                    <div class="opacity-30 group-hover:opacity-100 flex gap-2 transition">
-                         <button type="button" onclick="moveQ('${id}', -1)" class="text-gray-500 hover:text-blue-600"><i class="fas fa-arrow-up"></i></button>
-                         <button type="button" onclick="moveQ('${id}', 1)" class="text-gray-500 hover:text-blue-600"><i class="fas fa-arrow-down"></i></button>
-                         <button type="button" onclick="document.getElementById('${id}').remove()" class="text-red-400 hover:text-red-600 ml-2"><i class="fas fa-trash"></i></button>
-                    </div>
-                </div>
-            `;
-            container.insertAdjacentHTML('beforeend', html);
-        }
-
-        function moveQ(id, dir) {
-            const el = document.getElementById(id);
-            if(dir === -1 && el.previousElementSibling) el.parentNode.insertBefore(el, el.previousElementSibling);
-            if(dir === 1 && el.nextElementSibling) el.parentNode.insertBefore(el.nextElementSibling, el);
+                <div class="flex gap-2 items-center bg-white p-3 rounded border border-gray-200 group mb-2" id="${id}">
+                    <span class="text-blue-500 font-bold w-4">Q:</span>
+                    <input type="text" value="${text}" class="question-input flex-1 bg-transparent border-none text-sm focus:outline-none" placeholder="Definiere Leitfrage...">
+                    <button type="button" onclick="document.getElementById('${id}').remove()" class="text-red-400 hover:text-red-600"><i class="fas fa-trash"></i></button>
+                </div>`;
+            document.getElementById('questionsContainer').insertAdjacentHTML('beforeend', html);
         }
 
         async function generateRealAIQuestions() {
             const key = document.getElementById('apiKey').value;
-            const topic = document.getElementById('topic').value;
-            const role = document.getElementById('roleDesc').value;
-            const level = document.getElementById('level').value;
-            const lang = document.getElementById('targetLanguage').value;
-            const count = document.getElementById('questionCount').value;
-            
+            if(!key || !document.getElementById('topic').value) return alert("API Key und Thema werden benötigt.");
             const btn = document.getElementById('genQuestionsBtn');
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Generiere...'; btn.disabled = true;
 
-            if(!key) return alert("Ohne API Key kann ich keine Fragen generieren!");
-            if(!topic || !role) return alert("Bitte fülle zuerst Thema und Rolle aus.");
-
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Erdenke Leitfaden...';
-            btn.disabled = true;
-
-            const prompt = `Du bist ein Sprachexperte. Generiere exakt ${count} aufeinander aufbauende Gesprächs-Leitfragen für ein Sprachtraining.
-Zielsprache: ${lang}.
-Niveaustufe: ${level}.
-Szenario/Thema: ${topic}.
-Rolle der KI: ${role}.
-Regel 1: Keine platten Fragen wie 'Erzähl mir was von dir'. Sei spezifisch für die Rolle.
-Regel 2: Gib NUR ein striktes JSON Array aus Strings zurück, nichts anderes. Z.B. ["Frage 1", "Frage 2"]`;
-
+            const prompt = `Generiere ${document.getElementById('questionCount').value} Gesprächs-Leitfragen. Ziel: ${document.getElementById('targetLanguage').value}, Niveau: ${document.getElementById('level').value}, Thema: ${document.getElementById('topic').value}, Rolle: ${document.getElementById('roleDesc').value}. Gib NUR ein JSON Array aus Strings zurück.`;
             try {
                 const response = await fetch('https://api.openai.com/v1/chat/completions', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}` },
-                    body: JSON.stringify({
-                        model: "gpt-4o",
-                        messages: [{ role: "system", content: prompt }],
-                        temperature: 0.7
-                    })
+                    method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}` },
+                    body: JSON.stringify({ model: "gpt-4o", messages: [{ role: "system", content: prompt }] })
                 });
-
-                if(!response.ok) throw new Error("API Fehler");
-                
                 const result = await response.json();
-                let txt = result.choices[0].message.content.trim();
-                
-                // Remove markdown code blocks if GPT added them
-                if (txt.startsWith('```json')) { txt = txt.replace(/```json/g, '').replace(/```/g, '').trim(); }
-
+                let txt = result.choices[0].message.content.trim().replace(/```json/g, '').replace(/```/g, '').trim();
                 const questions = JSON.parse(txt);
-                
-                document.getElementById('questionsContainer').innerHTML = ""; // Clear old
+                document.getElementById('questionsContainer').innerHTML = "";
                 questions.forEach(q => addQuestionUI(q));
-
-            } catch(e) {
-                alert("Fehler bei der Generierung. Prüfe deinen API Key.");
-                console.error(e);
-            }
-
-            btn.innerHTML = '<i class="fas fa-brain mr-2"></i> Sinnvolle Leitfragen generieren';
-            btn.disabled = false;
+            } catch(e) { alert("Fehler bei Generierung."); }
+            btn.innerHTML = '<i class="fas fa-brain mr-2"></i> Generieren'; btn.disabled = false;
         }
 
-        // --- LIST MANAGEMENT (Vokabeln & Redemittel) ---
         function addItem(type) {
             const input = document.getElementById(type + 'Input');
-            const val = input.value.trim();
-            if(!val) return;
-
-            if(type === 'vocab') {
-                vocabList.push(val);
-                renderLists();
-            } else {
-                scaffoldList.push(val);
-                renderLists();
-            }
-            input.value = '';
+            if(!input.value.trim()) return;
+            if(type === 'vocab') vocabList.push(input.value.trim()); else scaffoldList.push(input.value.trim());
+            renderLists(); input.value = '';
         }
 
-        function removeItem(type, index) {
-            if(type === 'vocab') vocabList.splice(index, 1);
-            else scaffoldList.splice(index, 1);
+        function removeItem(type, i) {
+            if(type === 'vocab') vocabList.splice(i, 1); else scaffoldList.splice(i, 1);
             renderLists();
         }
 
         function renderLists() {
-            const vBox = document.getElementById('vocabTags');
-            vBox.innerHTML = vocabList.map((v, i) => `<span class="chip">${v} <button type="button" onclick="removeItem('vocab', ${i})"><i class="fas fa-times-circle ml-1"></i></button></span>`).join('');
-            
-            const sBox = document.getElementById('scaffoldTags');
-            sBox.innerHTML = scaffoldList.map((s, i) => `<div class="w-full bg-white px-2 py-1 rounded text-sm text-gray-700 flex justify-between items-center shadow-sm"><span>${s}</span> <button type="button" class="text-red-400 hover:text-red-600" onclick="removeItem('scaffold', ${i})"><i class="fas fa-trash-alt"></i></button></div>`).join('');
+            document.getElementById('vocabTags').innerHTML = vocabList.map((v, i) => `<span class="chip">${v} <button type="button" onclick="removeItem('vocab', ${i})"><i class="fas fa-times-circle"></i></button></span>`).join('');
+            document.getElementById('scaffoldTags').innerHTML = scaffoldList.map((s, i) => `<div class="w-full bg-white px-2 py-1 rounded text-sm text-gray-700 flex justify-between shadow-sm"><span>${s}</span> <button type="button" class="text-red-400" onclick="removeItem('scaffold', ${i})"><i class="fas fa-trash-alt"></i></button></div>`).join('');
         }
 
-        // --- BUILD URL ---
         function generateStudentLink() {
-            if(!document.getElementById('apiKey').value) {
-                alert("Bitte gib deinen API Key ein."); return;
-            }
-
+            if(!document.getElementById('apiKey').value) return alert("Bitte API Key eingeben.");
             const qs = Array.from(document.querySelectorAll('.question-input')).map(input => input.value).filter(v => v.trim() !== "");
-            if(qs.length === 0) {
-                alert("Bitte füge mindestens eine Leitfrage hinzu!"); return;
-            }
-
-            // KI Model Select Logik
-            let finalModel = document.getElementById('aiModel').value;
-            if(finalModel === 'custom') {
-                finalModel = document.getElementById('customModelName').value;
-                if(!finalModel) return alert("Bitte gib eine Custom Model-ID an.");
-            }
+            let fModel = document.getElementById('aiModel').value === 'custom' ? document.getElementById('customModelName').value : document.getElementById('aiModel').value;
 
             const config = {
-                // Teacher Setup
-                apiKey: document.getElementById('apiKey').value,
-                model: finalModel,
-                
-                // Audio
-                audioEngine: document.getElementById('audioEngine').value,
-                openaiVoice: document.getElementById('openaiVoice').value,
-                elevenApiKey: document.getElementById('elevenApiKey').value,
-                elevenVoiceId: document.getElementById('elevenVoiceId').value,
-
-                // Content Defaults
-                studentName: document.getElementById('studentName').value,
-                language: document.getElementById('targetLanguage').value,
-                level: document.getElementById('level').value,
-                topic: document.getElementById('topic').value,
-                role: document.getElementById('roleDesc').value,
-                intro: document.getElementById('introText').value,
-                questions: qs,
-                
-                // Pedagogy Setup
-                focus: document.getElementById('pedagogicFocus').value,
-                correction: document.getElementById('correctionMode').value,
-                followUp: document.getElementById('aiFollowUp').checked,
-                
-                // Resources
-                vocab: vocabList,
-                scaffolds: scaffoldList,
-                showVocab: document.getElementById('showVocab').checked,
-                showScaffolds: document.getElementById('showScaffolds').checked,
-
-                // UX / Limits
-                hasTimer: document.getElementById('timerEnabled').checked,
-                timer: document.getElementById('questionTimer').value
+                apiKey: document.getElementById('apiKey').value, model: fModel,
+                audioEngine: document.getElementById('audioEngine').value, openaiVoice: document.getElementById('openaiVoice').value,
+                elevenApiKey: document.getElementById('elevenApiKey').value, elevenVoiceId: document.getElementById('elevenVoiceId').value,
+                studentName: document.getElementById('studentName').value, language: document.getElementById('targetLanguage').value,
+                level: document.getElementById('level').value, topic: document.getElementById('topic').value,
+                role: document.getElementById('roleDesc').value, intro: document.getElementById('introText').value, questions: qs,
+                focus: document.getElementById('pedagogicFocus').value, correction: document.getElementById('correctionMode').value,
+                textMode: document.getElementById('textMode').value, followUp: document.getElementById('aiFollowUp').checked,
+                vocab: vocabList, scaffolds: scaffoldList, showVocab: document.getElementById('showVocab').checked, showScaffolds: document.getElementById('showScaffolds').checked,
+                hasTimer: document.getElementById('timerEnabled').checked, timer: document.getElementById('questionTimer').value
             };
-
-            const jsonString = JSON.stringify(config);
-            const encodedConfig = encodeURIComponent(btoa(unescape(encodeURIComponent(jsonString)))); 
-            
-            // Link zusammenbauen (Setzt voraus, dass Backend-Skript 'student.html' im selben Ordner liegt)
-            const url = `${window.location.origin}${window.location.pathname.replace('index.html','')}student.html?config=${encodedConfig}`;
-            
-            document.getElementById('studentLink').value = url;
-            document.getElementById('openLinkBtn').href = url;
-            
-            document.getElementById('resultArea').classList.remove('hidden');
-            document.getElementById('resultArea').scrollIntoView({ behavior: 'smooth' });
+            const b64 = encodeURIComponent(btoa(unescape(encodeURIComponent(JSON.stringify(config))))); 
+            const url = `${window.location.origin}${window.location.pathname.replace('index.html','')}student.html?config=${b64}`;
+            document.getElementById('studentLink').value = url; document.getElementById('openLinkBtn').href = url;
+            document.getElementById('resultArea').classList.remove('hidden'); document.getElementById('resultArea').scrollIntoView();
         }
 
         function copyLink() {
             const input = document.getElementById("studentLink");
-            input.select(); navigator.clipboard.writeText(input.value);
-            alert("✅ Secure Link kopiert! Sende ihn an den Schüler.");
+            input.select(); navigator.clipboard.writeText(input.value); alert("✅ Link kopiert!");
         }
     </script>
 </body>
