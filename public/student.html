@@ -54,6 +54,13 @@
             box-shadow: inset 0 0 50px 10px rgba(20, 184, 166, 0.4) !important;
             transition: none !important;
         }
+
+        /* Fix für die Bubble-Formatierung (Zeilenumbrüche) */
+        .chat-bubble-content {
+            white-space: pre-wrap; 
+            word-wrap: break-word; 
+            overflow-wrap: break-word;
+        }
     </style>
 </head>
 <body class="flex flex-col bg-slate-50 dark:bg-darkbg text-slate-800 dark:text-slate-100 relative">
@@ -90,7 +97,8 @@
                 </div>
             </div>
 
-            <div id="chatHistory" class="flex-1 overflow-y-auto px-4 md:px-12 pb-[140px] space-y-6 scroll-hide"></div>
+            <!-- Fix: Volle Breite erzwungen w-full, und flex-col für sauberes Stacking -->
+            <div id="chatHistory" class="flex-1 overflow-y-auto px-4 md:px-12 pb-[140px] space-y-6 scroll-hide flex flex-col w-full"></div>
 
             <div class="absolute bottom-0 left-0 w-full h-[120px] bg-gradient-to-t from-slate-50 dark:from-darkbg to-transparent flex flex-col items-center justify-end pb-6 z-50">
                 <div id="statusBadge" class="mb-3 px-4 py-1 rounded-full bg-slate-900/10 dark:bg-black/40 backdrop-blur font-semibold text-[11px] uppercase tracking-wide opacity-0 transition-opacity">
@@ -242,7 +250,6 @@
             recognition.continuous = true; 
             recognition.interimResults = true; 
             
-            // Setzt die Native Web-Engine auf die Lehrersprache, damit das Transkript klappt!
             if(C.language === 'Englisch') recognition.lang = 'en-US';
             else if(C.language === 'Spanisch') recognition.lang = 'es-ES';
             else if(C.language === 'Französisch') recognition.lang = 'fr-FR';
@@ -268,7 +275,7 @@
                     if(!transNode) {
                         addChatBubble('Student', showText, 'liveTrans');
                     } else {
-                        transNode.querySelector('div').innerText = showText;
+                        transNode.querySelector('.chat-bubble-content').innerText = showText;
                         const box = document.getElementById('chatHistory');
                         if(box) box.scrollTo({ top: box.scrollHeight, behavior: 'smooth' });
                     }
@@ -325,13 +332,15 @@
             if(text === '...') displayText = '<i class="fas fa-ellipsis-h animate-pulse"></i>';
 
             const align = isCoach ? 'justify-start' : 'justify-end';
+            
+            // Fix: w-fit und max-w-[85%] für saubere, nicht-gestreckte Boxen
             const color = isCoach 
                 ? 'bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 border border-slate-200 dark:border-slate-700 shadow-sm rounded-tl-sm' 
                 : 'bg-indigo-600 text-white rounded-tr-sm shadow-md';
             
             const html = `
                 <div class="flex w-full ${align} bubble-anim" ${id ? `id="${id}"` : ''}>
-                    <div class="max-w-[85%] rounded-2xl p-4 text-[15px] leading-relaxed ${color}">
+                    <div class="w-fit max-w-[85%] rounded-2xl p-4 text-[15px] leading-relaxed chat-bubble-content ${color}">
                         ${displayText}
                     </div>
                 </div>`;
@@ -369,7 +378,6 @@
         async function playTTS(text, callback) {
             S.speaking = true; document.body.classList.add('is-speaking');
             
-            // 11 Labs API
             if(C.audioEngine === 'elevenlabs' && C.elevenApiKey && C.elevenVoiceId) {
                 try {
                     const res = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${C.elevenVoiceId}`, {
@@ -381,7 +389,6 @@
                 } catch(e) { console.warn("11L Error"); }
             }
 
-            // OpenAI API
             if(C.audioEngine === 'openai' && C.apiKey) {
                 try {
                     const res = await fetch("https://api.openai.com/v1/audio/speech", {
@@ -393,7 +400,6 @@
                 } catch(e) { console.warn("OAI Error, using browser TTS fallback"); }
             }
 
-            // Browser Fallback mit dynamischer Sprache (damit es z.B. französisch klingt!)
             speechSynthesis.cancel();
             const u = new SpeechSynthesisUtterance(text);
             
@@ -440,7 +446,7 @@
             let studentTextOriginal = S.finalTranscription.trim(); 
             
             // Fallback für den letzten erfassten Live-Schnipsel
-            if(studentTextOriginal === '' && transNode) studentTextOriginal = transNode.querySelector('div').innerText.trim();
+            if(studentTextOriginal === '' && transNode) studentTextOriginal = transNode.querySelector('.chat-bubble-content').innerText.trim();
             if(studentTextOriginal === '') studentTextOriginal = "*(Hat den Knopf gedrückt, aber nichts gesagt)*";
 
             if(transNode) transNode.removeAttribute('id'); 
@@ -476,7 +482,6 @@
 
         async function askGPT() {
             let messagesToSend = [...conversationHistory];
-            // Der Geheim-Prompt am Ende sichert den Fortlauf durch den Fragen-Leitfaden des Lehrers (in der richtigen Sprache)
             if(S.step < C.questions.length) {
                 messagesToSend.push({ role: "developer", content: `Beziehe dich auf die letzte Nachricht. Beende deine Antwort dann UNBEDINGT organisch in deiner Rolle IN DER ZIELSPRACHE, indem du genau folgende Leitfrage fließend einbaust: "${C.questions[S.step]}".` });
             } else {
@@ -532,7 +537,7 @@
         function unlockMic() {
             const btn = document.getElementById('micBtn');
             btn.className = 'mic-fab mic-idle'; btn.innerHTML = '<i class="fas fa-microphone"></i>'; btn.disabled = false;
-            setStatus('Tippe den Button und sprich', true);
+            setStatus('Tippen zum Starten', true);
         }
 
         function setStatus(msg, visible) {
@@ -561,7 +566,7 @@
             md += `--- Dialog-Verlauf ---\n\n`;
             S.log.forEach(r => { md += `**${r.s}:**\n${r.t}\n\n`; });
             
-            // Formulardaten sicher packen (URLSearchParams ist die sicherste Formspree-Methode)
+            // Formulardaten sicher packen
             const formData = new URLSearchParams();
             formData.append("Schueler", C.studentName || "Unbekannt");
             formData.append("Thema", C.topic || "Sitzung");
