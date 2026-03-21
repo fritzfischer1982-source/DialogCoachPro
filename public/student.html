@@ -56,6 +56,9 @@
 
         .chat-bubble-content { white-space: pre-wrap; word-wrap: break-word; overflow-wrap: break-word; }
         #browserWarning { display: none; }
+
+        /* Sender-Label über den Bubbles */
+        .bubble-label { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; opacity: 0.5; }
     </style>
 </head>
 <body class="flex flex-col bg-slate-50 dark:bg-darkbg text-slate-800 dark:text-slate-100 relative">
@@ -92,7 +95,7 @@
                 </div>
             </div>
 
-            <div id="chatHistory" class="flex-1 overflow-y-auto px-4 md:px-12 pb-[140px] space-y-6 scroll-hide flex flex-col w-full"></div>
+            <div id="chatHistory" class="flex-1 overflow-y-auto px-4 md:px-12 pb-[140px] scroll-hide flex flex-col w-full gap-2"></div>
 
             <div class="absolute bottom-0 left-0 w-full h-[120px] bg-gradient-to-t from-slate-50 dark:from-darkbg to-transparent flex flex-col items-center justify-end pb-6 z-50">
                 <div id="statusBadge" class="mb-3 px-4 py-1 rounded-full bg-slate-900/10 dark:bg-black/40 backdrop-blur font-semibold text-[11px] uppercase tracking-wide opacity-0 transition-opacity">
@@ -340,19 +343,28 @@
             if (hitFound) triggerFlash();
         }
 
+        // FIX: Sauberer Chat-Wechsel – jede Bubble bekommt ein Label und einen Abstand
         function addChatBubble(sender, text, id = null) {
             const isCoach = sender === 'Coach';
             const box = document.getElementById('chatHistory');
             if (!box) return;
-            const wrapper = document.createElement('div');
-            wrapper.className = `flex w-full ${isCoach ? 'justify-start' : 'justify-end'} bubble-anim`;
-            if (id) wrapper.id = id;
+
+            const group = document.createElement('div');
+            group.className = `flex flex-col w-full ${isCoach ? 'items-start' : 'items-end'} mb-4`;
+            if (id) group.id = id;
+
+            // Label über der Bubble
+            const label = document.createElement('div');
+            label.className = `bubble-label ${isCoach ? 'text-teal-600 dark:text-teal-400 pl-1' : 'text-indigo-400 pr-1'}`;
+            label.textContent = isCoach ? (C.role || 'Coach') : (C.studentName || 'Du');
+
             const bubble = document.createElement('div');
             bubble.className = `w-fit max-w-[85%] rounded-2xl p-4 text-[15px] leading-relaxed chat-bubble-content ${
                 isCoach
-                    ? 'bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 border border-slate-200 dark:border-slate-700 shadow-sm rounded-tl-sm'
-                    : 'bg-indigo-600 text-white rounded-tr-sm shadow-md'
+                    ? 'bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 border border-slate-200 dark:border-slate-700 shadow-sm rounded-tl-none'
+                    : 'bg-indigo-600 text-white rounded-tr-none shadow-md'
             }`;
+
             if (text === '...') {
                 bubble.innerHTML = '<i class="fas fa-ellipsis-h animate-pulse"></i>';
             } else if (isCoach && C.textMode === 'hidden') {
@@ -360,8 +372,11 @@
             } else {
                 bubble.textContent = text;
             }
-            wrapper.appendChild(bubble);
-            box.appendChild(wrapper);
+
+            // Label nur anzeigen wenn kein Typing-Indikator
+            if (text !== '...') group.appendChild(label);
+            group.appendChild(bubble);
+            box.appendChild(group);
             box.scrollTo({ top: box.scrollHeight, behavior: 'smooth' });
         }
 
@@ -482,15 +497,17 @@
         async function askGPT() {
             const messagesToSend = [...conversationHistory];
 
+            // FIX: "developer" → "system"
+            // FIX: S.step zeigt hier auf die NÄCHSTE Frage – noch nicht erhöht
             if (S.step < C.questions.length) {
                 messagesToSend.push({
                     role: "system",
-                    content: `Beziehe dich auf die letzte Nachricht des Schülers. Beende deine Antwort dann UNBEDINGT organisch in deiner Rolle IN DER ZIELSPRACHE, indem du genau folgende Leitfrage fließend einbaust: "${C.questions[S.step]}".`
+                    content: `Beziehe dich kurz auf die letzte Antwort des Schülers. Leite dann organisch zur nächsten Frage über: "${C.questions[S.step]}". Stelle NUR diese eine Frage und warte auf die Antwort.`
                 });
             } else {
                 messagesToSend.push({
                     role: "system",
-                    content: "Letzter Zug. Beende das Training freundlich und lobend in deiner Rolle."
+                    content: `Das war die letzte Frage. Beende jetzt das Training. Bedanke dich beim Schüler ${C.studentName}, gib ein kurzes ehrliches Lob und verabschiede dich freundlich. Stelle KEINE weitere Frage mehr.`
                 });
             }
 
@@ -521,6 +538,9 @@
 
                 addChatBubble('Coach', aiReply);
 
+                // FIX: S.step wird HIER erhöht – nach der KI-Antwort, nicht vorher
+                S.step++;
+
                 playTTS(aiReply, () => {
                     if (S.step >= C.questions.length) {
                         setTimeout(finish, 1000);
@@ -544,6 +564,8 @@
             conversationHistory.push({ role: "assistant", content: intro });
             setStatus('Coach spricht...', true);
             addChatBubble('Coach', intro);
+            // FIX: Mic bleibt gesperrt während Intro läuft
+            lockMic(true);
             playTTS(intro, () => { setTimeout(nextTeacherQuestion, 500); });
         }
 
@@ -554,8 +576,8 @@
             conversationHistory.push({ role: "assistant", content: text });
             addChatBubble('Coach', text);
             lockMic(true);
+            // FIX: S.step wird NICHT mehr hier erhöht
             playTTS(text, () => { unlockMic(); startTimer(); });
-            S.step++;
         }
 
         async function playTTS(text, callback) {
