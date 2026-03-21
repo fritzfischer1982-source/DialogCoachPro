@@ -335,4 +335,213 @@
                 // FIX: Über Proxy, kein API Key im Browser
                 const response = await fetch('/.netlify/functions/ai-proxy', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        type: 'chat',
+                        model: 'gpt-4o',
+                        messages: [{ role: 'system', content: prompt }]
+                    })
+                });
+                if (!response.ok) throw new Error();
+                const result = await response.json();
+                document.getElementById('introText').value = result.choices[0].message.content.trim();
+            } catch (e) {
+                // Fallback wenn API nicht erreichbar
+                document.getElementById('introText').value = fallbacks[lang] || fallbacks['Deutsch'];
+            }
+        }
+
+        function addQuestionUI(text = "") {
+            const id = 'q-' + Date.now() + Math.floor(Math.random() * 100);
+            const safeText = text.replace(/"/g, '&quot;');
+            const html = `
+                <div class="flex gap-2 items-center bg-white p-3 rounded border border-gray-200 group mb-2" id="${id}">
+                    <span class="text-blue-500 font-bold w-4">Q:</span>
+                    <input type="text" value="${safeText}" class="question-input flex-1 bg-transparent border-none text-sm focus:outline-none" placeholder="Definiere Leitfrage...">
+                    <button type="button" onclick="document.getElementById('${id}').remove()" class="text-red-400 hover:text-red-600"><i class="fas fa-trash"></i></button>
+                </div>`;
+            document.getElementById('questionsContainer').insertAdjacentHTML('beforeend', html);
+        }
+
+        async function generateRealAIQuestions() {
+            const topic = document.getElementById('topic').value;
+            const lang = document.getElementById('targetLanguage').value;
+            const level = document.getElementById('level').value;
+            const role = document.getElementById('roleDesc').value;
+            const count = document.getElementById('questionCount').value;
+
+            // FIX: Validierung vor dem API-Call
+            if (!topic) {
+                alert("Bitte zuerst ein Thema eingeben.");
+                return;
+            }
+
+            const btn = document.getElementById('genQuestionsBtn');
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Generiere...';
+            btn.disabled = true;
+
+            const prompt = `Generiere exakt ${count} Gesprächs-Leitfragen.
+Zielsprache: ${lang}. (WICHTIG: Die Fragen müssen auf ${lang} formuliert sein!).
+Niveau: ${level}.
+Thema: ${topic}.
+Rolle: ${role}.
+Regel 1: Verwende IN ALLEN FRAGEN zwingend das informelle "DU".
+Regel 2: Gib NUR ein striktes JSON Array aus Strings zurück. Keine Erklärung. Kein Markdown. Nur das Array.`;
+
+            try {
+                // FIX: Über Proxy, kein API Key im Browser
+                const response = await fetch('/.netlify/functions/ai-proxy', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        type: 'questions',
+                        model: 'gpt-4o',
+                        messages: [{ role: 'system', content: prompt }]
+                    })
+                });
+
+                if (!response.ok) throw new Error(`Server Fehler: ${response.status}`);
+
+                const result = await response.json();
+                let txt = result.choices[0].message.content.trim();
+
+                // FIX: Robusteres JSON-Parsing mit Bereinigung und klarer Fehlermeldung
+                txt = txt.replace(/```json/g, '').replace(/```/g, '').trim();
+
+                let questions;
+                try {
+                    questions = JSON.parse(txt);
+                    if (!Array.isArray(questions)) throw new Error("Kein Array");
+                } catch (parseErr) {
+                    console.error("Parse-Fehler. Rohantwort:", txt);
+                    alert(`Die KI hat kein gültiges Format zurückgegeben. Bitte nochmal versuchen.\n\nDetails: ${txt.substring(0, 100)}...`);
+                    return;
+                }
+
+                document.getElementById('questionsContainer').innerHTML = "";
+                questions.forEach(q => addQuestionUI(q));
+
+            } catch (e) {
+                alert(`Fehler bei der Generierung: ${e.message}`);
+            }
+
+            btn.innerHTML = '<i class="fas fa-brain mr-2"></i> Generieren';
+            btn.disabled = false;
+        }
+
+        function addItem(type) {
+            const input = document.getElementById(type + 'Input');
+            if (!input.value.trim()) return;
+            if (type === 'vocab') vocabList.push(input.value.trim());
+            else scaffoldList.push(input.value.trim());
+            renderLists();
+            input.value = '';
+        }
+
+        function removeItem(type, i) {
+            if (type === 'vocab') vocabList.splice(i, 1);
+            else scaffoldList.splice(i, 1);
+            renderLists();
+        }
+
+        function renderLists() {
+            document.getElementById('vocabTags').innerHTML = vocabList.map((v, i) =>
+                `<span class="chip">${v} <button type="button" onclick="removeItem('vocab', ${i})"><i class="fas fa-times-circle"></i></button></span>`
+            ).join('');
+            document.getElementById('scaffoldTags').innerHTML = scaffoldList.map((s, i) =>
+                `<div class="w-full bg-white px-2 py-1 rounded text-sm text-gray-700 flex justify-between shadow-sm">
+                    <span>${s}</span>
+                    <button type="button" class="text-red-400" onclick="removeItem('scaffold', ${i})"><i class="fas fa-trash-alt"></i></button>
+                </div>`
+            ).join('');
+        }
+
+        function generateStudentLink() {
+            // FIX: Validierung custom model
+            const modelSelect = document.getElementById('aiModel').value;
+            let finalModel = modelSelect;
+            if (modelSelect === 'custom') {
+                finalModel = document.getElementById('customModelName').value.trim();
+                if (!finalModel) {
+                    alert("Bitte eine Modell-ID eingeben wenn 'Benutzerdefiniert' gewählt ist.");
+                    document.getElementById('customModelName').focus();
+                    return;
+                }
+            }
+
+            // FIX: Validierung ElevenLabs
+            const audioEngine = document.getElementById('audioEngine').value;
+            if (audioEngine === 'elevenlabs') {
+                const elKey = document.getElementById('elevenApiKey').value.trim();
+                const elVoice = document.getElementById('elevenVoiceId').value.trim();
+                if (!elKey || !elVoice) {
+                    alert("Bitte ElevenLabs API Key und Voice ID eingeben.");
+                    return;
+                }
+            }
+
+            // FIX: Validierung Formspree ID
+            const formspreeId = document.getElementById('formspreeId').value.trim();
+            if (!formspreeId) {
+                alert("Bitte eine Formspree ID eingeben.");
+                document.getElementById('formspreeId').focus();
+                return;
+            }
+
+            const qs = Array.from(document.querySelectorAll('.question-input'))
+                .map(input => input.value)
+                .filter(v => v.trim() !== "");
+
+            // FIX: Kein apiKey mehr im Config-Objekt!
+            const config = {
+                model: finalModel,
+                audioEngine: audioEngine,
+                openaiVoice: document.getElementById('openaiVoice').value,
+                elevenApiKey: document.getElementById('elevenApiKey').value,
+                elevenVoiceId: document.getElementById('elevenVoiceId').value,
+                studentName: document.getElementById('studentName').value,
+                language: document.getElementById('targetLanguage').value,
+                level: document.getElementById('level').value,
+                topic: document.getElementById('topic').value,
+                role: document.getElementById('roleDesc').value,
+                intro: document.getElementById('introText').value,
+                questions: qs,
+                focus: document.getElementById('pedagogicFocus').value,
+                correction: document.getElementById('correctionMode').value,
+                textMode: document.getElementById('textMode').value,
+                followUp: document.getElementById('aiFollowUp').checked,
+                vocab: vocabList,
+                scaffolds: scaffoldList,
+                showVocab: document.getElementById('showVocab').checked,
+                showScaffolds: document.getElementById('showScaffolds').checked,
+                hasTimer: document.getElementById('timerEnabled').checked,
+                timer: document.getElementById('questionTimer').value,
+                formspreeId: formspreeId  // FIX: Formspree ID konfigurierbar
+            };
+
+            const b64 = encodeURIComponent(btoa(unescape(encodeURIComponent(JSON.stringify(config)))));
+            const url = `${window.location.origin}${window.location.pathname.replace('index.html', '')}student.html?config=${b64}`;
+
+            document.getElementById('studentLink').value = url;
+            document.getElementById('openLinkBtn').href = url;
+            document.getElementById('resultArea').classList.remove('hidden');
+            document.getElementById('resultArea').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function copyLink() {
+            const input = document.getElementById("studentLink");
+            navigator.clipboard.writeText(input.value).then(() => {
+                // FIX: Kein alert() – stattdessen kurzes visuelles Feedback
+                const btn = event.target.closest('button');
+                const original = btn.innerText;
+                btn.innerText = '✅ Kopiert!';
+                btn.classList.add('bg-green-300');
+                setTimeout(() => {
+                    btn.innerText = original;
+                    btn.classList.remove('bg-green-300');
+                }, 2000);
+            });
+        }
+    </script>
+</body>
+</html>
