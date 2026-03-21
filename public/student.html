@@ -17,7 +17,6 @@
     </script>
 
     <style>
-        /* FIX: dvh statt vh für besseres Mobile-Verhalten mit Soft-Keyboard */
         body { height: 100dvh; overflow: hidden; transition: background-color 0.3s, color 0.3s; }
         
         .avatar-ring { position: absolute; inset: -4px; border-radius: 50%; border: 2px solid transparent; transition: all 0.3s ease; }
@@ -56,8 +55,6 @@
         }
 
         .chat-bubble-content { white-space: pre-wrap; word-wrap: break-word; overflow-wrap: break-word; }
-
-        /* FIX: Browser-Warnung wenn SpeechRecognition nicht verfügbar */
         #browserWarning { display: none; }
     </style>
 </head>
@@ -125,7 +122,6 @@
         </div>
     </main>
 
-    <!-- FIX: Browser-Warnung für Firefox/Safari -->
     <div id="browserWarning" class="fixed inset-0 z-[200] flex items-center justify-center p-6 bg-slate-900/80 backdrop-blur-sm">
         <div class="bg-white dark:bg-darkpanel w-full max-w-md p-8 rounded-2xl shadow-2xl text-center">
             <div class="text-5xl mb-4">⚠️</div>
@@ -147,47 +143,31 @@
         </div>
     </div>
 
-    <!-- ← HIER GEHT ES WEITER (Teil 2: JavaScript) -->
     <script>
         let C = null;
         let S = {
-            step: 0,
-            recording: false,
-            speaking: false,
-            log: [],
-            timer: null,
-            timeLeft: 0,
-            finalTranscription: "",
-            usedVocab: new Set(),
-            usedScaffolds: new Set()
+            step: 0, recording: false, speaking: false, log: [],
+            timer: null, timeLeft: 0, finalTranscription: "",
+            usedVocab: new Set(), usedScaffolds: new Set()
         };
         let recognition = null;
         let conversationHistory = [];
 
         window.addEventListener('DOMContentLoaded', () => {
-            // FIX: Browser-Check vor allem anderen
             if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
                 document.getElementById('browserWarning').style.display = 'flex';
                 document.getElementById('startOverlay').style.display = 'none';
                 return;
             }
-
-            if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-                toggleDarkMode(true);
-            }
-
+            if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) toggleDarkMode(true);
             const d = new URLSearchParams(location.search).get('config');
             if (d) {
                 try {
                     C = JSON.parse(decodeURIComponent(escape(atob(decodeURIComponent(d)))));
                     renderUI();
                     buildSocraticPrompt();
-                } catch (e) {
-                    alert("Konfiguration defekt. Bitte den Lehrer kontaktieren.");
-                }
-            } else {
-                alert("Kein Session-Code gefunden.");
-            }
+                } catch (e) { alert("Konfiguration defekt. Bitte den Lehrer kontaktieren."); }
+            } else { alert("Kein Session-Code gefunden."); }
         });
 
         function toggleDarkMode(forceDark = null) {
@@ -196,44 +176,32 @@
             document.getElementById('themeIcon').className = isDark ? 'fas fa-sun text-yellow-400' : 'fas fa-moon text-slate-500';
         }
 
-        // FIX: Normalisierung für Umlaute und Akzente beim Vocab-Matching
         function clean(str) {
-            return str.toLowerCase()
-                .normalize("NFD")
-                .replace(/[\u0300-\u036f]/g, "")
-                .replace(/[.,!??"'();:]/g, '')
-                .trim();
+            return str.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[.,!??"'();:]/g, '').trim();
         }
 
         function renderUI() {
             document.getElementById('topicDisplay').innerText = C.topic || "Sitzung";
             document.getElementById('welcomeName').innerText = C.studentName || 'Schüler';
-
             if (C.hasTimer) document.getElementById('countdownWrapper').classList.remove('hidden');
-
             let panelActive = false;
-
             if (C.showVocab && C.vocab && C.vocab.length > 0) {
                 panelActive = true;
                 document.getElementById('vocabSection').classList.remove('hidden');
                 C.vocab.forEach(word => {
-                    // FIX: data-vocab Attribut für sicheres Matching statt ID-Hack
                     const safeId = 'v-' + clean(word).replace(/\s+/g, '-');
                     document.getElementById('vocabList').innerHTML +=
                         `<span class="vocab-chip" id="${safeId}" data-vocab="${clean(word)}">${word}</span>`;
                 });
             }
-
             if (C.showScaffolds && C.scaffolds && C.scaffolds.length > 0) {
                 panelActive = true;
                 document.getElementById('scaffoldSection').classList.remove('hidden');
                 C.scaffolds.forEach((s, index) => {
-                    // FIX: data-index Attribut für sicheres Scaffold-Matching
                     document.getElementById('scaffoldList').innerHTML +=
                         `<li class="text-sm dark:text-slate-300 pl-3 border-l-2 border-indigo-200 dark:border-indigo-800 transition-colors duration-300" data-index="${index}">${s}</li>`;
                 });
             }
-
             if (panelActive) document.getElementById('sidePanel').style.display = 'flex';
         }
 
@@ -242,16 +210,12 @@
             prompt += `### SCHÜLER\n- Name: ${C.studentName || 'Schüler'}\n- Thema: ${C.topic}\n- Niveau: ${C.level}\n- Deine Simulierte Rolle: ${C.role}\n\n`;
             prompt += `### REGELN (STRENG EINHALTEN)\n`;
             prompt += `1. ANREDE: Verwende IMMER und AUSSCHLIESSLICH das informelle Duzen.\n`;
-
             if (C.correction === 'immediate') prompt += `2. KORREKTUR: GIB NIEMALS DIE LÖSUNG VOR. Stelle stattdessen eine zielführende pädagogische Rückfrage zu Fehlern.\n`;
             else if (C.correction === 'end') prompt += `2. KORREKTUR: Korrigiere WÄHREND des Dialogs NICHT. Ignoriere Grammatikfehler, antworte nur auf den Inhalt.\n`;
             else prompt += `2. KORREKTUR: Keine Grammatik-Hinweise. Fokus auf Sprechfluss.\n`;
-
             prompt += `3. KONTEXTUELLE INTELLIGENZ: Nutze das Thema "${C.topic}" und bleibe in der Rolle als "${C.role}".\n`;
             prompt += `4. SPRACHE: Alles findet strikt auf ${C.language} statt.\n`;
-
             if (C.followUp) prompt += `5. DYNAMISCHES NACHHAKEN: Wenn der Schüler nur extrem kurz antwortet, hake in deiner Rolle fordernd nach.\n`;
-
             conversationHistory.push({ role: "system", content: prompt });
         }
 
@@ -259,22 +223,18 @@
             const btn = document.querySelector('#startOverlay button');
             const originalHTML = btn.innerHTML;
             btn.innerHTML = '<i class="fas fa-circle-notch fa-spin mr-2"></i> Fordere Mikrofon an...';
-
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
                 const ac = new (window.AudioContext || window.webkitAudioContext)();
                 await ac.resume();
                 speechSynthesis.speak(new SpeechSynthesisUtterance(''));
-
                 setupRecognition();
                 stream.getTracks().forEach(t => t.stop());
-
                 document.getElementById('startOverlay').style.opacity = '0';
                 setTimeout(() => {
                     document.getElementById('startOverlay').style.display = 'none';
                     startSessionFlow();
                 }, 500);
-
             } catch (err) {
                 alert("Mikrofon blockiert! Bitte erlaube es im Browser neben der URL-Leiste.");
                 btn.innerHTML = originalHTML;
@@ -294,11 +254,7 @@
             recognition = new SpeechRecognition();
             recognition.continuous = true;
             recognition.interimResults = true;
-
-            const langMap = {
-                'Englisch': 'en-US', 'Spanisch': 'es-ES',
-                'Französisch': 'fr-FR', 'Italienisch': 'it-IT', 'Deutsch': 'de-DE'
-            };
+            const langMap = { 'Englisch': 'en-US', 'Spanisch': 'es-ES', 'Französisch': 'fr-FR', 'Italienisch': 'it-IT', 'Deutsch': 'de-DE' };
             recognition.lang = langMap[C.language] || 'de-DE';
 
             recognition.onresult = (e) => {
@@ -311,7 +267,6 @@
                         interimTranscript += e.results[i][0].transcript;
                     }
                 }
-
                 const showText = (S.finalTranscription + interimTranscript).trim();
                 if (showText !== '') {
                     let transNode = document.getElementById('liveTrans');
@@ -326,17 +281,14 @@
                 }
             };
 
-            // FIX: Endlos-Loop abgesichert – nur neu starten wenn wirklich noch recording
             recognition.onend = () => {
                 if (S.recording) {
                     try {
                         recognition.start();
                     } catch (e) {
-                        // Wenn Start fehlschlägt, kurz warten und nochmal versuchen
                         setTimeout(() => {
                             if (S.recording) {
                                 try { recognition.start(); } catch (e2) {
-                                    // Endgültig fehlgeschlagen – Nutzer informieren
                                     S.recording = false;
                                     setStatus('Mikrofon-Fehler – bitte neu laden', true);
                                     const btn = document.getElementById('micBtn');
@@ -350,40 +302,32 @@
             };
 
             recognition.onerror = (e) => {
-                // 'aborted' ist normal beim manuellen Stop – kein Fehler
                 if (e.error === 'aborted') return;
                 console.warn("Recognition Fehler:", e.error);
             };
         }
 
-        // FIX: data-vocab und data-index für sicheres Matching
         function checkVocab(fullText) {
             if (!C.vocab && !C.scaffolds) return;
             const cleanText = clean(fullText);
             let hitFound = false;
-
             if (C.vocab) {
                 C.vocab.forEach(w => {
                     const cleanW = clean(w);
                     if (cleanText.includes(cleanW) && !S.usedVocab.has(cleanW)) {
                         S.usedVocab.add(cleanW);
                         hitFound = true;
-                        // FIX: Suche per data-vocab Attribut statt fragiler ID
                         const el = document.querySelector(`[data-vocab="${cleanW}"]`);
-                        if (el && !el.classList.contains('vocab-hit')) {
-                            el.classList.add('vocab-hit');
-                        }
+                        if (el && !el.classList.contains('vocab-hit')) el.classList.add('vocab-hit');
                     }
                 });
             }
-
             if (C.scaffolds) {
                 C.scaffolds.forEach((s, ix) => {
                     const cleanS = clean(s);
                     if (cleanText.includes(cleanS) && !S.usedScaffolds.has(cleanS)) {
                         S.usedScaffolds.add(cleanS);
                         hitFound = true;
-                        // FIX: Suche per data-index statt fragiler Reihenfolge
                         const li = document.querySelector(`#scaffoldList li[data-index="${ix}"]`);
                         if (li) {
                             li.style.borderColor = '#14b8a6';
@@ -393,171 +337,93 @@
                     }
                 });
             }
-
             if (hitFound) triggerFlash();
         }
 
-        // FIX: XSS-Schutz – text wird nicht als HTML eingefügt
         function addChatBubble(sender, text, id = null) {
             const isCoach = sender === 'Coach';
             const box = document.getElementById('chatHistory');
             if (!box) return;
-
             const wrapper = document.createElement('div');
             wrapper.className = `flex w-full ${isCoach ? 'justify-start' : 'justify-end'} bubble-anim`;
             if (id) wrapper.id = id;
-
             const bubble = document.createElement('div');
             bubble.className = `w-fit max-w-[85%] rounded-2xl p-4 text-[15px] leading-relaxed chat-bubble-content ${
                 isCoach
                     ? 'bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 border border-slate-200 dark:border-slate-700 shadow-sm rounded-tl-sm'
                     : 'bg-indigo-600 text-white rounded-tr-sm shadow-md'
             }`;
-
-            // Sonderfälle: Typing-Indikator und hidden-Modus
             if (text === '...') {
                 bubble.innerHTML = '<i class="fas fa-ellipsis-h animate-pulse"></i>';
             } else if (isCoach && C.textMode === 'hidden') {
                 bubble.innerHTML = '🔊 <i>Text verborgen (Höre zu)</i>';
             } else {
-                // FIX: textContent statt innerHTML – kein XSS möglich
                 bubble.textContent = text;
             }
-
             wrapper.appendChild(bubble);
             box.appendChild(wrapper);
             box.scrollTo({ top: box.scrollHeight, behavior: 'smooth' });
         }
 
-        // ← HIER GEHT ES WEITER (Teil 3: Session-Flow, TTS, Timer, Finish)
-    </script>
-        <script>
-        function startSessionFlow() {
-            const intro = C.intro || "Die Simulation beginnt jetzt.";
-            S.log.push({ s: 'Coach', t: intro });
-            conversationHistory.push({ role: "assistant", content: intro });
-
-            setStatus('Coach spricht...', true);
-            addChatBubble('Coach', intro);
-            playTTS(intro, () => { setTimeout(nextTeacherQuestion, 500); });
+        function setStatus(msg, visible) {
+            const b = document.getElementById('statusBadge');
+            b.innerText = msg;
+            b.style.opacity = visible ? 1 : 0;
         }
 
-        // FIX: S.step wird nur noch HIER erhöht, nicht mehr in askGPT()
-        function nextTeacherQuestion() {
-            if (S.step >= C.questions.length) return finish();
-            const text = C.questions[S.step];
-            S.log.push({ s: 'Coach (Leitfrage)', t: text });
-            conversationHistory.push({ role: "assistant", content: text });
-
-            addChatBubble('Coach', text);
-            lockMic(true);
-            playTTS(text, () => { unlockMic(); startTimer(); });
-            S.step++; // FIX: Einmalige Erhöhung hier
-        }
-
-        async function playTTS(text, callback) {
-            S.speaking = true;
-            document.body.classList.add('is-speaking');
-
-            if (C.audioEngine === 'elevenlabs' && C.elevenApiKey && C.elevenVoiceId) {
-                try {
-                    const res = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${C.elevenVoiceId}`, {
-                        method: 'POST',
-                        headers: { 'xi-api-key': C.elevenApiKey, 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ text: text, model_id: "eleven_multilingual_v2" })
-                    });
-                    if (!res.ok) throw new Error();
-                    playAudioBlob(await res.blob(), callback);
-                    return;
-                } catch (e) { console.warn("ElevenLabs Fehler, Fallback zu Browser TTS"); }
+        function lockMic(lock) {
+            const btn = document.getElementById('micBtn');
+            if (lock) {
+                btn.className = 'mic-fab mic-disabled';
+                btn.innerHTML = '<i class="fas fa-microphone"></i>';
+                btn.disabled = true;
             }
-
-            if (C.audioEngine === 'openai') {
-                try {
-                    // FIX: TTS über Netlify Proxy – kein API Key im Browser
-                    const res = await fetch('/.netlify/functions/ai-proxy', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            type: 'tts',
-                            model: 'tts-1',
-                            input: text,
-                            voice: C.openaiVoice || 'alloy'
-                        })
-                    });
-                    if (!res.ok) throw new Error();
-                    playAudioBlob(await res.blob(), callback);
-                    return;
-                } catch (e) { console.warn("OpenAI TTS Fehler, Fallback zu Browser TTS"); }
-            }
-
-            // Browser TTS Fallback
-            speechSynthesis.cancel();
-            const u = new SpeechSynthesisUtterance(text);
-            const langMap = {
-                'Englisch': 'en-US', 'Spanisch': 'es-ES',
-                'Französisch': 'fr-FR', 'Italienisch': 'it-IT', 'Deutsch': 'de-DE'
-            };
-            u.lang = langMap[C.language] || 'de-DE';
-
-            let callbackFired = false;
-            const fireCallback = () => {
-                if (callbackFired) return;
-                callbackFired = true;
-                S.speaking = false;
-                document.body.classList.remove('is-speaking');
-                if (callback) callback();
-            };
-
-            u.onend = fireCallback;
-
-            // FIX: Realistischerer Timeout – ca. 60ms pro Zeichen + 2s Puffer
-            // (statt 100ms pro Zeichen was viel zu lang war)
-            const timeoutMs = Math.max(5000, text.length * 60 + 2000);
-            setTimeout(fireCallback, timeoutMs);
-
-            speechSynthesis.speak(u);
         }
 
-        function playAudioBlob(blob, callback) {
-            const audio = new Audio(URL.createObjectURL(blob));
-            audio.onended = () => {
-                S.speaking = false;
-                document.body.classList.remove('is-speaking');
-                if (callback) callback();
-            };
-            audio.onerror = () => {
-                S.speaking = false;
-                document.body.classList.remove('is-speaking');
-                if (callback) callback();
-            };
-            audio.play();
+        function unlockMic() {
+            const btn = document.getElementById('micBtn');
+            btn.className = 'mic-fab mic-idle';
+            btn.innerHTML = '<i class="fas fa-microphone"></i>';
+            btn.disabled = false;
+            setStatus('Tippen zum Starten', true);
         }
 
-        function toggleRecording() {
-            if (S.recording) stopRec();
-            else startRec();
+        function updTimeUI() {
+            const m = Math.floor(S.timeLeft / 60);
+            const s = S.timeLeft % 60;
+            document.getElementById('countdown').innerText = `${m}:${s < 10 ? '0' + s : s}`;
         }
+
+        function startTimer() {
+            if (!C.hasTimer) return;
+            S.timeLeft = parseInt(C.timer);
+            updTimeUI();
+            clearInterval(S.timer);
+            S.timer = setInterval(() => {
+                S.timeLeft--;
+                updTimeUI();
+                const box = document.getElementById('countdownWrapper');
+                if (S.timeLeft <= 10 && S.timeLeft > 0) box.classList.add('timer-warning');
+                else box.classList.remove('timer-warning');
+                if (S.timeLeft <= 0) { clearInterval(S.timer); if (S.recording) stopRec(); }
+            }, 1000);
+        }
+
+        function toggleRecording() { if (S.recording) stopRec(); else startRec(); }
 
         function startRec() {
             if (S.speaking) return;
-            // FIX: S.recording sofort auf true setzen vor allem anderen
             S.recording = true;
             S.finalTranscription = "";
-
             try { recognition.start(); } catch (e) {}
-
             const btn = document.getElementById('micBtn');
             btn.className = 'mic-fab mic-recording';
             btn.innerHTML = '<i class="fas fa-stop"></i>';
             setStatus('Antworte jetzt – tippe das Icon zum Senden', true);
         }
-
         async function stopRec() {
-            // FIX: S.recording sofort auf false – verhindert Race Condition mit onend
             if (!S.recording) return;
             S.recording = false;
-
             try { recognition.stop(); } catch (e) {}
             clearInterval(S.timer);
             document.getElementById('countdownWrapper').classList.remove('timer-warning');
@@ -570,18 +436,14 @@
 
             let studentTextFinal = S.finalTranscription.trim();
 
-            // Failsafe: Text aus sichtbarer Bubble greifen
             const transNode = document.getElementById('liveTrans');
             if (studentTextFinal === '' && transNode) {
                 const innerDiv = transNode.querySelector('.chat-bubble-content');
                 if (innerDiv) studentTextFinal = innerDiv.innerText.trim();
             }
 
-            if (studentTextFinal === '') {
-                studentTextFinal = "*(Hat den Knopf gedrückt, aber nichts gesagt)*";
-            }
+            if (studentTextFinal === '') studentTextFinal = "*(Hat den Knopf gedrückt, aber nichts gesagt)*";
 
-            // Bubble einfrieren
             if (transNode) {
                 transNode.removeAttribute('id');
                 const contentDiv = transNode.querySelector('.chat-bubble-content');
@@ -590,7 +452,6 @@
                 addChatBubble('Student', studentTextFinal);
             }
 
-            // Protokoll-Formatierung
             let studentTextFormatted = studentTextFinal;
             if (C.vocab) {
                 C.vocab.forEach(w => {
@@ -621,7 +482,6 @@
         async function askGPT() {
             const messagesToSend = [...conversationHistory];
 
-            // FIX: "developer" → "system" – einzige gültige Rolle für Regieanweisungen
             if (S.step < C.questions.length) {
                 messagesToSend.push({
                     role: "system",
@@ -635,7 +495,6 @@
             }
 
             try {
-                // FIX: Über Netlify Proxy – kein API Key im Browser
                 const response = await fetch('/.netlify/functions/ai-proxy', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -662,7 +521,6 @@
 
                 addChatBubble('Coach', aiReply);
 
-                // FIX: S.step wird NICHT mehr hier erhöht (war der Doppel-Increment Bug)
                 playTTS(aiReply, () => {
                     if (S.step >= C.questions.length) {
                         setTimeout(finish, 1000);
@@ -680,54 +538,94 @@
             }
         }
 
-        function startTimer() {
-            if (!C.hasTimer) return;
-            S.timeLeft = parseInt(C.timer);
-            updTimeUI();
-            clearInterval(S.timer);
-            S.timer = setInterval(() => {
-                S.timeLeft--;
-                updTimeUI();
-                const box = document.getElementById('countdownWrapper');
-                if (S.timeLeft <= 10 && S.timeLeft > 0) {
-                    box.classList.add('timer-warning');
-                } else {
-                    box.classList.remove('timer-warning');
-                }
-                if (S.timeLeft <= 0) {
-                    clearInterval(S.timer);
-                    if (S.recording) stopRec();
-                }
-            }, 1000);
+        function startSessionFlow() {
+            const intro = C.intro || "Die Simulation beginnt jetzt.";
+            S.log.push({ s: 'Coach', t: intro });
+            conversationHistory.push({ role: "assistant", content: intro });
+            setStatus('Coach spricht...', true);
+            addChatBubble('Coach', intro);
+            playTTS(intro, () => { setTimeout(nextTeacherQuestion, 500); });
         }
 
-        function updTimeUI() {
-            const m = Math.floor(S.timeLeft / 60);
-            const s = S.timeLeft % 60;
-            document.getElementById('countdown').innerText = `${m}:${s < 10 ? '0' + s : s}`;
+        function nextTeacherQuestion() {
+            if (S.step >= C.questions.length) return finish();
+            const text = C.questions[S.step];
+            S.log.push({ s: 'Coach (Leitfrage)', t: text });
+            conversationHistory.push({ role: "assistant", content: text });
+            addChatBubble('Coach', text);
+            lockMic(true);
+            playTTS(text, () => { unlockMic(); startTimer(); });
+            S.step++;
         }
 
-        function lockMic(lock) {
-            const btn = document.getElementById('micBtn');
-            if (lock) {
-                btn.className = 'mic-fab mic-disabled';
-                btn.innerHTML = '<i class="fas fa-microphone"></i>';
-                btn.disabled = true;
+        async function playTTS(text, callback) {
+            S.speaking = true;
+            document.body.classList.add('is-speaking');
+
+            if (C.audioEngine === 'elevenlabs' && C.elevenApiKey && C.elevenVoiceId) {
+                try {
+                    const res = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${C.elevenVoiceId}`, {
+                        method: 'POST',
+                        headers: { 'xi-api-key': C.elevenApiKey, 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ text: text, model_id: "eleven_multilingual_v2" })
+                    });
+                    if (!res.ok) throw new Error();
+                    playAudioBlob(await res.blob(), callback);
+                    return;
+                } catch (e) { console.warn("ElevenLabs Fehler, Fallback zu Browser TTS"); }
             }
+
+            if (C.audioEngine === 'openai') {
+                try {
+                    const res = await fetch('/.netlify/functions/ai-proxy', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            type: 'tts',
+                            model: 'tts-1',
+                            input: text,
+                            voice: C.openaiVoice || 'alloy'
+                        })
+                    });
+                    if (!res.ok) throw new Error();
+                    playAudioBlob(await res.blob(), callback);
+                    return;
+                } catch (e) { console.warn("OpenAI TTS Fehler, Fallback zu Browser TTS"); }
+            }
+
+            speechSynthesis.cancel();
+            const u = new SpeechSynthesisUtterance(text);
+            const langMap = { 'Englisch': 'en-US', 'Spanisch': 'es-ES', 'Französisch': 'fr-FR', 'Italienisch': 'it-IT', 'Deutsch': 'de-DE' };
+            u.lang = langMap[C.language] || 'de-DE';
+
+            let callbackFired = false;
+            const fireCallback = () => {
+                if (callbackFired) return;
+                callbackFired = true;
+                S.speaking = false;
+                document.body.classList.remove('is-speaking');
+                if (callback) callback();
+            };
+
+            u.onend = fireCallback;
+            const timeoutMs = Math.max(5000, text.length * 60 + 2000);
+            setTimeout(fireCallback, timeoutMs);
+            speechSynthesis.speak(u);
         }
 
-        function unlockMic() {
-            const btn = document.getElementById('micBtn');
-            btn.className = 'mic-fab mic-idle';
-            btn.innerHTML = '<i class="fas fa-microphone"></i>';
-            btn.disabled = false;
-            setStatus('Tippen zum Starten', true);
-        }
-
-        function setStatus(msg, visible) {
-            const b = document.getElementById('statusBadge');
-            b.innerText = msg;
-            b.style.opacity = visible ? 1 : 0;
+        function playAudioBlob(blob, callback) {
+            const audio = new Audio(URL.createObjectURL(blob));
+            audio.onended = () => {
+                S.speaking = false;
+                document.body.classList.remove('is-speaking');
+                if (callback) callback();
+            };
+            audio.onerror = () => {
+                S.speaking = false;
+                document.body.classList.remove('is-speaking');
+                if (callback) callback();
+            };
+            audio.play();
         }
 
         async function finish() {
@@ -736,10 +634,7 @@
             setStatus('Übertrage Ergebnisse...', true);
             addChatBubble('Coach', "🟢 Das Training ist beendet. Protokoll wird sicher an den Lehrer gesendet...");
 
-            const dateStr = new Date().toLocaleDateString('de-DE', {
-                day: '2-digit', month: '2-digit', year: 'numeric'
-            });
-
+            const dateStr = new Date().toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
             const vocabTotal = C.vocab ? C.vocab.length : 0;
             const scaffTotal = C.scaffolds ? C.scaffolds.length : 0;
 
@@ -751,7 +646,6 @@
             md += `--- Dialog-Verlauf ---\n\n`;
             S.log.forEach(r => { md += `**${r.s}:**\n${r.t}\n\n`; });
 
-            // FIX: Formspree ID aus Config – nicht mehr hardcoded
             const formspreeId = C.formspreeId || '';
             if (!formspreeId) {
                 addChatBubble('Coach', "⚠️ Keine Formspree ID konfiguriert. Protokoll konnte nicht gesendet werden.");
@@ -770,7 +664,6 @@
                     headers: { "Accept": "application/json" },
                     body: formData
                 });
-
                 if (response.ok) {
                     setStatus('Abgeschlossen ✅', true);
                     addChatBubble('Coach', "✅ Übertragung erfolgreich! Der Lehrer hat das Protokoll erhalten. Du kannst diesen Tab nun schließen.");
@@ -782,6 +675,7 @@
                 addChatBubble('Coach', "⚠️ Verbindungsfehler beim Senden des Protokolls.");
             }
         }
-        </script>
+
+    </script>
 </body>
 </html>
