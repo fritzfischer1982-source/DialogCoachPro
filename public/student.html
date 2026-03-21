@@ -97,7 +97,7 @@
                 </div>
             </div>
 
-            <!-- Fix: Volle Breite erzwungen w-full, und flex-col für sauberes Stacking -->
+            <!-- Volle Breite für flüssiges Stacking -->
             <div id="chatHistory" class="flex-1 overflow-y-auto px-4 md:px-12 pb-[140px] space-y-6 scroll-hide flex flex-col w-full"></div>
 
             <div class="absolute bottom-0 left-0 w-full h-[120px] bg-gradient-to-t from-slate-50 dark:from-darkbg to-transparent flex flex-col items-center justify-end pb-6 z-50">
@@ -275,7 +275,10 @@
                     if(!transNode) {
                         addChatBubble('Student', showText, 'liveTrans');
                     } else {
-                        transNode.querySelector('.chat-bubble-content').innerText = showText;
+                        // Aktualisiert nur den Textteil der bestehenden Blase
+                        let contentDiv = transNode.querySelector('.chat-bubble-content');
+                        if(contentDiv) contentDiv.innerText = showText;
+                        
                         const box = document.getElementById('chatHistory');
                         if(box) box.scrollTo({ top: box.scrollHeight, behavior: 'smooth' });
                     }
@@ -332,8 +335,6 @@
             if(text === '...') displayText = '<i class="fas fa-ellipsis-h animate-pulse"></i>';
 
             const align = isCoach ? 'justify-start' : 'justify-end';
-            
-            // Fix: w-fit und max-w-[85%] für saubere, nicht-gestreckte Boxen
             const color = isCoach 
                 ? 'bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 border border-slate-200 dark:border-slate-700 shadow-sm rounded-tl-sm' 
                 : 'bg-indigo-600 text-white rounded-tr-sm shadow-md';
@@ -423,6 +424,7 @@
         function toggleRecording() { if(S.recording) stopRec(); else startRec(); }
 
         function startRec() {
+            if(S.speaking) return; // Kein Mikrofon-Start während Coach spricht
             S.recording = true; 
             S.finalTranscription = ""; 
             
@@ -434,7 +436,9 @@
         }
 
         async function stopRec() {
+            if(!S.recording) return; // Prevent double trigger
             S.recording = false; 
+            
             try { recognition.stop(); } catch(e){}
             clearInterval(S.timer); document.getElementById('countdownWrapper').classList.remove('timer-warning');
             
@@ -443,17 +447,26 @@
             setStatus('Coach überlegt...', true);
 
             let transNode = document.getElementById('liveTrans');
-            let studentTextOriginal = S.finalTranscription.trim(); 
+            let studentTextFinal = S.finalTranscription.trim(); 
             
-            // Fallback für den letzten erfassten Live-Schnipsel
-            if(studentTextOriginal === '' && transNode) studentTextOriginal = transNode.querySelector('.chat-bubble-content').innerText.trim();
-            if(studentTextOriginal === '') studentTextOriginal = "*(Hat den Knopf gedrückt, aber nichts gesagt)*";
+            // Failsafe: Text aus der sichtbaren Live-Bubble greifen, falls Engine noch nicht als "Final" markiert hat
+            if(studentTextFinal === '' && transNode) {
+                let innerDiv = transNode.querySelector('.chat-bubble-content');
+                if(innerDiv) studentTextFinal = innerDiv.innerText.trim();
+            }
 
-            if(transNode) transNode.removeAttribute('id'); 
-            else addChatBubble('Student', studentTextOriginal);
+            if(studentTextFinal === '') studentTextFinal = "*(Hat den Knopf gedrückt, aber nichts gesagt)*";
 
-            // Fetch formatting (Bold-Maker für das Teacher Protokoll)
-            let studentTextFormatted = studentTextOriginal;
+            // Der entscheidende Fix: Freeze die Live-Bubble
+            if(transNode) {
+                transNode.removeAttribute('id'); 
+                transNode.querySelector('.chat-bubble-content').innerText = studentTextFinal;
+            } else {
+                addChatBubble('Student', studentTextFinal);
+            }
+
+            // Formatting for Protocol (Bold text for used words)
+            let studentTextFormatted = studentTextFinal;
             if(C.vocab) {
                 C.vocab.forEach(w => {
                     const cleanW = clean(w);
@@ -474,7 +487,7 @@
             }
 
             S.log.push({ s: C.studentName || 'Student', t: studentTextFormatted });
-            conversationHistory.push({ role: "user", content: studentTextOriginal });
+            conversationHistory.push({ role: "user", content: studentTextFinal });
 
             addChatBubble('Coach', '...', 'typingIndicator');
             await askGPT();
@@ -482,6 +495,7 @@
 
         async function askGPT() {
             let messagesToSend = [...conversationHistory];
+            // Geheim-Prompt zwingt KI zur nächsten Leitfrage
             if(S.step < C.questions.length) {
                 messagesToSend.push({ role: "developer", content: `Beziehe dich auf die letzte Nachricht. Beende deine Antwort dann UNBEDINGT organisch in deiner Rolle IN DER ZIELSPRACHE, indem du genau folgende Leitfrage fließend einbaust: "${C.questions[S.step]}".` });
             } else {
