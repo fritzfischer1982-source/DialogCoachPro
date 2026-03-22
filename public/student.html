@@ -4,34 +4,35 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Dialog Coaching - Session</title>
-    
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    
     <script>
         tailwind.config = {
             darkMode: 'class',
-            theme: { extend: { fontFamily: { sans: ['"Plus Jakarta Sans"', 'sans-serif'] }, colors: { darkbg: '#0f172a', darkpanel: '#1e293b' } } }
+            theme: { extend: {
+                fontFamily: { sans: ['"Plus Jakarta Sans"', 'sans-serif'] },
+                colors: { darkbg: '#0f172a', darkpanel: '#1e293b' }
+            }}
         }
     </script>
-
     <style>
         body { height: 100dvh; overflow: hidden; transition: background-color 0.3s, color 0.3s; }
-        
-        .avatar-ring { position: absolute; inset: -4px; border-radius: 50%; border: 2px solid transparent; transition: all 0.3s ease; }
-        .is-speaking .avatar-ring { border-color: #14b8a6; box-shadow: 0 0 0 4px rgba(20, 184, 166, 0.2); animation: breathe 2s infinite; }
-        @keyframes breathe { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.05); opacity: 0.7; } }
 
-        .mic-fab { width: 72px; height: 72px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 26px; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); border: none; outline: none; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.15); cursor: pointer; }
+        .avatar-ring { position: absolute; inset: -4px; border-radius: 50%; border: 2px solid transparent; transition: all 0.3s ease; }
+        .is-speaking .avatar-ring { border-color: #14b8a6; box-shadow: 0 0 0 4px rgba(20,184,166,0.2); animation: breathe 2s infinite; }
+        @keyframes breathe { 0%,100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.05); opacity: 0.7; } }
+
+        .mic-fab { width: 72px; height: 72px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 26px; transition: all 0.2s cubic-bezier(0.4,0,0.2,1); border: none; outline: none; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.15); cursor: pointer; }
         .mic-fab:active { transform: scale(0.95); }
         .mic-idle { background: #14b8a6; color: white; } .mic-idle:hover { background: #0d9488; }
         .mic-recording { background: #ef4444; color: white; animation: pulse-red 1.5s infinite; }
-        @keyframes pulse-red { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); } 70% { box-shadow: 0 0 0 15px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
+        @keyframes pulse-red { 0% { box-shadow: 0 0 0 0 rgba(239,68,68,0.4); } 70% { box-shadow: 0 0 0 15px rgba(239,68,68,0); } 100% { box-shadow: 0 0 0 0 rgba(239,68,68,0); } }
         .mic-disabled { background: #94a3b8; color: #f1f5f9; cursor: not-allowed; }
         .dark .mic-disabled { background: #334155; color: #64748b; }
 
-        .scroll-hide::-webkit-scrollbar { display: none; } .scroll-hide { -ms-overflow-style: none; scrollbar-width: none; }
+        .scroll-hide::-webkit-scrollbar { display: none; }
+        .scroll-hide { -ms-overflow-style: none; scrollbar-width: none; }
 
         .vocab-chip { border: 1px solid #e2e8f0; padding: 6px 14px; border-radius: 99px; font-size: 0.85rem; font-weight: 500; transition: all 0.4s ease; display: inline-block; margin: 3px; }
         .dark .vocab-chip { border-color: #334155; background: #1e293b; color: #cbd5e1; }
@@ -39,665 +40,957 @@
         .dark .vocab-hit { background: #115e59 !important; border-color: #14b8a6 !important; color: #ccfbf1 !important; }
 
         .timer-warning { color: #ef4444 !important; border-color: #ef4444 !important; animation: timer-pulse 1s infinite alternate; }
-        @keyframes timer-pulse { from { box-shadow: 0 0 5px rgba(239, 68, 68, 0.2); } to { box-shadow: 0 0 15px rgba(239, 68, 68, 0.6); } }
+        @keyframes timer-pulse { from { box-shadow: 0 0 5px rgba(239,68,68,0.2); } to { box-shadow: 0 0 15px rgba(239,68,68,0.6); } }
 
         @keyframes fade-up { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .bubble-anim { animation: fade-up 0.4s ease-out forwards; }
 
-        #successFlash {
-            position: fixed; inset: 0; pointer-events: none; z-index: 9999;
-            box-shadow: inset 0 0 0 0 rgba(20, 184, 166, 0);
-            transition: box-shadow 0.5s ease-out;
-        }
-        .flash-active {
-            box-shadow: inset 0 0 50px 10px rgba(20, 184, 166, 0.4) !important;
-            transition: none !important;
-        }
+        #successFlash { position: fixed; inset: 0; pointer-events: none; z-index: 9999; box-shadow: inset 0 0 0 0 rgba(20,184,166,0); transition: box-shadow 0.5s ease-out; }
+        .flash-active { box-shadow: inset 0 0 50px 10px rgba(20,184,166,0.4) !important; transition: none !important; }
 
         .chat-bubble-content { white-space: pre-wrap; word-wrap: break-word; overflow-wrap: break-word; }
+        .bubble-label { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; opacity: 0.5; }
         #browserWarning { display: none; }
 
-        /* Sender-Label über den Bubbles */
-        .bubble-label { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; opacity: 0.5; }
+        /* Fortschrittsbalken */
+        #progressBar { transition: width 0.5s ease; }
+
+        /* Pause Overlay */
+        #pauseOverlay { display: none; }
+
+        /* Übersetzungs-Box */
+        .translation-box { font-size: 0.8rem; color: #64748b; border-top: 1px solid #e2e8f0; margin-top: 8px; padding-top: 8px; font-style: italic; }
+        .dark .translation-box { color: #94a3b8; border-color: #334155; }
+
+        /* Whisper Recording Indicator */
+        .whisper-recording { background: #ef4444 !important; }
+        @keyframes whisper-pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
+        .whisper-active { animation: whisper-pulse 1s infinite; }
     </style>
 </head>
 <body class="flex flex-col bg-slate-50 dark:bg-darkbg text-slate-800 dark:text-slate-100 relative">
 
-    <div id="successFlash"></div>
+<div id="successFlash"></div>
 
-    <header class="h-16 flex items-center justify-between px-6 bg-white dark:bg-darkpanel border-b border-slate-200 dark:border-slate-800 z-20 shadow-sm flex-shrink-0">
+<!-- PAUSE OVERLAY -->
+<div id="pauseOverlay" class="fixed inset-0 z-[150] flex items-center justify-center bg-slate-900/70 backdrop-blur-sm">
+    <div class="bg-white dark:bg-darkpanel rounded-2xl p-8 text-center shadow-2xl">
+        <div class="text-5xl mb-4">⏸️</div>
+        <h2 class="text-2xl font-bold mb-2">Pause</h2>
+        <p class="text-slate-500 mb-6 text-sm">Die Session ist pausiert.</p>
+        <button onclick="resumeSession()" class="bg-teal-500 hover:bg-teal-600 text-white font-bold px-8 py-3 rounded-xl">
+            <i class="fas fa-play mr-2"></i> Weiter
+        </button>
+    </div>
+</div>
+
+<!-- HEADER -->
+<header class="flex-shrink-0 bg-white dark:bg-darkpanel border-b border-slate-200 dark:border-slate-800 z-20 shadow-sm">
+    <!-- Fortschrittsbalken -->
+    <div class="w-full h-1 bg-slate-100 dark:bg-slate-800">
+        <div id="progressBar" class="h-1 bg-teal-500 rounded-r-full" style="width: 0%"></div>
+    </div>
+    <div class="h-14 flex items-center justify-between px-4">
         <div class="flex items-center gap-3">
-            <div class="w-8 h-8 rounded-lg bg-indigo-600 text-white flex items-center justify-center font-bold text-sm">
+            <div class="w-7 h-7 rounded-lg bg-indigo-600 text-white flex items-center justify-center text-xs font-bold">
                 <i class="fas fa-layer-group"></i>
             </div>
             <div>
                 <h1 id="topicDisplay" class="font-bold text-sm leading-tight">Wird geladen...</h1>
-                <p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">DialogCoach Active</p>
+                <p id="progressText" class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">DialogCoach</p>
             </div>
         </div>
-        <div class="flex items-center gap-4">
-            <div id="countdownWrapper" class="hidden font-mono font-bold w-16 text-center bg-slate-100 dark:bg-slate-700 px-3 py-1.5 rounded-md text-sm border border-slate-200 dark:border-slate-600 transition-all">
+        <div class="flex items-center gap-2">
+            <!-- Timer -->
+            <div id="countdownWrapper" class="hidden font-mono font-bold w-14 text-center bg-slate-100 dark:bg-slate-700 px-2 py-1 rounded-md text-sm border border-slate-200 dark:border-slate-600">
                 <span id="countdown">--:--</span>
             </div>
+            <!-- Aufnahme-Indikator -->
+            <div id="recIndicator" class="hidden items-center gap-1 bg-red-50 dark:bg-red-900/30 px-2 py-1 rounded-md">
+                <div class="w-2 h-2 bg-red-500 rounded-full whisper-active"></div>
+                <span class="text-xs font-bold text-red-600 dark:text-red-400">REC</span>
+            </div>
+            <!-- Pause Button -->
+            <button onclick="pauseSession()" id="pauseBtn" class="hidden text-slate-400 hover:text-orange-500 transition border border-slate-200 dark:border-slate-600 rounded-full w-8 h-8 items-center justify-center">
+                <i class="fas fa-pause"></i>
+            </button>
+            <!-- Dark Mode -->
             <button onclick="toggleDarkMode()" class="text-slate-400 hover:text-indigo-500 transition border border-slate-200 dark:border-slate-600 rounded-full w-8 h-8 flex items-center justify-center">
                 <i id="themeIcon" class="fas fa-moon"></i>
             </button>
         </div>
-    </header>
+    </div>
+</header>
 
-    <main class="flex-1 flex overflow-hidden w-full relative">
-        <div class="flex-1 flex flex-col relative bg-slate-50 dark:bg-darkbg h-full w-full">
-            
-            <div class="flex-shrink-0 pt-6 pb-2 flex flex-col items-center justify-center z-10 bg-gradient-to-b from-slate-50 dark:from-darkbg to-transparent">
-                <div class="relative w-24 h-24 mb-4">
-                    <div class="avatar-ring"></div>
-                    <img id="avatarImg" src="avatar.png" onerror="this.src='https://ui-avatars.com/api/?name=KI&background=4F46E5&color=fff'" class="w-full h-full rounded-full object-cover border-4 border-white dark:border-slate-800 shadow-lg relative z-10 bg-slate-100">
-                </div>
+<!-- MAIN -->
+<main class="flex-1 flex overflow-hidden w-full relative">
+    <div class="flex-1 flex flex-col relative bg-slate-50 dark:bg-darkbg h-full w-full">
+
+        <!-- Avatar -->
+        <div class="flex-shrink-0 pt-4 pb-2 flex flex-col items-center z-10 bg-gradient-to-b from-slate-50 dark:from-darkbg to-transparent">
+            <div class="relative w-20 h-20 mb-2">
+                <div class="avatar-ring"></div>
+                <img id="avatarImg" src="avatar.png" onerror="this.src='https://ui-avatars.com/api/?name=KI&background=4F46E5&color=fff'" class="w-full h-full rounded-full object-cover border-4 border-white dark:border-slate-800 shadow-lg relative z-10 bg-slate-100">
             </div>
+        </div>
 
-            <div id="chatHistory" class="flex-1 overflow-y-auto px-4 md:px-12 pb-[140px] scroll-hide flex flex-col w-full gap-2"></div>
+        <!-- Chat -->
+        <div id="chatHistory" class="flex-1 overflow-y-auto px-4 md:px-12 pb-[140px] scroll-hide flex flex-col w-full gap-2"></div>
 
-            <div class="absolute bottom-0 left-0 w-full h-[120px] bg-gradient-to-t from-slate-50 dark:from-darkbg to-transparent flex flex-col items-center justify-end pb-6 z-50">
-                <div id="statusBadge" class="mb-3 px-4 py-1 rounded-full bg-slate-900/10 dark:bg-black/40 backdrop-blur font-semibold text-[11px] uppercase tracking-wide opacity-0 transition-opacity">
-                    Zuhören...
-                </div>
-                <button id="micBtn" class="mic-fab mic-disabled" disabled onclick="toggleRecording()">
-                    <i class="fas fa-microphone"></i>
+        <!-- Bottom Controls -->
+        <div class="absolute bottom-0 left-0 w-full h-[130px] bg-gradient-to-t from-slate-50 dark:from-darkbg to-transparent flex flex-col items-center justify-end pb-5 z-50">
+            <!-- Action Buttons -->
+            <div id="actionButtons" class="hidden flex items-center gap-4 mb-3">
+                <!-- Wiederholen -->
+                <button onclick="repeatLastCoachMessage()" class="flex flex-col items-center gap-1 text-slate-400 hover:text-teal-500 transition">
+                    <div class="w-9 h-9 rounded-full border border-slate-200 dark:border-slate-600 flex items-center justify-center bg-white dark:bg-darkpanel shadow-sm">
+                        <i class="fas fa-redo text-sm"></i>
+                    </div>
+                    <span class="text-[9px] uppercase tracking-wide font-bold">Wiederholen</span>
+                </button>
+                <!-- Übersetzen -->
+                <button onclick="translateLastCoachMessage()" class="flex flex-col items-center gap-1 text-slate-400 hover:text-indigo-500 transition">
+                    <div class="w-9 h-9 rounded-full border border-slate-200 dark:border-slate-600 flex items-center justify-center bg-white dark:bg-darkpanel shadow-sm">
+                        <i class="fas fa-language text-sm"></i>
+                    </div>
+                    <span class="text-[9px] uppercase tracking-wide font-bold">Übersetzen</span>
                 </button>
             </div>
-        </div>
 
-        <div id="sidePanel" class="hidden md:flex w-80 bg-white dark:bg-darkpanel border-l border-slate-200 dark:border-slate-800 flex-col z-20 shadow-[-10px_0_15px_-3px_rgba(0,0,0,0.05)] h-full flex-shrink-0">
-            <div class="p-6 border-b border-slate-100 dark:border-slate-700">
-                <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Lernhilfen</h3>
-                <p class="text-sm text-slate-500">Integriere dies in deine Antworten.</p>
+            <div id="statusBadge" class="mb-2 px-4 py-1 rounded-full bg-slate-900/10 dark:bg-black/40 backdrop-blur font-semibold text-[11px] uppercase tracking-wide opacity-0 transition-opacity">
+                Zuhören...
             </div>
-            <div class="flex-1 overflow-y-auto p-6 space-y-8">
-                <div id="vocabSection" class="hidden">
-                    <h4 class="font-bold text-sm mb-3 flex items-center gap-2"><i class="fas fa-star text-teal-500"></i> Vokabeln</h4>
-                    <div id="vocabList" class="flex flex-wrap flex-row gap-1"></div>
-                </div>
-                <div id="scaffoldSection" class="hidden">
-                    <h4 class="font-bold text-sm mb-3 flex items-center gap-2"><i class="fas fa-quote-right text-teal-500"></i> Redemittel</h4>
-                    <ul id="scaffoldList" class="space-y-3"></ul>
-                </div>
-            </div>
-        </div>
-    </main>
-
-    <div id="browserWarning" class="fixed inset-0 z-[200] flex items-center justify-center p-6 bg-slate-900/80 backdrop-blur-sm">
-        <div class="bg-white dark:bg-darkpanel w-full max-w-md p-8 rounded-2xl shadow-2xl text-center">
-            <div class="text-5xl mb-4">⚠️</div>
-            <h2 class="text-xl font-bold mb-3">Browser nicht unterstützt</h2>
-            <p class="text-slate-500 text-sm mb-6">Die Spracherkennung funktioniert nur in <strong>Google Chrome</strong> oder <strong>Microsoft Edge</strong>. Bitte öffne den Link in einem dieser Browser.</p>
-        </div>
-    </div>
-
-    <div id="startOverlay" class="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-slate-900/80 backdrop-blur-sm transition-opacity duration-500">
-        <div class="bg-white dark:bg-darkpanel w-full max-w-md p-8 rounded-2xl shadow-2xl text-center">
-            <div class="w-16 h-16 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-full flex items-center justify-center mx-auto mb-6 text-2xl">
-                <i class="fas fa-microphone-alt"></i>
-            </div>
-            <h1 class="text-2xl font-bold mb-2">Bereit, <span id="welcomeName"></span>?</h1>
-            <p class="text-slate-500 dark:text-slate-400 mb-8 text-sm">Bitte erlaube gleich deinem Browser den Mikrofonzugriff, um starten zu können.</p>
-            <button onclick="unlockEverything()" class="w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-lg transition transform hover:-translate-y-1 inline-flex justify-center items-center">
-                <span>Mikrofon erlauben & Starten</span>
+            <button id="micBtn" class="mic-fab mic-disabled" disabled onclick="toggleRecording()">
+                <i class="fas fa-microphone"></i>
             </button>
         </div>
     </div>
 
-    <script>
-        let C = null;
-        let S = {
-            step: 0, recording: false, speaking: false, log: [],
-            timer: null, timeLeft: 0, finalTranscription: "",
-            usedVocab: new Set(), usedScaffolds: new Set()
-        };
-        let recognition = null;
-        let conversationHistory = [];
+    <!-- Seiten-Panel -->
+    <div id="sidePanel" class="hidden md:flex w-72 bg-white dark:bg-darkpanel border-l border-slate-200 dark:border-slate-800 flex-col z-20 h-full flex-shrink-0">
+        <div class="p-5 border-b border-slate-100 dark:border-slate-700">
+            <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Lernhilfen</h3>
+            <p class="text-sm text-slate-500">Integriere dies in deine Antworten.</p>
+        </div>
+        <div class="flex-1 overflow-y-auto p-5 space-y-6">
+            <div id="vocabSection" class="hidden">
+                <h4 class="font-bold text-sm mb-3 flex items-center gap-2"><i class="fas fa-star text-teal-500"></i> Vokabeln</h4>
+                <div id="vocabList" class="flex flex-wrap gap-1"></div>
+            </div>
+            <div id="scaffoldSection" class="hidden">
+                <h4 class="font-bold text-sm mb-3 flex items-center gap-2"><i class="fas fa-quote-right text-teal-500"></i> Redemittel</h4>
+                <ul id="scaffoldList" class="space-y-2"></ul>
+            </div>
+            <!-- Audio Download -->
+            <div id="audioDownloadSection" class="hidden pt-4 border-t border-slate-100 dark:border-slate-700">
+                <h4 class="font-bold text-sm mb-2 flex items-center gap-2"><i class="fas fa-download text-indigo-500"></i> Aufnahme</h4>
+                <button onclick="downloadAudio()" class="w-full bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 px-3 py-2 rounded-lg text-sm font-bold hover:bg-indigo-100 transition">
+                    <i class="fas fa-file-audio mr-2"></i> Audio herunterladen
+                </button>
+            </div>
+        </div>
+    </div>
+</main>
 
-        window.addEventListener('DOMContentLoaded', () => {
-            if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
-                document.getElementById('browserWarning').style.display = 'flex';
-                document.getElementById('startOverlay').style.display = 'none';
-                return;
-            }
-            if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) toggleDarkMode(true);
-            const d = new URLSearchParams(location.search).get('config');
-            if (d) {
-                try {
-                    C = JSON.parse(decodeURIComponent(escape(atob(decodeURIComponent(d)))));
-                    renderUI();
-                    buildSocraticPrompt();
-                } catch (e) { alert("Konfiguration defekt. Bitte den Lehrer kontaktieren."); }
-            } else { alert("Kein Session-Code gefunden."); }
-        });
+<!-- Browser Warning -->
+<div id="browserWarning" class="fixed inset-0 z-[200] flex items-center justify-center p-6 bg-slate-900/80 backdrop-blur-sm">
+    <div class="bg-white dark:bg-darkpanel w-full max-w-md p-8 rounded-2xl shadow-2xl text-center">
+        <div class="text-5xl mb-4">⚠️</div>
+        <h2 class="text-xl font-bold mb-3">Browser nicht unterstützt</h2>
+        <p class="text-slate-500 text-sm">Die App funktioniert nur in <strong>Google Chrome</strong> oder <strong>Microsoft Edge</strong>.</p>
+    </div>
+</div>
 
-        function toggleDarkMode(forceDark = null) {
-            const isDark = forceDark !== null ? forceDark : !document.documentElement.classList.contains('dark');
-            document.documentElement.classList.toggle('dark', isDark);
-            document.getElementById('themeIcon').className = isDark ? 'fas fa-sun text-yellow-400' : 'fas fa-moon text-slate-500';
+<!-- Start Overlay -->
+<div id="startOverlay" class="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-slate-900/80 backdrop-blur-sm transition-opacity duration-500">
+    <div class="bg-white dark:bg-darkpanel w-full max-w-md p-8 rounded-2xl shadow-2xl text-center">
+        <div class="w-16 h-16 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 rounded-full flex items-center justify-center mx-auto mb-6 text-2xl">
+            <i class="fas fa-microphone-alt"></i>
+        </div>
+        <h1 class="text-2xl font-bold mb-2">Bereit, <span id="welcomeName"></span>?</h1>
+        <p class="text-slate-500 dark:text-slate-400 mb-8 text-sm">Bitte erlaube gleich den Mikrofonzugriff.</p>
+        <button onclick="unlockEverything()" class="w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-lg transition">
+            <i class="fas fa-microphone mr-2"></i> Mikrofon erlauben & Starten
+        </button>
+    </div>
+</div>
+<script>
+    // ── STATE ────────────────────────────────────────────────────────────
+    let C = null;
+    let S = {
+        step: 0,
+        recording: false,
+        speaking: false,
+        paused: false,
+        log: [],
+        timer: null,
+        timeLeft: 0,
+        usedVocab: new Set(),
+        usedScaffolds: new Set(),
+        lastCoachMessage: "",
+        lastCoachBubble: null,
+        mediaRecorder: null,
+        audioChunks: [],
+        audioBlob: null
+    };
+    let conversationHistory = [];
+    let mediaStream = null;
+
+    // ── INIT ─────────────────────────────────────────────────────────────
+    window.addEventListener('DOMContentLoaded', () => {
+        if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+            document.getElementById('browserWarning').style.display = 'flex';
+            document.getElementById('startOverlay').style.display = 'none';
+            return;
         }
-
-        function clean(str) {
-            return str.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[.,!??"'();:]/g, '').trim();
-        }
-
-        function renderUI() {
-            document.getElementById('topicDisplay').innerText = C.topic || "Sitzung";
-            document.getElementById('welcomeName').innerText = C.studentName || 'Schüler';
-            if (C.hasTimer) document.getElementById('countdownWrapper').classList.remove('hidden');
-            let panelActive = false;
-            if (C.showVocab && C.vocab && C.vocab.length > 0) {
-                panelActive = true;
-                document.getElementById('vocabSection').classList.remove('hidden');
-                C.vocab.forEach(word => {
-                    const safeId = 'v-' + clean(word).replace(/\s+/g, '-');
-                    document.getElementById('vocabList').innerHTML +=
-                        `<span class="vocab-chip" id="${safeId}" data-vocab="${clean(word)}">${word}</span>`;
-                });
-            }
-            if (C.showScaffolds && C.scaffolds && C.scaffolds.length > 0) {
-                panelActive = true;
-                document.getElementById('scaffoldSection').classList.remove('hidden');
-                C.scaffolds.forEach((s, index) => {
-                    document.getElementById('scaffoldList').innerHTML +=
-                        `<li class="text-sm dark:text-slate-300 pl-3 border-l-2 border-indigo-200 dark:border-indigo-800 transition-colors duration-300" data-index="${index}">${s}</li>`;
-                });
-            }
-            if (panelActive) document.getElementById('sidePanel').style.display = 'flex';
-        }
-
-        function buildSocraticPrompt() {
-            let prompt = `### ROLLE\nDu bist ein hochqualifizierter KI-Tutor für ${C.language} als Fremdsprache, spezialisiert auf die "Sokratische Methode".\n`;
-            prompt += `### SCHÜLER\n- Name: ${C.studentName || 'Schüler'}\n- Thema: ${C.topic}\n- Niveau: ${C.level}\n- Deine Simulierte Rolle: ${C.role}\n\n`;
-            prompt += `### REGELN (STRENG EINHALTEN)\n`;
-            prompt += `1. ANREDE: Verwende IMMER und AUSSCHLIESSLICH das informelle Duzen.\n`;
-            if (C.correction === 'immediate') prompt += `2. KORREKTUR: GIB NIEMALS DIE LÖSUNG VOR. Stelle stattdessen eine zielführende pädagogische Rückfrage zu Fehlern.\n`;
-            else if (C.correction === 'end') prompt += `2. KORREKTUR: Korrigiere WÄHREND des Dialogs NICHT. Ignoriere Grammatikfehler, antworte nur auf den Inhalt.\n`;
-            else prompt += `2. KORREKTUR: Keine Grammatik-Hinweise. Fokus auf Sprechfluss.\n`;
-            prompt += `3. KONTEXTUELLE INTELLIGENZ: Nutze das Thema "${C.topic}" und bleibe in der Rolle als "${C.role}".\n`;
-            prompt += `4. SPRACHE: Alles findet strikt auf ${C.language} statt.\n`;
-            if (C.followUp) prompt += `5. DYNAMISCHES NACHHAKEN: Wenn der Schüler nur extrem kurz antwortet, hake in deiner Rolle fordernd nach.\n`;
-            conversationHistory.push({ role: "system", content: prompt });
-        }
-
-        async function unlockEverything() {
-            const btn = document.querySelector('#startOverlay button');
-            const originalHTML = btn.innerHTML;
-            btn.innerHTML = '<i class="fas fa-circle-notch fa-spin mr-2"></i> Fordere Mikrofon an...';
+        if (window.matchMedia('(prefers-color-scheme: dark)').matches) toggleDarkMode(true);
+        const d = new URLSearchParams(location.search).get('config');
+        if (d) {
             try {
-                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                const ac = new (window.AudioContext || window.webkitAudioContext)();
-                await ac.resume();
-                speechSynthesis.speak(new SpeechSynthesisUtterance(''));
-                setupRecognition();
-                stream.getTracks().forEach(t => t.stop());
-                document.getElementById('startOverlay').style.opacity = '0';
-                setTimeout(() => {
-                    document.getElementById('startOverlay').style.display = 'none';
-                    startSessionFlow();
-                }, 500);
-            } catch (err) {
-                alert("Mikrofon blockiert! Bitte erlaube es im Browser neben der URL-Leiste.");
-                btn.innerHTML = originalHTML;
-            }
+                C = JSON.parse(decodeURIComponent(escape(atob(decodeURIComponent(d)))));
+                renderUI();
+                buildSocraticPrompt();
+            } catch (e) { alert("Konfiguration defekt. Bitte den Lehrer kontaktieren."); }
+        } else { alert("Kein Session-Code gefunden."); }
+    });
+
+    // ── DARK MODE ────────────────────────────────────────────────────────
+    function toggleDarkMode(forceDark = null) {
+        const isDark = forceDark !== null ? forceDark : !document.documentElement.classList.contains('dark');
+        document.documentElement.classList.toggle('dark', isDark);
+        document.getElementById('themeIcon').className = isDark ? 'fas fa-sun text-yellow-400' : 'fas fa-moon text-slate-500';
+    }
+
+    // ── TEXT CLEANING ────────────────────────────────────────────────────
+    function clean(str) {
+        return str.toLowerCase().normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "")
+            .replace(/[.,!??"'();:]/g, '')
+            .trim();
+    }
+
+    // ── UI AUFBAUEN ──────────────────────────────────────────────────────
+    function renderUI() {
+        document.getElementById('topicDisplay').innerText = C.topic || "Sitzung";
+        document.getElementById('welcomeName').innerText = C.studentName || 'Schüler';
+        if (C.hasTimer) document.getElementById('countdownWrapper').classList.remove('hidden');
+
+        let panelActive = false;
+        if (C.showVocab && C.vocab && C.vocab.length > 0) {
+            panelActive = true;
+            document.getElementById('vocabSection').classList.remove('hidden');
+            C.vocab.forEach(word => {
+                const safeId = 'v-' + clean(word).replace(/\s+/g, '-');
+                document.getElementById('vocabList').innerHTML +=
+                    `<span class="vocab-chip" id="${safeId}" data-vocab="${clean(word)}">${word}</span>`;
+            });
+        }
+        if (C.showScaffolds && C.scaffolds && C.scaffolds.length > 0) {
+            panelActive = true;
+            document.getElementById('scaffoldSection').classList.remove('hidden');
+            C.scaffolds.forEach((s, index) => {
+                document.getElementById('scaffoldList').innerHTML +=
+                    `<li class="text-sm dark:text-slate-300 pl-3 border-l-2 border-indigo-200 dark:border-indigo-800 transition-colors duration-300" data-index="${index}">${s}</li>`;
+            });
+        }
+        if (panelActive) document.getElementById('sidePanel').style.display = 'flex';
+        updateProgress();
+    }
+
+    // ── FORTSCHRITTSBALKEN ───────────────────────────────────────────────
+    function updateProgress() {
+        const total = C.questions ? C.questions.length : 0;
+        if (total === 0) return;
+        const pct = Math.round((S.step / total) * 100);
+        document.getElementById('progressBar').style.width = pct + '%';
+        document.getElementById('progressText').innerText = `Frage ${Math.min(S.step + 1, total)} von ${total}`;
+    }
+
+    // ── SYSTEM PROMPT ────────────────────────────────────────────────────
+    function buildSocraticPrompt() {
+        let prompt = `### ROLLE\nDu bist ein hochqualifizierter KI-Sprachtutor für ${C.language} als Fremdsprache.\n`;
+        prompt += `### SCHÜLER\n- Name: ${C.studentName || 'Schüler'}\n- Muttersprache: ${C.nativeLanguage || 'unbekannt'}\n- Thema: ${C.topic}\n- Niveau: ${C.level}\n- Deine Rolle: ${C.role}\n\n`;
+        prompt += `### GESPRÄCHSMODUS: ${C.dialogMode === 'strict' ? 'STRENG' : 'ADAPTIV'}\n`;
+
+        if (C.dialogMode === 'strict') {
+            prompt += `- Stelle die vorgegebene Frage klar und deutlich.\n`;
+            prompt += `- Warte auf die Antwort des Schülers.\n`;
+            prompt += `- Reagiere kurz und gehe dann zur nächsten Frage über.\n`;
+            prompt += `- Kein Nachhaken, keine Zusatzfragen.\n\n`;
+        } else {
+            prompt += `- Passe dein Niveau dynamisch an die Antwortqualität an.\n`;
+            prompt += `- Bei sehr kurzen Antworten: hake nach.\n`;
+            prompt += `- Bei sehr guten Antworten: erhöhe die Komplexität.\n\n`;
         }
 
-        function triggerFlash() {
-            const flash = document.getElementById('successFlash');
-            if (flash) {
-                flash.classList.add('flash-active');
-                setTimeout(() => flash.classList.remove('flash-active'), 200);
-            }
+        prompt += `### REGELN\n`;
+        prompt += `1. ANREDE: Immer informelles DU.\n`;
+        prompt += `2. SPRACHE: Ausschließlich ${C.language}.\n`;
+
+        if (C.correction === 'immediate') {
+            prompt += `3. KORREKTUR: Gib niemals die Lösung vor. Stelle sokratische Rückfragen bei Fehlern.\n`;
+        } else if (C.correction === 'end') {
+            prompt += `3. KORREKTUR: Ignoriere Grammatikfehler während des Dialogs.\n`;
+        } else {
+            prompt += `3. KORREKTUR: Keine Korrekturen. Fokus auf Sprechfluss.\n`;
         }
 
-        function setupRecognition() {
-            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-            recognition = new SpeechRecognition();
-            recognition.continuous = true;
-            recognition.interimResults = true;
-            const langMap = { 'Englisch': 'en-US', 'Spanisch': 'es-ES', 'Französisch': 'fr-FR', 'Italienisch': 'it-IT', 'Deutsch': 'de-DE' };
-            recognition.lang = langMap[C.language] || 'de-DE';
+        if (C.pronunciationFeedback) {
+            prompt += `4. AUSSPRACHE: Nach jeder Schüler-Antwort gib einen kurzen, konstruktiven Aussprache-Hinweis basierend auf typischen Fehlern von ${C.nativeLanguage || 'Muttersprachlern'} beim ${C.language}-Sprechen. Fokus: ${C.pronunciationFocus || 'general'}. Format: Trenne deinen Aussprache-Hinweis mit der Markierung [AUSSPRACHE] am Anfang der Zeile.\n`;
+        }
 
-            recognition.onresult = (e) => {
-                let interimTranscript = '';
-                for (let i = e.resultIndex; i < e.results.length; ++i) {
-                    if (e.results[i].isFinal) {
-                        S.finalTranscription += e.results[i][0].transcript + " ";
-                        checkVocab(S.finalTranscription);
-                    } else {
-                        interimTranscript += e.results[i][0].transcript;
-                    }
+        conversationHistory.push({ role: "system", content: prompt });
+    }
+
+    // ── FLASH EFFEKT ─────────────────────────────────────────────────────
+    function triggerFlash() {
+        const flash = document.getElementById('successFlash');
+        if (flash) {
+            flash.classList.add('flash-active');
+            setTimeout(() => flash.classList.remove('flash-active'), 200);
+        }
+    }
+
+    // ── CHAT BUBBLE ──────────────────────────────────────────────────────
+    function addChatBubble(sender, text, id = null) {
+        const isCoach = sender === 'Coach';
+        const box = document.getElementById('chatHistory');
+        if (!box) return;
+
+        const group = document.createElement('div');
+        group.className = `flex flex-col w-full ${isCoach ? 'items-start' : 'items-end'} mb-4`;
+        if (id) group.id = id;
+
+        const label = document.createElement('div');
+        label.className = `bubble-label ${isCoach ? 'text-teal-600 dark:text-teal-400 pl-1' : 'text-indigo-400 pr-1'}`;
+        label.textContent = isCoach ? (C.role || 'Coach') : (C.studentName || 'Du');
+
+        const bubble = document.createElement('div');
+        bubble.className = `w-fit max-w-[85%] rounded-2xl p-4 text-[15px] leading-relaxed chat-bubble-content ${
+            isCoach
+                ? 'bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 border border-slate-200 dark:border-slate-700 shadow-sm rounded-tl-none'
+                : 'bg-indigo-600 text-white rounded-tr-none shadow-md'
+        }`;
+
+        if (text === '...') {
+            bubble.innerHTML = '<i class="fas fa-ellipsis-h animate-pulse"></i>';
+        } else if (isCoach && C.textMode === 'hidden') {
+            bubble.innerHTML = '🔊 <i>Text verborgen (Höre zu)</i>';
+        } else {
+            // Aussprache-Hinweis farblich hervorheben
+            if (isCoach && text.includes('[AUSSPRACHE]')) {
+                const parts = text.split('[AUSSPRACHE]');
+                bubble.textContent = parts[0].trim();
+                if (parts[1]) {
+                    const hint = document.createElement('div');
+                    hint.className = 'mt-3 pt-3 border-t border-slate-200 dark:border-slate-600 text-sm text-amber-600 dark:text-amber-400';
+                    hint.innerHTML = `<i class="fas fa-comment-alt mr-1"></i> <strong>Aussprache:</strong> ${parts[1].trim()}`;
+                    bubble.appendChild(hint);
                 }
-                const showText = (S.finalTranscription + interimTranscript).trim();
-                if (showText !== '') {
-                    let transNode = document.getElementById('liveTrans');
-                    if (!transNode) {
-                        addChatBubble('Student', showText, 'liveTrans');
-                    } else {
-                        const contentDiv = transNode.querySelector('.chat-bubble-content');
-                        if (contentDiv) contentDiv.innerText = showText;
-                        const box = document.getElementById('chatHistory');
-                        if (box) box.scrollTo({ top: box.scrollHeight, behavior: 'smooth' });
-                    }
-                }
-            };
-
-            recognition.onend = () => {
-                if (S.recording) {
-                    try {
-                        recognition.start();
-                    } catch (e) {
-                        setTimeout(() => {
-                            if (S.recording) {
-                                try { recognition.start(); } catch (e2) {
-                                    S.recording = false;
-                                    setStatus('Mikrofon-Fehler – bitte neu laden', true);
-                                    const btn = document.getElementById('micBtn');
-                                    btn.className = 'mic-fab mic-disabled';
-                                    btn.disabled = true;
-                                }
-                            }
-                        }, 300);
-                    }
-                }
-            };
-
-            recognition.onerror = (e) => {
-                if (e.error === 'aborted') return;
-                console.warn("Recognition Fehler:", e.error);
-            };
-        }
-
-        function checkVocab(fullText) {
-            if (!C.vocab && !C.scaffolds) return;
-            const cleanText = clean(fullText);
-            let hitFound = false;
-            if (C.vocab) {
-                C.vocab.forEach(w => {
-                    const cleanW = clean(w);
-                    if (cleanText.includes(cleanW) && !S.usedVocab.has(cleanW)) {
-                        S.usedVocab.add(cleanW);
-                        hitFound = true;
-                        const el = document.querySelector(`[data-vocab="${cleanW}"]`);
-                        if (el && !el.classList.contains('vocab-hit')) el.classList.add('vocab-hit');
-                    }
-                });
-            }
-            if (C.scaffolds) {
-                C.scaffolds.forEach((s, ix) => {
-                    const cleanS = clean(s);
-                    if (cleanText.includes(cleanS) && !S.usedScaffolds.has(cleanS)) {
-                        S.usedScaffolds.add(cleanS);
-                        hitFound = true;
-                        const li = document.querySelector(`#scaffoldList li[data-index="${ix}"]`);
-                        if (li) {
-                            li.style.borderColor = '#14b8a6';
-                            li.classList.add('font-bold');
-                            li.style.color = '#0f766e';
-                        }
-                    }
-                });
-            }
-            if (hitFound) triggerFlash();
-        }
-
-        // FIX: Sauberer Chat-Wechsel – jede Bubble bekommt ein Label und einen Abstand
-        function addChatBubble(sender, text, id = null) {
-            const isCoach = sender === 'Coach';
-            const box = document.getElementById('chatHistory');
-            if (!box) return;
-
-            const group = document.createElement('div');
-            group.className = `flex flex-col w-full ${isCoach ? 'items-start' : 'items-end'} mb-4`;
-            if (id) group.id = id;
-
-            // Label über der Bubble
-            const label = document.createElement('div');
-            label.className = `bubble-label ${isCoach ? 'text-teal-600 dark:text-teal-400 pl-1' : 'text-indigo-400 pr-1'}`;
-            label.textContent = isCoach ? (C.role || 'Coach') : (C.studentName || 'Du');
-
-            const bubble = document.createElement('div');
-            bubble.className = `w-fit max-w-[85%] rounded-2xl p-4 text-[15px] leading-relaxed chat-bubble-content ${
-                isCoach
-                    ? 'bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 border border-slate-200 dark:border-slate-700 shadow-sm rounded-tl-none'
-                    : 'bg-indigo-600 text-white rounded-tr-none shadow-md'
-            }`;
-
-            if (text === '...') {
-                bubble.innerHTML = '<i class="fas fa-ellipsis-h animate-pulse"></i>';
-            } else if (isCoach && C.textMode === 'hidden') {
-                bubble.innerHTML = '🔊 <i>Text verborgen (Höre zu)</i>';
             } else {
                 bubble.textContent = text;
             }
-
-            // Label nur anzeigen wenn kein Typing-Indikator
-            if (text !== '...') group.appendChild(label);
-            group.appendChild(bubble);
-            box.appendChild(group);
-            box.scrollTo({ top: box.scrollHeight, behavior: 'smooth' });
         }
 
-        function setStatus(msg, visible) {
-            const b = document.getElementById('statusBadge');
-            b.innerText = msg;
-            b.style.opacity = visible ? 1 : 0;
+        if (text !== '...') group.appendChild(label);
+        group.appendChild(bubble);
+
+        // Übersetzungs-Container für Coach-Bubbles
+        if (isCoach && text !== '...' && C.textMode !== 'hidden') {
+            const transContainer = document.createElement('div');
+            transContainer.className = 'translation-container hidden mt-1 pl-1';
+            transContainer.id = id ? `trans-${id}` : `trans-${Date.now()}`;
+            group.appendChild(transContainer);
         }
 
-        function lockMic(lock) {
-            const btn = document.getElementById('micBtn');
-            if (lock) {
-                btn.className = 'mic-fab mic-disabled';
-                btn.innerHTML = '<i class="fas fa-microphone"></i>';
-                btn.disabled = true;
-            }
+        box.appendChild(group);
+        box.scrollTo({ top: box.scrollHeight, behavior: 'smooth' });
+
+        // Letzte Coach-Bubble merken für Wiederholen/Übersetzen
+        if (isCoach && text !== '...') {
+            S.lastCoachMessage = text;
+            S.lastCoachBubble = group;
         }
 
-        function unlockMic() {
-            const btn = document.getElementById('micBtn');
-            btn.className = 'mic-fab mic-idle';
-            btn.innerHTML = '<i class="fas fa-microphone"></i>';
-            btn.disabled = false;
-            setStatus('Tippen zum Starten', true);
-        }
+        return group;
+    }
 
-        function updTimeUI() {
-            const m = Math.floor(S.timeLeft / 60);
-            const s = S.timeLeft % 60;
-            document.getElementById('countdown').innerText = `${m}:${s < 10 ? '0' + s : s}`;
-        }
+    // ── STATUS BADGE ─────────────────────────────────────────────────────
+    function setStatus(msg, visible) {
+        const b = document.getElementById('statusBadge');
+        b.innerText = msg;
+        b.style.opacity = visible ? 1 : 0;
+    }
 
-        function startTimer() {
-            if (!C.hasTimer) return;
-            S.timeLeft = parseInt(C.timer);
+    // ── MIC LOCK/UNLOCK ──────────────────────────────────────────────────
+    function lockMic() {
+        const btn = document.getElementById('micBtn');
+        btn.className = 'mic-fab mic-disabled';
+        btn.innerHTML = '<i class="fas fa-microphone"></i>';
+        btn.disabled = true;
+        document.getElementById('actionButtons').classList.add('hidden');
+    }
+
+    function unlockMic() {
+        const btn = document.getElementById('micBtn');
+        btn.className = 'mic-fab mic-idle';
+        btn.innerHTML = '<i class="fas fa-microphone"></i>';
+        btn.disabled = false;
+        setStatus('Mikrofon drücken zum Sprechen', true);
+        document.getElementById('actionButtons').classList.remove('hidden');
+        document.getElementById('actionButtons').style.display = 'flex';
+        document.getElementById('pauseBtn').classList.remove('hidden');
+        document.getElementById('pauseBtn').style.display = 'flex';
+    }
+
+    // ── TIMER ────────────────────────────────────────────────────────────
+    function updTimeUI() {
+        const m = Math.floor(S.timeLeft / 60);
+        const s = S.timeLeft % 60;
+        document.getElementById('countdown').innerText = `${m}:${s < 10 ? '0' + s : s}`;
+    }
+
+    function startTimer() {
+        if (!C.hasTimer) return;
+        S.timeLeft = parseInt(C.timer);
+        updTimeUI();
+        clearInterval(S.timer);
+        S.timer = setInterval(() => {
+            S.timeLeft--;
             updTimeUI();
-            clearInterval(S.timer);
-            S.timer = setInterval(() => {
-                S.timeLeft--;
-                updTimeUI();
-                const box = document.getElementById('countdownWrapper');
-                if (S.timeLeft <= 10 && S.timeLeft > 0) box.classList.add('timer-warning');
-                else box.classList.remove('timer-warning');
-                if (S.timeLeft <= 0) { clearInterval(S.timer); if (S.recording) stopRec(); }
-            }, 1000);
+            const box = document.getElementById('countdownWrapper');
+            if (S.timeLeft <= 10 && S.timeLeft > 0) box.classList.add('timer-warning');
+            else box.classList.remove('timer-warning');
+            if (S.timeLeft <= 0) { clearInterval(S.timer); if (S.recording) stopRec(); }
+        }, 1000);
+    }
+
+    // ── VOCAB CHECK ──────────────────────────────────────────────────────
+    function checkVocab(fullText) {
+        if (!C.vocab && !C.scaffolds) return;
+        const cleanText = clean(fullText);
+        let hitFound = false;
+
+        if (C.vocab) {
+            C.vocab.forEach(w => {
+                const cleanW = clean(w);
+                if (cleanText.includes(cleanW) && !S.usedVocab.has(cleanW)) {
+                    S.usedVocab.add(cleanW);
+                    hitFound = true;
+                    const el = document.querySelector(`[data-vocab="${cleanW}"]`);
+                    if (el && !el.classList.contains('vocab-hit')) el.classList.add('vocab-hit');
+                }
+            });
         }
-
-        function toggleRecording() { if (S.recording) stopRec(); else startRec(); }
-
-        function startRec() {
-            if (S.speaking) return;
-            S.recording = true;
-            S.finalTranscription = "";
-            try { recognition.start(); } catch (e) {}
-            const btn = document.getElementById('micBtn');
-            btn.className = 'mic-fab mic-recording';
-            btn.innerHTML = '<i class="fas fa-stop"></i>';
-            setStatus('Antworte jetzt – tippe das Icon zum Senden', true);
-        }
-        async function stopRec() {
-            if (!S.recording) return;
-            S.recording = false;
-            try { recognition.stop(); } catch (e) {}
-            clearInterval(S.timer);
-            document.getElementById('countdownWrapper').classList.remove('timer-warning');
-
-            const btn = document.getElementById('micBtn');
-            btn.className = 'mic-fab mic-disabled';
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
-            btn.disabled = true;
-            setStatus('Coach überlegt...', true);
-
-            let studentTextFinal = S.finalTranscription.trim();
-
-            const transNode = document.getElementById('liveTrans');
-            if (studentTextFinal === '' && transNode) {
-                const innerDiv = transNode.querySelector('.chat-bubble-content');
-                if (innerDiv) studentTextFinal = innerDiv.innerText.trim();
-            }
-
-            if (studentTextFinal === '') studentTextFinal = "*(Hat den Knopf gedrückt, aber nichts gesagt)*";
-
-            if (transNode) {
-                transNode.removeAttribute('id');
-                const contentDiv = transNode.querySelector('.chat-bubble-content');
-                if (contentDiv) contentDiv.textContent = studentTextFinal;
-            } else {
-                addChatBubble('Student', studentTextFinal);
-            }
-
-            let studentTextFormatted = studentTextFinal;
-            if (C.vocab) {
-                C.vocab.forEach(w => {
-                    const cleanW = clean(w);
-                    if (cleanW) {
-                        const regex = new RegExp(`(${cleanW})`, 'gi');
-                        studentTextFormatted = studentTextFormatted.replace(regex, '**$1**');
+        if (C.scaffolds) {
+            C.scaffolds.forEach((s, ix) => {
+                const cleanS = clean(s);
+                if (cleanText.includes(cleanS) && !S.usedScaffolds.has(cleanS)) {
+                    S.usedScaffolds.add(cleanS);
+                    hitFound = true;
+                    const li = document.querySelector(`#scaffoldList li[data-index="${ix}"]`);
+                    if (li) {
+                        li.style.borderColor = '#14b8a6';
+                        li.classList.add('font-bold');
+                        li.style.color = '#0f766e';
                     }
-                });
-            }
-            if (C.scaffolds) {
-                C.scaffolds.forEach(s => {
-                    const cleanS = clean(s);
-                    if (cleanS) {
-                        const regex = new RegExp(`(${cleanS})`, 'gi');
-                        studentTextFormatted = studentTextFormatted.replace(regex, '**$1**');
-                    }
-                });
-            }
+                }
+            });
+        }
+        if (hitFound) triggerFlash();
+    }
 
-            S.log.push({ s: C.studentName || 'Student', t: studentTextFormatted });
-            conversationHistory.push({ role: "user", content: studentTextFinal });
+    // ── PAUSE / RESUME ───────────────────────────────────────────────────
+    function pauseSession() {
+        if (S.speaking || S.recording) return;
+        S.paused = true;
+        clearInterval(S.timer);
+        document.getElementById('pauseOverlay').style.display = 'flex';
+    }
 
-            addChatBubble('Coach', '...', 'typingIndicator');
-            await askGPT();
+    function resumeSession() {
+        S.paused = false;
+        document.getElementById('pauseOverlay').style.display = 'none';
+        if (C.hasTimer && S.timeLeft > 0) startTimer();
+    }
+
+    // ── WIEDERHOLEN ──────────────────────────────────────────────────────
+    function repeatLastCoachMessage() {
+        if (!S.lastCoachMessage || S.speaking) return;
+        setStatus('Wiederholt...', true);
+        playTTS(S.lastCoachMessage, () => {
+            setStatus('Mikrofon drücken zum Sprechen', true);
+        });
+    }
+
+    // ── ÜBERSETZEN ───────────────────────────────────────────────────────
+    async function translateLastCoachMessage() {
+        if (!S.lastCoachMessage || !S.lastCoachBubble) return;
+        const nativeLang = C.nativeLanguage || 'Deutsch';
+
+        // Bereits übersetzt?
+        const existing = S.lastCoachBubble.querySelector('.translation-container');
+        if (existing) {
+            existing.classList.toggle('hidden');
+            return;
         }
 
-        async function askGPT() {
-            const messagesToSend = [...conversationHistory];
+        setStatus('Übersetze...', true);
+        const prompt = `Übersetze folgenden Text ins ${nativeLang}. Gib NUR die Übersetzung zurück, nichts anderes:\n\n${S.lastCoachMessage}`;
 
-            // FIX: "developer" → "system"
-            // FIX: S.step zeigt hier auf die NÄCHSTE Frage – noch nicht erhöht
-            if (S.step < C.questions.length) {
-                messagesToSend.push({
-                    role: "system",
-                    content: `Beziehe dich kurz auf die letzte Antwort des Schülers. Leite dann organisch zur nächsten Frage über: "${C.questions[S.step]}". Stelle NUR diese eine Frage und warte auf die Antwort.`
-                });
-            } else {
-                messagesToSend.push({
-                    role: "system",
-                    content: `Das war die letzte Frage. Beende jetzt das Training. Bedanke dich beim Schüler ${C.studentName}, gib ein kurzes ehrliches Lob und verabschiede dich freundlich. Stelle KEINE weitere Frage mehr.`
-                });
+        try {
+            const response = await fetch('/.netlify/functions/ai-proxy', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    type: 'chat',
+                    model: 'gpt-4o',
+                    messages: [{ role: 'user', content: prompt }],
+                    max_tokens: 200
+                })
+            });
+            const result = await response.json();
+            const translation = result.choices[0].message.content.trim();
+
+            const transContainer = S.lastCoachBubble.querySelector('.translation-container');
+            if (transContainer) {
+                transContainer.innerHTML = `<div class="translation-box">🌐 ${translation}</div>`;
+                transContainer.classList.remove('hidden');
             }
+        } catch (e) {
+            console.warn("Übersetzungsfehler:", e);
+        }
+        setStatus('Mikrofon drücken zum Sprechen', true);
+    }
+    // ── UNLOCK / START ───────────────────────────────────────────────────
+    async function unlockEverything() {
+        const btn = document.querySelector('#startOverlay button');
+        const originalHTML = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-circle-notch fa-spin mr-2"></i> Fordere Mikrofon an...';
 
+        try {
+            mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            const ac = new (window.AudioContext || window.webkitAudioContext)();
+            await ac.resume();
+            speechSynthesis.speak(new SpeechSynthesisUtterance(''));
+
+            document.getElementById('startOverlay').style.opacity = '0';
+            setTimeout(() => {
+                document.getElementById('startOverlay').style.display = 'none';
+                startSessionFlow();
+            }, 500);
+
+        } catch (err) {
+            alert("Mikrofon blockiert! Bitte erlaube es im Browser neben der URL-Leiste.");
+            btn.innerHTML = originalHTML;
+        }
+    }
+
+    // ── SESSION FLOW ─────────────────────────────────────────────────────
+    function startSessionFlow() {
+        const intro = C.intro || "Die Simulation beginnt jetzt.";
+        S.log.push({ s: 'Coach', t: intro });
+        conversationHistory.push({ role: "assistant", content: intro });
+        setStatus('Coach spricht...', true);
+        addChatBubble('Coach', intro);
+        lockMic();
+        playTTS(intro, () => { setTimeout(nextTeacherQuestion, 500); });
+    }
+
+    function nextTeacherQuestion() {
+        if (S.step >= C.questions.length) return finish();
+        const text = C.questions[S.step];
+        S.log.push({ s: 'Coach (Leitfrage)', t: text });
+        conversationHistory.push({ role: "assistant", content: text });
+        addChatBubble('Coach', text);
+        lockMic();
+        updateProgress();
+        // S.step wird NICHT hier erhöht – nur in askGPT()
+        playTTS(text, () => { unlockMic(); startTimer(); });
+    }
+
+    // ── TTS ──────────────────────────────────────────────────────────────
+    async function playTTS(text, callback) {
+        S.speaking = true;
+        document.body.classList.add('is-speaking');
+        setStatus('Coach spricht...', true);
+
+        if (C.audioEngine === 'elevenlabs' && C.elevenApiKey && C.elevenVoiceId) {
             try {
-                const response = await fetch('/.netlify/functions/ai-proxy', {
+                const res = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${C.elevenVoiceId}`, {
+                    method: 'POST',
+                    headers: { 'xi-api-key': C.elevenApiKey, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text: text, model_id: "eleven_multilingual_v2" })
+                });
+                if (!res.ok) throw new Error();
+                playAudioBlob(await res.blob(), callback);
+                return;
+            } catch (e) { console.warn("ElevenLabs Fehler, Fallback"); }
+        }
+
+        if (C.audioEngine === 'openai') {
+            try {
+                const res = await fetch('/.netlify/functions/ai-proxy', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        type: 'chat',
-                        model: C.model || 'gpt-4o',
-                        messages: messagesToSend,
-                        temperature: 0.7,
-                        max_tokens: 350
+                        type: 'tts',
+                        model: 'tts-1',
+                        input: text,
+                        voice: C.openaiVoice || 'alloy'
                     })
                 });
-
-                const indicator = document.getElementById('typingIndicator');
-                if (indicator) indicator.remove();
-
-                if (!response.ok) {
-                    const errData = await response.json();
-                    throw new Error(errData.error?.message || response.status);
-                }
-
-                const aiReply = (await response.json()).choices[0].message.content;
-                S.log.push({ s: 'Coach', t: aiReply });
-                conversationHistory.push({ role: "assistant", content: aiReply });
-
-                addChatBubble('Coach', aiReply);
-
-                // FIX: S.step wird HIER erhöht – nach der KI-Antwort, nicht vorher
-                S.step++;
-
-                playTTS(aiReply, () => {
-                    if (S.step >= C.questions.length) {
-                        setTimeout(finish, 1000);
-                    } else {
-                        unlockMic();
-                        startTimer();
-                    }
-                });
-
-            } catch (err) {
-                const indicator = document.getElementById('typingIndicator');
-                if (indicator) indicator.remove();
-                addChatBubble('Coach', `⚠️ Verbindungsfehler: ${err.message}. Bitte versuche es nochmal.`);
-                unlockMic();
-            }
-        }
-
-        function startSessionFlow() {
-            const intro = C.intro || "Die Simulation beginnt jetzt.";
-            S.log.push({ s: 'Coach', t: intro });
-            conversationHistory.push({ role: "assistant", content: intro });
-            setStatus('Coach spricht...', true);
-            addChatBubble('Coach', intro);
-            // FIX: Mic bleibt gesperrt während Intro läuft
-            lockMic(true);
-            playTTS(intro, () => { setTimeout(nextTeacherQuestion, 500); });
-        }
-
-        function nextTeacherQuestion() {
-            if (S.step >= C.questions.length) return finish();
-            const text = C.questions[S.step];
-            S.log.push({ s: 'Coach (Leitfrage)', t: text });
-            conversationHistory.push({ role: "assistant", content: text });
-            addChatBubble('Coach', text);
-            lockMic(true);
-            // FIX: S.step wird NICHT mehr hier erhöht
-            playTTS(text, () => { unlockMic(); startTimer(); });
-        }
-
-        async function playTTS(text, callback) {
-            S.speaking = true;
-            document.body.classList.add('is-speaking');
-
-            if (C.audioEngine === 'elevenlabs' && C.elevenApiKey && C.elevenVoiceId) {
-                try {
-                    const res = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${C.elevenVoiceId}`, {
-                        method: 'POST',
-                        headers: { 'xi-api-key': C.elevenApiKey, 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ text: text, model_id: "eleven_multilingual_v2" })
-                    });
-                    if (!res.ok) throw new Error();
-                    playAudioBlob(await res.blob(), callback);
-                    return;
-                } catch (e) { console.warn("ElevenLabs Fehler, Fallback zu Browser TTS"); }
-            }
-
-            if (C.audioEngine === 'openai') {
-                try {
-                    const res = await fetch('/.netlify/functions/ai-proxy', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            type: 'tts',
-                            model: 'tts-1',
-                            input: text,
-                            voice: C.openaiVoice || 'alloy'
-                        })
-                    });
-                    if (!res.ok) throw new Error();
-                    playAudioBlob(await res.blob(), callback);
-                    return;
-                } catch (e) { console.warn("OpenAI TTS Fehler, Fallback zu Browser TTS"); }
-            }
-
-            speechSynthesis.cancel();
-            const u = new SpeechSynthesisUtterance(text);
-            const langMap = { 'Englisch': 'en-US', 'Spanisch': 'es-ES', 'Französisch': 'fr-FR', 'Italienisch': 'it-IT', 'Deutsch': 'de-DE' };
-            u.lang = langMap[C.language] || 'de-DE';
-
-            let callbackFired = false;
-            const fireCallback = () => {
-                if (callbackFired) return;
-                callbackFired = true;
-                S.speaking = false;
-                document.body.classList.remove('is-speaking');
-                if (callback) callback();
-            };
-
-            u.onend = fireCallback;
-            const timeoutMs = Math.max(5000, text.length * 60 + 2000);
-            setTimeout(fireCallback, timeoutMs);
-            speechSynthesis.speak(u);
-        }
-
-        function playAudioBlob(blob, callback) {
-            const audio = new Audio(URL.createObjectURL(blob));
-            audio.onended = () => {
-                S.speaking = false;
-                document.body.classList.remove('is-speaking');
-                if (callback) callback();
-            };
-            audio.onerror = () => {
-                S.speaking = false;
-                document.body.classList.remove('is-speaking');
-                if (callback) callback();
-            };
-            audio.play();
-        }
-
-        async function finish() {
-            document.getElementById('micBtn').style.display = 'none';
-            document.getElementById('countdownWrapper').style.display = 'none';
-            setStatus('Übertrage Ergebnisse...', true);
-            addChatBubble('Coach', "🟢 Das Training ist beendet. Protokoll wird sicher an den Lehrer gesendet...");
-
-            const dateStr = new Date().toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
-            const vocabTotal = C.vocab ? C.vocab.length : 0;
-            const scaffTotal = C.scaffolds ? C.scaffolds.length : 0;
-
-            let md = `DialogCoach - Training: ${C.topic}\n`;
-            md += `Schüler: ${C.studentName} | Datum: ${dateStr} | Niveau: ${C.level} | Sprache: ${C.language}\n\n`;
-            md += `--- Lernziel-Auswertung ---\n`;
-            if (vocabTotal > 0) md += `Pflichtvokabeln: ${S.usedVocab.size} von ${vocabTotal} verwendet.\n`;
-            if (scaffTotal > 0) md += `Redemittel: ${S.usedScaffolds.size} von ${scaffTotal} verwendet.\n\n`;
-            md += `--- Dialog-Verlauf ---\n\n`;
-            S.log.forEach(r => { md += `**${r.s}:**\n${r.t}\n\n`; });
-
-            const formspreeId = C.formspreeId || '';
-            if (!formspreeId) {
-                addChatBubble('Coach', "⚠️ Keine Formspree ID konfiguriert. Protokoll konnte nicht gesendet werden.");
+                if (!res.ok) throw new Error();
+                playAudioBlob(await res.blob(), callback);
                 return;
+            } catch (e) { console.warn("OpenAI TTS Fehler, Fallback"); }
+        }
+
+        // Browser TTS Fallback
+        speechSynthesis.cancel();
+        const u = new SpeechSynthesisUtterance(text);
+        const langMap = { 'Englisch': 'en-US', 'Spanisch': 'es-ES', 'Französisch': 'fr-FR', 'Italienisch': 'it-IT', 'Deutsch': 'de-DE' };
+        u.lang = langMap[C.language] || 'de-DE';
+
+        let callbackFired = false;
+        const fireCallback = () => {
+            if (callbackFired) return;
+            callbackFired = true;
+            S.speaking = false;
+            document.body.classList.remove('is-speaking');
+            if (callback) callback();
+        };
+        u.onend = fireCallback;
+        const timeoutMs = Math.max(5000, text.length * 60 + 2000);
+        setTimeout(fireCallback, timeoutMs);
+        speechSynthesis.speak(u);
+    }
+
+    function playAudioBlob(blob, callback) {
+        const audio = new Audio(URL.createObjectURL(blob));
+        audio.onended = () => {
+            S.speaking = false;
+            document.body.classList.remove('is-speaking');
+            if (callback) callback();
+        };
+        audio.onerror = () => {
+            S.speaking = false;
+            document.body.classList.remove('is-speaking');
+            if (callback) callback();
+        };
+        audio.play();
+    }
+
+    // ── WHISPER RECORDING ────────────────────────────────────────────────
+    function toggleRecording() {
+        if (S.paused) return;
+        if (S.recording) stopRec();
+        else startRec();
+    }
+
+    function startRec() {
+        if (S.speaking) return;
+        S.recording = true;
+        S.audioChunks = [];
+
+        // MediaRecorder für Whisper
+        try {
+            const options = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
+                ? { mimeType: 'audio/webm;codecs=opus' }
+                : {};
+            S.mediaRecorder = new MediaRecorder(mediaStream, options);
+        } catch (e) {
+            S.mediaRecorder = new MediaRecorder(mediaStream);
+        }
+
+        S.mediaRecorder.ondataavailable = (e) => {
+            if (e.data && e.data.size > 0) S.audioChunks.push(e.data);
+        };
+
+        S.mediaRecorder.start(100); // Alle 100ms ein Chunk
+
+        const btn = document.getElementById('micBtn');
+        btn.className = 'mic-fab mic-recording';
+        btn.innerHTML = '<i class="fas fa-stop"></i>';
+        document.getElementById('recIndicator').classList.remove('hidden');
+        document.getElementById('recIndicator').style.display = 'flex';
+        setStatus('Sprich jetzt – drücke Stop zum Senden', true);
+    }
+
+    async function stopRec() {
+        if (!S.recording) return;
+        S.recording = false;
+
+        const btn = document.getElementById('micBtn');
+        btn.className = 'mic-fab mic-disabled';
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+        btn.disabled = true;
+        document.getElementById('recIndicator').classList.add('hidden');
+        clearInterval(S.timer);
+        document.getElementById('countdownWrapper').classList.remove('timer-warning');
+        setStatus('Whisper transkribiert...', true);
+
+        // MediaRecorder stoppen und auf Daten warten
+        await new Promise((resolve) => {
+            S.mediaRecorder.onstop = resolve;
+            S.mediaRecorder.stop();
+        });
+
+        // Audio-Blob erstellen
+        const mimeType = S.mediaRecorder.mimeType || 'audio/webm';
+        const audioBlob = new Blob(S.audioChunks, { type: mimeType });
+
+        // Für Cloudinary Upload speichern
+        S.audioBlob = audioBlob;
+
+        // An Whisper schicken
+        const studentText = await transcribeWithWhisper(audioBlob);
+
+        // Bubble anzeigen
+        addChatBubble('Student', studentText);
+        checkVocab(studentText);
+
+        // Protokoll
+        let studentTextFormatted = studentText;
+        if (C.vocab) {
+            C.vocab.forEach(w => {
+                const cleanW = clean(w);
+                if (cleanW) {
+                    const regex = new RegExp(`(${cleanW})`, 'gi');
+                    studentTextFormatted = studentTextFormatted.replace(regex, '**$1**');
+                }
+            });
+        }
+
+        S.log.push({ s: C.studentName || 'Student', t: studentTextFormatted });
+        conversationHistory.push({ role: "user", content: studentText });
+
+        addChatBubble('Coach', '...', 'typingIndicator');
+        await askGPT();
+    }
+
+    // ── WHISPER TRANSKRIPTION ────────────────────────────────────────────
+    async function transcribeWithWhisper(audioBlob) {
+        const langMap = {
+            'Deutsch': 'de', 'Englisch': 'en', 'Spanisch': 'es',
+            'Französisch': 'fr', 'Italienisch': 'it'
+        };
+
+        const formData = new FormData();
+        // Whisper braucht eine Datei mit Endung
+        const ext = audioBlob.type.includes('webm') ? 'webm' :
+                    audioBlob.type.includes('mp4') ? 'mp4' : 'webm';
+        formData.append('file', audioBlob, `audio.${ext}`);
+        formData.append('model', 'whisper-1');
+        formData.append('language', langMap[C.language] || 'de');
+
+        try {
+            const response = await fetch('/.netlify/functions/ai-proxy', {
+                method: 'POST',
+                body: formData
+                // Content-Type NICHT setzen – Browser setzt boundary automatisch
+            });
+
+            if (!response.ok) throw new Error(`Whisper Fehler: ${response.status}`);
+            const result = await response.json();
+            return result.text || "*(Keine Sprache erkannt)*";
+
+        } catch (e) {
+            console.error("Whisper Fehler:", e);
+            return "*(Transkriptionsfehler – bitte nochmal versuchen)*";
+        }
+    }
+
+    // ── AUDIO DOWNLOAD ───────────────────────────────────────────────────
+    function downloadAudio() {
+        if (!S.audioBlob) {
+            alert("Noch keine Aufnahme vorhanden.");
+            return;
+        }
+        const url = URL.createObjectURL(S.audioBlob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `DialogCoach_${C.studentName}_${C.topic}_${new Date().toLocaleDateString('de-DE').replace(/\./g, '-')}.webm`;
+        a.click();
+        URL.revokeObjectURL(url);
+    }
+
+    // ── CLOUDINARY UPLOAD ────────────────────────────────────────────────
+    async function uploadToCloudinary(blob) {
+        const CLOUD_NAME = 'digx17mll';
+        const UPLOAD_PRESET = 'dialogcoach_audio';
+        const fileName = `${C.studentName}_${C.topic}_${Date.now()}`.replace(/\s+/g, '_');
+
+        const formData = new FormData();
+        formData.append('file', blob, fileName + '.webm');
+        formData.append('upload_preset', UPLOAD_PRESET);
+        formData.append('public_id', `dialogcoach/${fileName}`);
+        formData.append('resource_type', 'video'); // Cloudinary behandelt Audio als video
+
+        try {
+            const response = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/video/upload`, {
+                method: 'POST',
+                body: formData
+            });
+            const result = await response.json();
+            return result.secure_url || null;
+        } catch (e) {
+            console.warn("Cloudinary Upload Fehler:", e);
+            return null;
+        }
+    }
+    // ── ASK GPT ──────────────────────────────────────────────────────────
+    async function askGPT() {
+        const messagesToSend = [...conversationHistory];
+
+        if (S.step < C.questions.length) {
+            messagesToSend.push({
+                role: "system",
+                content: `Beziehe dich kurz auf die letzte Antwort des Schülers. Leite dann organisch zur nächsten Frage über: "${C.questions[S.step]}". Stelle NUR diese eine Frage und warte auf die Antwort.`
+            });
+        } else {
+            messagesToSend.push({
+                role: "system",
+                content: `Das war die letzte Frage. Beende jetzt das Training. Bedanke dich beim Schüler ${C.studentName}, gib ein kurzes ehrliches Lob und verabschiede dich freundlich. Stelle KEINE weitere Frage mehr.`
+            });
+        }
+
+        try {
+            const response = await fetch('/.netlify/functions/ai-proxy', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    type: 'chat',
+                    model: C.model || 'gpt-4o',
+                    messages: messagesToSend,
+                    temperature: 0.7,
+                    max_tokens: 400
+                })
+            });
+
+            const indicator = document.getElementById('typingIndicator');
+            if (indicator) indicator.remove();
+
+            if (!response.ok) {
+                const errData = await response.json();
+                throw new Error(errData.error?.message || response.status);
             }
 
-            const formData = new URLSearchParams();
-            formData.append("Schueler", C.studentName || "Unbekannt");
-            formData.append("Thema", C.topic || "Sitzung");
-            formData.append("Niveau", C.level || "?");
-            formData.append("Protokoll", md);
+            const aiReply = (await response.json()).choices[0].message.content;
+            S.log.push({ s: 'Coach', t: aiReply });
+            conversationHistory.push({ role: "assistant", content: aiReply });
 
-            try {
-                const response = await fetch(`https://formspree.io/f/${formspreeId}`, {
-                    method: "POST",
-                    headers: { "Accept": "application/json" },
-                    body: formData
-                });
-                if (response.ok) {
-                    setStatus('Abgeschlossen ✅', true);
-                    addChatBubble('Coach', "✅ Übertragung erfolgreich! Der Lehrer hat das Protokoll erhalten. Du kannst diesen Tab nun schließen.");
+            addChatBubble('Coach', aiReply);
+
+            // FIX: S.step erst NACH der KI-Antwort erhöhen
+            S.step++;
+            updateProgress();
+
+            playTTS(aiReply, () => {
+                if (S.step >= C.questions.length) {
+                    setTimeout(finish, 1000);
                 } else {
-                    addChatBubble('Coach', "⚠️ Sende-Fehler. Bitte melde dich beim Lehrer.");
+                    unlockMic();
+                    startTimer();
                 }
-            } catch (error) {
-                console.error(error);
-                addChatBubble('Coach', "⚠️ Verbindungsfehler beim Senden des Protokolls.");
+            });
+
+        } catch (err) {
+            const indicator = document.getElementById('typingIndicator');
+            if (indicator) indicator.remove();
+            addChatBubble('Coach', `⚠️ Verbindungsfehler: ${err.message}. Bitte versuche es nochmal.`);
+            unlockMic();
+        }
+    }
+
+    // ── FINISH ───────────────────────────────────────────────────────────
+    async function finish() {
+        document.getElementById('micBtn').style.display = 'none';
+        document.getElementById('countdownWrapper').style.display = 'none';
+        document.getElementById('pauseBtn').style.display = 'none';
+        document.getElementById('actionButtons').style.display = 'none';
+
+        // Fortschrittsbalken auf 100%
+        document.getElementById('progressBar').style.width = '100%';
+        document.getElementById('progressText').innerText = 'Abgeschlossen ✅';
+
+        setStatus('Session beendet', true);
+
+        // Audio-Download Button zeigen falls Aufnahme vorhanden
+        if (S.audioBlob) {
+            document.getElementById('audioDownloadSection').classList.remove('hidden');
+            if (!document.getElementById('sidePanel').style.display ||
+                document.getElementById('sidePanel').style.display === 'none') {
+                document.getElementById('sidePanel').style.display = 'flex';
             }
         }
 
-    </script>
+        addChatBubble('Coach', "🟢 Das Training ist beendet. Protokoll wird an den Lehrer gesendet...");
+
+        const dateStr = new Date().toLocaleDateString('de-DE', {
+            day: '2-digit', month: '2-digit', year: 'numeric'
+        });
+        const vocabTotal = C.vocab ? C.vocab.length : 0;
+        const scaffTotal = C.scaffolds ? C.scaffolds.length : 0;
+
+        let md = `DialogCoach Pro V4.0 – Training: ${C.topic}\n`;
+        md += `Schüler: ${C.studentName} | Datum: ${dateStr} | Niveau: ${C.level} | Sprache: ${C.language}\n`;
+        md += `Modus: ${C.dialogMode === 'strict' ? 'Streng' : 'Adaptiv'} | Aussprache-Feedback: ${C.pronunciationFeedback ? 'Ja' : 'Nein'}\n\n`;
+        md += `--- Lernziel-Auswertung ---\n`;
+        if (vocabTotal > 0) md += `Pflichtvokabeln: ${S.usedVocab.size} von ${vocabTotal} verwendet.\n`;
+        if (scaffTotal > 0) md += `Redemittel: ${S.usedScaffolds.size} von ${scaffTotal} verwendet.\n\n`;
+        md += `--- Dialog-Verlauf ---\n\n`;
+        S.log.forEach(r => { md += `**${r.s}:**\n${r.t}\n\n`; });
+
+        // Cloudinary Upload falls Audio vorhanden
+        let audioUrl = null;
+        if (S.audioBlob) {
+            setStatus('Lade Audio hoch...', true);
+            addChatBubble('Coach', "🎙️ Lade Audio-Aufnahme hoch...");
+            audioUrl = await uploadToCloudinary(S.audioBlob);
+            if (audioUrl) {
+                md += `--- Audio-Aufnahme ---\n${audioUrl}\n`;
+                addChatBubble('Coach', `✅ Audio gespeichert.`);
+            } else {
+                addChatBubble('Coach', "⚠️ Audio-Upload fehlgeschlagen. Du kannst die Aufnahme manuell herunterladen.");
+            }
+        }
+
+        // Formspree
+        const formspreeId = C.formspreeId || '';
+        if (!formspreeId) {
+            addChatBubble('Coach', "⚠️ Keine Formspree ID konfiguriert.");
+            return;
+        }
+
+        setStatus('Sende Protokoll...', true);
+        const formData = new URLSearchParams();
+        formData.append("Schueler", C.studentName || "Unbekannt");
+        formData.append("Thema", C.topic || "Sitzung");
+        formData.append("Niveau", C.level || "?");
+        formData.append("Sprache", C.language || "?");
+        formData.append("Modus", C.dialogMode === 'strict' ? 'Streng' : 'Adaptiv');
+        if (audioUrl) formData.append("Audio-URL", audioUrl);
+        formData.append("Protokoll", md);
+
+        try {
+            const response = await fetch(`https://formspree.io/f/${formspreeId}`, {
+                method: "POST",
+                headers: { "Accept": "application/json" },
+                body: formData
+            });
+            if (response.ok) {
+                setStatus('Abgeschlossen ✅', true);
+                addChatBubble('Coach', "✅ Protokoll erfolgreich gesendet! Du kannst diesen Tab nun schließen.");
+            } else {
+                addChatBubble('Coach', "⚠️ Sende-Fehler. Bitte melde dich beim Lehrer.");
+            }
+        } catch (error) {
+            console.error(error);
+            addChatBubble('Coach', "⚠️ Verbindungsfehler beim Senden.");
+        }
+    }
+
+</script>
 </body>
 </html>
