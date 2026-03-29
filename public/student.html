@@ -1,234 +1,713 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>DialogCoach Pro – Session</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <script>
-    tailwind.config = {
-      darkMode: 'class',
-      theme: { extend: {
-        fontFamily: { sans: ['"Plus Jakarta Sans"', 'sans-serif'] },
-        colors: { darkbg: '#0f172a', darkpanel: '#1e293b' }
-      }}
-    }
-  </script>
-  <style>
-    body { height: 100dvh; overflow: hidden; transition: background-color 0.3s, color 0.3s; }
-    .avatar-ring { position: absolute; inset: -4px; border-radius: 50%; border: 2px solid transparent; transition: all 0.3s ease; }
-    .is-speaking .avatar-ring { border-color: #14b8a6; box-shadow: 0 0 0 4px rgba(20,184,166,0.2); animation: breathe 2s infinite; }
-    @keyframes breathe { 0%,100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.05); opacity: 0.7; } }
-    .mic-fab { width: 72px; height: 72px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 26px; transition: all 0.2s cubic-bezier(0.4,0,0.2,1); border: none; outline: none; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.15); cursor: pointer; }
-    .mic-fab:active { transform: scale(0.95); }
-    .mic-idle { background: #14b8a6; color: white; }
-    .mic-idle:hover { background: #0d9488; }
-    .mic-recording { background: #ef4444; color: white; animation: pulse-red 1.5s infinite; }
-    @keyframes pulse-red { 0% { box-shadow: 0 0 0 0 rgba(239,68,68,0.4); } 70% { box-shadow: 0 0 0 15px rgba(239,68,68,0); } 100% { box-shadow: 0 0 0 0 rgba(239,68,68,0); } }
-    .mic-disabled { background: #94a3b8; color: #f1f5f9; cursor: not-allowed; }
-    .dark .mic-disabled { background: #334155; color: #64748b; }
-    .scroll-hide::-webkit-scrollbar { display: none; }
-    .scroll-hide { -ms-overflow-style: none; scrollbar-width: none; }
-    .vocab-chip { border: 1px solid #e2e8f0; padding: 6px 14px; border-radius: 99px; font-size: 0.85rem; font-weight: 500; transition: all 0.4s ease; display: inline-block; margin: 3px; }
-    .dark .vocab-chip { border-color: #334155; background: #1e293b; color: #cbd5e1; }
-    .vocab-hit { background: #ccfbf1 !important; border-color: #14b8a6 !important; color: #0f766e !important; transform: scale(1.05); }
-    .dark .vocab-hit { background: #115e59 !important; border-color: #14b8a6 !important; color: #ccfbf1 !important; }
-    .timer-warning { color: #ef4444 !important; border-color: #ef4444 !important; animation: timer-pulse 1s infinite alternate; }
-    @keyframes timer-pulse { from { box-shadow: 0 0 5px rgba(239,68,68,0.2); } to { box-shadow: 0 0 15px rgba(239,68,68,0.6); } }
-    @keyframes fade-up { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-    .bubble-anim { animation: fade-up 0.4s ease-out forwards; }
-    #successFlash { position: fixed; inset: 0; pointer-events: none; z-index: 9999; box-shadow: inset 0 0 0 0 rgba(20,184,166,0); transition: box-shadow 0.5s ease-out; }
-    .flash-active { box-shadow: inset 0 0 50px 10px rgba(20,184,166,0.4) !important; transition: none !important; }
-    .chat-bubble-content { white-space: pre-wrap; word-wrap: break-word; overflow-wrap: break-word; }
-    .bubble-label { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; opacity: 0.5; }
-    #browserWarning { display: none; }
-    #progressBar { transition: width 0.5s ease; }
-    #pauseOverlay { display: none; }
-    #selfAssessmentOverlay { display: none; }
-    .translation-box { font-size: 0.8rem; color: #64748b; border-top: 1px solid #e2e8f0; margin-top: 8px; padding-top: 8px; font-style: italic; }
-    .dark .translation-box { color: #94a3b8; border-color: #334155; }
-    @keyframes whisper-pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
-    .whisper-active { animation: whisper-pulse 1s infinite; }
-    .star-btn { cursor: pointer; font-size: 2rem; color: #cbd5e1; transition: color 0.2s, transform 0.2s; }
-    .star-btn:hover { transform: scale(1.2); }
-    .star-btn.active { color: #f59e0b; }
-    .dark .star-btn { color: #475569; }
-    .dark .star-btn.active { color: #f59e0b; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>DialogCoach Pro – Session</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: { extend: {
+                fontFamily: { sans: ['"Plus Jakarta Sans"', 'sans-serif'] },
+                colors: { darkbg: '#0f172a', darkpanel: '#1e293b' }
+            }}
+        }
+    </script>
+    <style>
+        body { height: 100dvh; overflow: hidden; transition: background-color 0.3s, color 0.3s; }
+        .avatar-ring { position: absolute; inset: -4px; border-radius: 50%; border: 2px solid transparent; transition: all 0.3s ease; }
+        .is-speaking .avatar-ring { border-color: #14b8a6; box-shadow: 0 0 0 4px rgba(20,184,166,0.2); animation: breathe 2s infinite; }
+        @keyframes breathe { 0%,100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.05); opacity: 0.7; } }
+        .mic-fab { width: 72px; height: 72px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 26px; transition: all 0.2s cubic-bezier(0.4,0,0.2,1); border: none; outline: none; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.15); cursor: pointer; }
+        .mic-fab:active { transform: scale(0.95); }
+        .mic-idle { background: #14b8a6; color: white; }
+        .mic-idle:hover { background: #0d9488; }
+        .mic-recording { background: #ef4444; color: white; animation: pulse-red 1.5s infinite; }
+        @keyframes pulse-red { 0% { box-shadow: 0 0 0 0 rgba(239,68,68,0.4); } 70% { box-shadow: 0 0 0 15px rgba(239,68,68,0); } 100% { box-shadow: 0 0 0 0 rgba(239,68,68,0); } }
+        .mic-disabled { background: #94a3b8; color: #f1f5f9; cursor: not-allowed; }
+        .dark .mic-disabled { background: #334155; color: #64748b; }
+        .scroll-hide::-webkit-scrollbar { display: none; }
+        .scroll-hide { -ms-overflow-style: none; scrollbar-width: none; }
+        .vocab-chip { border: 1px solid #e2e8f0; padding: 6px 14px; border-radius: 99px; font-size: 0.85rem; font-weight: 500; transition: all 0.4s ease; display: inline-block; margin: 3px; }
+        .dark .vocab-chip { border-color: #334155; background: #1e293b; color: #cbd5e1; }
+        .vocab-hit { background: #ccfbf1 !important; border-color: #14b8a6 !important; color: #0f766e !important; transform: scale(1.05); }
+        .dark .vocab-hit { background: #115e59 !important; border-color: #14b8a6 !important; color: #ccfbf1 !important; }
+        .timer-warning { color: #ef4444 !important; border-color: #ef4444 !important; animation: timer-pulse 1s infinite alternate; }
+        @keyframes timer-pulse { from { box-shadow: 0 0 5px rgba(239,68,68,0.2); } to { box-shadow: 0 0 15px rgba(239,68,68,0.6); } }
+        @keyframes fade-up { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .bubble-anim { animation: fade-up 0.4s ease-out forwards; }
+        #successFlash { position: fixed; inset: 0; pointer-events: none; z-index: 9999; box-shadow: inset 0 0 0 0 rgba(20,184,166,0); transition: box-shadow 0.5s ease-out; }
+        .flash-active { box-shadow: inset 0 0 50px 10px rgba(20,184,166,0.4) !important; transition: none !important; }
+        .chat-bubble-content { white-space: pre-wrap; word-wrap: break-word; overflow-wrap: break-word; }
+        .bubble-label { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; opacity: 0.5; }
+        #browserWarning { display: none; }
+        #progressBar { transition: width 0.5s ease; }
+        #pauseOverlay { display: none; }
+        #selfAssessmentOverlay { display: none; }
+        .translation-box { font-size: 0.8rem; color: #64748b; border-top: 1px solid #e2e8f0; margin-top: 8px; padding-top: 8px; font-style: italic; }
+        .dark .translation-box { color: #94a3b8; border-color: #334155; }
+        @keyframes whisper-pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
+        .whisper-active { animation: whisper-pulse 1s infinite; }
+        .star-btn { cursor: pointer; font-size: 2rem; color: #cbd5e1; transition: color 0.2s, transform 0.2s; }
+        .star-btn:hover { transform: scale(1.2); }
+        .star-btn.active { color: #f59e0b; }
+        .dark .star-btn { color: #475569; }
+        .dark .star-btn.active { color: #f59e0b; }
+    </style>
 </head>
 <body class="flex flex-col bg-slate-50 dark:bg-darkbg text-slate-800 dark:text-slate-100 relative">
 <div id="successFlash"></div>
 
 <!-- PAUSE OVERLAY -->
 <div id="pauseOverlay" class="fixed inset-0 z-[150] flex items-center justify-center bg-slate-900/70 backdrop-blur-sm">
-  <div class="bg-white dark:bg-darkpanel rounded-2xl p-8 text-center shadow-2xl">
-    <div class="text-5xl mb-4">⏸️</div>
-    <h2 class="text-2xl font-bold mb-2">Pause</h2>
-    <p class="text-slate-500 mb-6 text-sm">Die Session ist pausiert.</p>
-    <button onclick="resumeSession()" class="bg-teal-500 hover:bg-teal-600 text-white font-bold px-8 py-3 rounded-xl">
-      <i class="fas fa-play mr-2"></i> Weiter
-    </button>
-  </div>
+    <div class="bg-white dark:bg-darkpanel rounded-2xl p-8 text-center shadow-2xl">
+        <div class="text-5xl mb-4">⏸️</div>
+        <h2 class="text-2xl font-bold mb-2" data-i18n="pauseTitle">Pause</h2>
+        <p class="text-slate-500 mb-6 text-sm" data-i18n="pauseText">Die Session ist pausiert.</p>
+        <button onclick="resumeSession()" class="bg-teal-500 hover:bg-teal-600 text-white font-bold px-8 py-3 rounded-xl">
+            <span data-i18n="pauseResume">▶ Weiter</span>
+        </button>
+    </div>
 </div>
 
 <!-- SELF ASSESSMENT OVERLAY -->
 <div id="selfAssessmentOverlay" class="fixed inset-0 z-[160] flex items-center justify-center bg-slate-900/70 backdrop-blur-sm">
-  <div class="bg-white dark:bg-darkpanel rounded-2xl p-8 text-center shadow-2xl w-full max-w-md mx-4">
-    <div class="text-5xl mb-4">📝</div>
-    <h2 class="text-2xl font-bold mb-2">Wie war's?</h2>
-    <p class="text-slate-500 dark:text-slate-400 mb-6 text-sm">Bewerte deine eigene Leistung.</p>
-    <div id="starContainer" class="flex justify-center gap-2 mb-6">
-      <span class="star-btn" onclick="setStar(1)">★</span>
-      <span class="star-btn" onclick="setStar(2)">★</span>
-      <span class="star-btn" onclick="setStar(3)">★</span>
-      <span class="star-btn" onclick="setStar(4)">★</span>
-      <span class="star-btn" onclick="setStar(5)">★</span>
+    <div class="bg-white dark:bg-darkpanel rounded-2xl p-8 text-center shadow-2xl w-full max-w-md mx-4">
+        <div class="text-5xl mb-4">🎯</div>
+        <h2 class="text-2xl font-bold mb-2" data-i18n="selfTitle">Wie war's?</h2>
+        <p class="text-slate-500 dark:text-slate-400 mb-6 text-sm" data-i18n="selfText">Bewerte deine eigene Leistung.</p>
+        <div id="starContainer" class="flex justify-center gap-2 mb-6">
+            <span class="star-btn" onclick="setStar(1)">★</span>
+            <span class="star-btn" onclick="setStar(2)">★</span>
+            <span class="star-btn" onclick="setStar(3)">★</span>
+            <span class="star-btn" onclick="setStar(4)">★</span>
+            <span class="star-btn" onclick="setStar(5)">★</span>
+        </div>
+        <textarea id="selfComment" rows="3" class="w-full border border-slate-200 dark:border-slate-600 dark:bg-slate-800 rounded-xl p-3 text-sm mb-4"></textarea>
+        <button onclick="submitSelfAssessment()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-xl">
+            <span data-i18n="selfSubmit">✔ Absenden & Beenden</span>
+        </button>
     </div>
-    <textarea id="selfComment" rows="3" class="w-full border border-slate-200 dark:border-slate-600 dark:bg-slate-800 rounded-xl p-3 text-sm mb-4" placeholder="Optional: Was war schwer? Was hat gut geklappt?"></textarea>
-    <button onclick="submitSelfAssessment()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-xl">
-      <i class="fas fa-check mr-2"></i> Absenden & Beenden
-    </button>
-  </div>
 </div>
 
 <!-- HEADER -->
 <header class="flex-shrink-0 bg-white dark:bg-darkpanel border-b border-slate-200 dark:border-slate-800 z-20 shadow-sm">
-  <div class="w-full h-1 bg-slate-100 dark:bg-slate-800">
-    <div id="progressBar" class="h-1 bg-teal-500 rounded-r-full" style="width: 0%"></div>
-  </div>
-  <div class="h-14 flex items-center justify-between px-4">
-    <div class="flex items-center gap-3">
-      <div class="w-7 h-7 rounded-lg bg-indigo-600 text-white flex items-center justify-center text-xs font-bold">
-        <i class="fas fa-layer-group"></i>
-      </div>
-      <div>
-        <h1 id="topicDisplay" class="font-bold text-sm leading-tight">Wird geladen...</h1>
-        <p id="progressText" class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">DialogCoach</p>
-      </div>
+    <div class="w-full h-1 bg-slate-100 dark:bg-slate-800">
+        <div id="progressBar" class="h-1 bg-teal-500 rounded-r-full" style="width: 0%"></div>
     </div>
-    <div class="flex items-center gap-2">
-      <div id="countdownWrapper" class="hidden font-mono font-bold w-14 text-center bg-slate-100 dark:bg-slate-700 px-2 py-1 rounded-md text-sm border border-slate-200 dark:border-slate-600">
-        <span id="countdown">--:--</span>
-      </div>
-      <div id="recIndicator" class="hidden items-center gap-1 bg-red-50 dark:bg-red-900/30 px-2 py-1 rounded-md">
-        <div class="w-2 h-2 bg-red-500 rounded-full whisper-active"></div>
-        <span class="text-xs font-bold text-red-600 dark:text-red-400">REC</span>
-      </div>
-      <button onclick="pauseSession()" id="pauseBtn" class="hidden text-slate-400 hover:text-orange-500 transition border border-slate-200 dark:border-slate-600 rounded-full w-8 h-8 items-center justify-center">
-        <i class="fas fa-pause"></i>
-      </button>
-      <button onclick="toggleDarkMode()" class="text-slate-400 hover:text-indigo-500 transition border border-slate-200 dark:border-slate-600 rounded-full w-8 h-8 flex items-center justify-center">
-        <i id="themeIcon" class="fas fa-moon"></i>
-      </button>
+    <div class="h-14 flex items-center justify-between px-4">
+        <div class="flex items-center gap-3">
+            <div class="w-7 h-7 rounded-lg bg-indigo-600 text-white flex items-center justify-center text-xs font-bold">
+                <i class="fas fa-layer-group"></i>
+            </div>
+            <div>
+                <h1 id="topicDisplay" class="font-bold text-sm leading-tight">Wird geladen...</h1>
+                <p id="progressText" class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">DialogCoach</p>
+            </div>
+        </div>
+        <div class="flex items-center gap-2">
+            <div id="countdownWrapper" class="hidden font-mono font-bold w-14 text-center bg-slate-100 dark:bg-slate-700 px-2 py-1 rounded-md text-sm border border-slate-200 dark:border-slate-600">
+                <span id="countdown">--:--</span>
+            </div>
+            <div id="recIndicator" class="hidden items-center gap-1 bg-red-50 dark:bg-red-900/30 px-2 py-1 rounded-md">
+                <div class="w-2 h-2 bg-red-500 rounded-full whisper-active"></div>
+                <span class="text-xs font-bold text-red-600 dark:text-red-400">REC</span>
+            </div>
+            <button onclick="pauseSession()" id="pauseBtn" class="hidden text-slate-400 hover:text-orange-500 transition border border-slate-200 dark:border-slate-600 rounded-full w-8 h-8 flex items-center justify-center">
+                <i class="fas fa-pause"></i>
+            </button>
+            <button onclick="toggleDarkMode()" class="text-slate-400 hover:text-indigo-500 transition border border-slate-200 dark:border-slate-600 rounded-full w-8 h-8 flex items-center justify-center">
+                <i id="themeIcon" class="fas fa-moon"></i>
+            </button>
+        </div>
     </div>
-  </div>
 </header>
 
 <!-- MAIN -->
 <main class="flex-1 flex overflow-hidden w-full relative">
-  <div class="flex-1 flex flex-col relative bg-slate-50 dark:bg-darkbg h-full w-full">
-    <div class="flex-shrink-0 pt-4 pb-2 flex flex-col items-center z-10 bg-gradient-to-b from-slate-50 dark:from-darkbg to-transparent">
-      <div class="relative w-20 h-20 mb-2">
-        <div class="avatar-ring"></div>
-        <img id="avatarImg" src="avatar.png" onerror="this.src='https://ui-avatars.com/api/?name=KI&background=4F46E5&color=fff'" class="w-full h-full rounded-full object-cover border-4 border-white dark:border-slate-800 shadow-lg relative z-10 bg-slate-100">
-      </div>
-    </div>
-    <div id="chatHistory" class="flex-1 overflow-y-auto px-4 md:px-12 pb-[160px] scroll-hide flex flex-col w-full gap-2"></div>
+    <div class="flex-1 flex flex-col relative bg-slate-50 dark:bg-darkbg h-full w-full">
+        <div class="flex-shrink-0 pt-4 pb-2 flex flex-col items-center z-10 bg-gradient-to-b from-slate-50 dark:from-darkbg to-transparent">
+            <div class="relative w-20 h-20 mb-2">
+                <div class="avatar-ring"></div>
+                <img id="avatarImg" src="avatar.png" onerror="this.src='https://ui-avatars.com/api/?name=KI&background=4F46E5&color=fff'" class="w-full h-full rounded-full object-cover border-4 border-white dark:border-slate-800 shadow-lg relative z-10 bg-slate-100">
+            </div>
+        </div>
+        <div id="chatHistory" class="flex-1 overflow-y-auto px-4 md:px-12 pb-[160px] scroll-hide flex flex-col w-full gap-2"></div>
 
-    <!-- Bottom Controls -->
-    <div class="absolute bottom-0 left-0 w-full h-[150px] bg-gradient-to-t from-slate-50 dark:from-darkbg to-transparent flex flex-col items-center justify-end pb-5 z-50">
-      <div id="actionButtons" class="hidden flex items-center gap-3 mb-3">
-        <button onclick="repeatLastCoachMessage()" class="flex flex-col items-center gap-1 text-slate-400 hover:text-teal-500 transition">
-          <div class="w-9 h-9 rounded-full border border-slate-200 dark:border-slate-600 flex items-center justify-center bg-white dark:bg-darkpanel shadow-sm">
-            <i class="fas fa-redo text-sm"></i>
-          </div>
-          <span class="text-[9px] uppercase tracking-wide font-bold">Wiederholen</span>
-        </button>
-        <button onclick="translateLastCoachMessage()" class="flex flex-col items-center gap-1 text-slate-400 hover:text-indigo-500 transition">
-          <div class="w-9 h-9 rounded-full border border-slate-200 dark:border-slate-600 flex items-center justify-center bg-white dark:bg-darkpanel shadow-sm">
-            <i class="fas fa-language text-sm"></i>
-          </div>
-          <span class="text-[9px] uppercase tracking-wide font-bold">Übersetzen</span>
-        </button>
-        <button id="helpBtnWrap" onclick="requestHelp()" class="hidden flex flex-col items-center gap-1 text-slate-400 hover:text-amber-500 transition">
-          <div class="w-9 h-9 rounded-full border border-slate-200 dark:border-slate-600 flex items-center justify-center bg-white dark:bg-darkpanel shadow-sm">
-            <i class="fas fa-lightbulb text-sm"></i>
-          </div>
-          <span class="text-[9px] uppercase tracking-wide font-bold">Hilfe</span>
-        </button>
-        <button id="retryBtnWrap" onclick="retryQuestion()" class="hidden flex flex-col items-center gap-1 text-slate-400 hover:text-rose-500 transition">
-          <div class="w-9 h-9 rounded-full border border-slate-200 dark:border-slate-600 flex items-center justify-center bg-white dark:bg-darkpanel shadow-sm">
-            <i class="fas fa-sync-alt text-sm"></i>
-          </div>
-          <span class="text-[9px] uppercase tracking-wide font-bold">Nochmal</span>
-        </button>
-      </div>
-      <div id="statusBadge" class="mb-2 px-4 py-1 rounded-full bg-slate-900/10 dark:bg-black/40 backdrop-blur font-semibold text-[11px] uppercase tracking-wide opacity-0 transition-opacity">
-        Zuhören...
-      </div>
-      <button id="micBtn" class="mic-fab mic-disabled" disabled onclick="toggleRecording()">
-        <i class="fas fa-microphone"></i>
-      </button>
+        <!-- Bottom Controls -->
+        <div class="absolute bottom-0 left-0 w-full h-[150px] bg-gradient-to-t from-slate-50 dark:from-darkbg to-transparent flex flex-col items-center justify-end pb-5 z-50">
+            <div id="actionButtons" class="hidden flex items-center gap-3 mb-3">
+                <button onclick="repeatLastCoachMessage()" class="flex flex-col items-center gap-1 text-slate-400 hover:text-teal-500 transition">
+                    <div class="w-9 h-9 rounded-full border border-slate-200 dark:border-slate-600 flex items-center justify-center bg-white dark:bg-darkpanel shadow-sm">
+                        <i class="fas fa-redo text-sm"></i>
+                    </div>
+                    <span class="text-[9px] uppercase tracking-wide font-bold" data-i18n="btnRepeat">Wiederholen</span>
+                </button>
+                <button onclick="translateLastCoachMessage()" class="flex flex-col items-center gap-1 text-slate-400 hover:text-indigo-500 transition">
+                    <div class="w-9 h-9 rounded-full border border-slate-200 dark:border-slate-600 flex items-center justify-center bg-white dark:bg-darkpanel shadow-sm">
+                        <i class="fas fa-language text-sm"></i>
+                    </div>
+                    <span class="text-[9px] uppercase tracking-wide font-bold" data-i18n="btnTranslate">Übersetzen</span>
+                </button>
+                <button id="helpBtnWrap" onclick="requestHelp()" class="hidden flex flex-col items-center gap-1 text-slate-400 hover:text-amber-500 transition">
+                    <div class="w-9 h-9 rounded-full border border-slate-200 dark:border-slate-600 flex items-center justify-center bg-white dark:bg-darkpanel shadow-sm">
+                        <i class="fas fa-lightbulb text-sm"></i>
+                    </div>
+                    <span class="text-[9px] uppercase tracking-wide font-bold" data-i18n="btnHelp">Hilfe</span>
+                </button>
+                <button id="retryBtnWrap" onclick="retryQuestion()" class="hidden flex flex-col items-center gap-1 text-slate-400 hover:text-rose-500 transition">
+                    <div class="w-9 h-9 rounded-full border border-slate-200 dark:border-slate-600 flex items-center justify-center bg-white dark:bg-darkpanel shadow-sm">
+                        <i class="fas fa-sync-alt text-sm"></i>
+                    </div>
+                    <span class="text-[9px] uppercase tracking-wide font-bold" data-i18n="btnRetry">Nochmal</span>
+                </button>
+            </div>
+            <div id="statusBadge" class="mb-2 px-4 py-1 rounded-full bg-slate-900/10 dark:bg-black/40 backdrop-blur font-semibold text-[11px] uppercase tracking-wide opacity-0 transition-opacity">
+                ...
+            </div>
+            <button id="micBtn" class="mic-fab mic-disabled" disabled onclick="toggleRecording()">
+                <i class="fas fa-microphone"></i>
+            </button>
+        </div>
     </div>
-  </div>
 
-  <!-- Seiten-Panel -->
-  <div id="sidePanel" class="hidden md:flex w-72 bg-white dark:bg-darkpanel border-l border-slate-200 dark:border-slate-800 flex-col z-20 h-full flex-shrink-0">
-    <div class="p-5 border-b border-slate-100 dark:border-slate-700">
-      <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Lernhilfen</h3>
-      <p class="text-sm text-slate-500">Integriere dies in deine Antworten.</p>
+    <!-- Seiten-Panel -->
+    <div id="sidePanel" class="hidden md:flex w-72 bg-white dark:bg-darkpanel border-l border-slate-200 dark:border-slate-800 flex-col z-20 h-full flex-shrink-0">
+        <div class="p-5 border-b border-slate-100 dark:border-slate-700">
+            <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1" data-i18n="sideTitle">Lernhilfen</h3>
+            <p class="text-sm text-slate-500" data-i18n="sideSubtitle">Integriere dies in deine Antworten.</p>
+        </div>
+        <div class="flex-1 overflow-y-auto p-5 space-y-6">
+            <div id="vocabSection" class="hidden">
+                <h4 class="font-bold text-sm mb-3 flex items-center gap-2"><i class="fas fa-star text-teal-500"></i> <span data-i18n="vocabLabel">Vokabeln</span></h4>
+                <div id="vocabList" class="flex flex-wrap gap-1"></div>
+            </div>
+            <div id="scaffoldSection" class="hidden">
+                <h4 class="font-bold text-sm mb-3 flex items-center gap-2"><i class="fas fa-quote-right text-teal-500"></i> <span data-i18n="scaffoldLabel">Redemittel</span></h4>
+                <ul id="scaffoldList" class="space-y-2"></ul>
+            </div>
+        </div>
     </div>
-    <div class="flex-1 overflow-y-auto p-5 space-y-6">
-      <div id="vocabSection" class="hidden">
-        <h4 class="font-bold text-sm mb-3 flex items-center gap-2"><i class="fas fa-star text-teal-500"></i> Vokabeln</h4>
-        <div id="vocabList" class="flex flex-wrap gap-1"></div>
-      </div>
-      <div id="scaffoldSection" class="hidden">
-        <h4 class="font-bold text-sm mb-3 flex items-center gap-2"><i class="fas fa-quote-right text-teal-500"></i> Redemittel</h4>
-        <ul id="scaffoldList" class="space-y-2"></ul>
-      </div>
-    </div>
-  </div>
 </main>
 
 <!-- Browser Warning -->
 <div id="browserWarning" class="fixed inset-0 z-[200] flex items-center justify-center p-6 bg-slate-900/80 backdrop-blur-sm">
-  <div class="bg-white dark:bg-darkpanel w-full max-w-md p-8 rounded-2xl shadow-2xl text-center">
-    <div class="text-5xl mb-4">⚠️</div>
-    <h2 class="text-xl font-bold mb-3">Browser nicht unterstützt</h2>
-    <p class="text-slate-500 text-sm">Die App funktioniert nur in <strong>Google Chrome</strong> oder <strong>Microsoft Edge</strong>.</p>
-  </div>
+    <div class="bg-white dark:bg-darkpanel w-full max-w-md p-8 rounded-2xl shadow-2xl text-center">
+        <div class="text-5xl mb-4">⚠️</div>
+        <h2 class="text-xl font-bold mb-3" data-i18n="browserTitle">Browser nicht unterstützt</h2>
+        <p class="text-slate-500 text-sm" data-i18n="browserText">Die App funktioniert nur in <strong>Google Chrome</strong> oder <strong>Microsoft Edge</strong>.</p>
+    </div>
 </div>
 
 <!-- Start Overlay -->
 <div id="startOverlay" class="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-slate-900/80 backdrop-blur-sm transition-opacity duration-500">
-  <div class="bg-white dark:bg-darkpanel w-full max-w-md p-8 rounded-2xl shadow-2xl text-center">
-    <div class="w-16 h-16 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 rounded-full flex items-center justify-center mx-auto mb-6 text-2xl">
-      <i class="fas fa-microphone-alt"></i>
+    <div class="bg-white dark:bg-darkpanel w-full max-w-md p-8 rounded-2xl shadow-2xl text-center">
+        <div class="w-16 h-16 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 rounded-full flex items-center justify-center mx-auto mb-6 text-2xl">
+            <i class="fas fa-microphone-alt"></i>
+        </div>
+        <h1 class="text-2xl font-bold mb-2"><span data-i18n="ready">Bereit,</span> <span id="welcomeName"></span>?</h1>
+        <div id="sessionInfo" class="text-left bg-slate-50 dark:bg-slate-800 rounded-xl p-4 mb-6 text-sm space-y-1">
+            <p><i class="fas fa-book text-indigo-500 w-5"></i> <strong data-i18n="labelTopic">Thema:</strong> <span id="infoTopic">-</span></p>
+            <p><i class="fas fa-signal text-indigo-500 w-5"></i> <strong data-i18n="labelLevel">Niveau:</strong> <span id="infoLevel">-</span></p>
+            <p><i class="fas fa-list-ol text-indigo-500 w-5"></i> <strong data-i18n="labelQuestions">Fragen:</strong> <span id="infoQuestions">-</span></p>
+            <p><i class="fas fa-user-tie text-indigo-500 w-5"></i> <strong data-i18n="labelRole">KI-Rolle:</strong> <span id="infoRole">-</span></p>
+        </div>
+        <p class="text-slate-500 dark:text-slate-400 mb-4 text-sm" data-i18n="micAllow">Bitte erlaube gleich den Mikrofonzugriff.</p>
+        <button id="startBtnEl" onclick="unlockEverything()" class="w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-lg transition" data-i18n="micStart">
+            🎤 Mikrofon erlauben & Starten
+        </button>
     </div>
-    <h1 class="text-2xl font-bold mb-2">Bereit, <span id="welcomeName"></span>?</h1>
-    <div id="sessionInfo" class="text-left bg-slate-50 dark:bg-slate-800 rounded-xl p-4 mb-6 text-sm space-y-1">
-      <p><i class="fas fa-book text-indigo-500 w-5"></i> <strong>Thema:</strong> <span id="infoTopic">-</span></p>
-      <p><i class="fas fa-signal text-indigo-500 w-5"></i> <strong>Niveau:</strong> <span id="infoLevel">-</span></p>
-      <p><i class="fas fa-list-ol text-indigo-500 w-5"></i> <strong>Fragen:</strong> <span id="infoQuestions">-</span></p>
-      <p><i class="fas fa-user-tie text-indigo-500 w-5"></i> <strong>KI-Rolle:</strong> <span id="infoRole">-</span></p>
-    </div>
-    <p class="text-slate-500 dark:text-slate-400 mb-4 text-sm">Bitte erlaube gleich den Mikrofonzugriff.</p>
-    <button onclick="unlockEverything()" class="w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-lg transition">
-      <i class="fas fa-microphone mr-2"></i> Mikrofon erlauben & Starten
-    </button>
-  </div>
 </div>
 
-<!-- ════════════════════════════════════════════ -->
-<!-- WEITER IN NACHRICHT 2 von 4 (JavaScript)   -->
-<!-- ════════════════════════════════════════════ -->
 <script>
-  // ── STATE ────────────────────────────────────────
-  var C = null;
-  var S = {
+// ── UI TRANSLATIONS ──────────────────────────────
+var UI_TRANSLATIONS = {
+  'Deutsch': {
+    ready:            'Bereit,',
+    micAllow:         'Bitte erlaube gleich den Mikrofonzugriff.',
+    micStart:         '🎤 Mikrofon erlauben & Starten',
+    labelTopic:       'Thema:',
+    labelLevel:       'Niveau:',
+    labelQuestions:   'Fragen:',
+    labelRole:        'KI-Rolle:',
+    pauseTitle:       'Pause',
+    pauseText:        'Die Session ist pausiert.',
+    pauseResume:      '▶ Weiter',
+    selfTitle:        "Wie war's?",
+    selfText:         'Bewerte deine eigene Leistung.',
+    selfPlaceholder:  'Optional: Was war schwer? Was hat gut geklappt?',
+    selfSubmit:       '✔ Absenden & Beenden',
+    browserTitle:     'Browser nicht unterstützt',
+    browserText:      'Die App funktioniert nur in <strong>Google Chrome</strong> oder <strong>Microsoft Edge</strong>.',
+    sideTitle:        'Lernhilfen',
+    sideSubtitle:     'Integriere dies in deine Antworten.',
+    vocabLabel:       'Vokabeln',
+    scaffoldLabel:    'Redemittel',
+    statusListen:     'Zuhören...',
+    statusMic:        'Mikrofon drücken zum Sprechen',
+    statusRecord:     'Sprich jetzt – drücke Stop zum Senden',
+    statusTranscribe: 'Whisper transkribiert...',
+    statusCoach:      'Coach spricht...',
+    statusTranslate:  'Übersetze...',
+    statusTip:        'Generiere Tipp...',
+    statusAnalyze:    'KI analysiert...',
+    statusSend:       'Sende Protokoll...',
+    statusDone:       'Abgeschlossen ✅',
+    statusEnded:      'Session beendet',
+    btnRepeat:        'Wiederholen',
+    btnTranslate:     'Übersetzen',
+    btnHelp:          'Hilfe',
+    btnRetry:         'Nochmal',
+    scoreTitle:       '📊 Deine Ergebnisse:\n',
+    scoreVocab:       '• Vokabeln: ',
+    scoreVocabOf:     ' von ',
+    scoreVocabUsed:   ' verwendet',
+    scoreVocabAll:    ' ✅ Alle!',
+    scoreScaff:       '• Redemittel: ',
+    retryMsg:         '🔄 Kein Problem! Versuche es nochmal:',
+    tipPrefix:        '💡 Tipp: ',
+    tipError:         '⚠️ Tipp konnte nicht geladen werden.',
+    analysisLoading:  '📝 Erstelle Abschlussanalyse...',
+    analysisTitle:    '📋 Abschlussanalyse:\n\n',
+    analysisTTS:      'Hier ist deine Abschlussanalyse.',
+    analysisError:    '⚠️ Analyse konnte nicht erstellt werden.',
+    finishMsg:        '🟢 Das Training ist beendet. Protokoll wird an den Lehrer gesendet...',
+    sendOk:           '✅ Protokoll erfolgreich gesendet! Du kannst diesen Tab nun schließen.',
+    sendError:        '⚠️ Sende-Fehler. Bitte melde dich beim Lehrer.',
+    sendNoId:         '⚠️ Keine Formspree ID konfiguriert.',
+    sendConnErr:      '⚠️ Verbindungsfehler beim Senden.',
+    connError:        '⚠️ Verbindungsfehler: ',
+    connRetry:        '. Bitte versuche es nochmal.',
+    micBlocked:       'Mikrofon blockiert! Bitte erlaube es im Browser.',
+    requesting:       'Fordere Mikrofon an...',
+    progressText:     'DialogCoach',
+    questionOf:       'Frage',
+    questionOfOf:     'von',
+    done:             'Abgeschlossen ✅',
+    hiddenText:       '🔊 Text verborgen (Höre zu)',
+    noSpeech:         '*(Keine Sprache erkannt)*',
+    transError:       '*(Transkriptionsfehler – bitte nochmal versuchen)*',
+  },
+  'Englisch': {
+    ready:            'Ready,',
+    micAllow:         'Please allow microphone access.',
+    micStart:         '🎤 Allow Microphone & Start',
+    labelTopic:       'Topic:',
+    labelLevel:       'Level:',
+    labelQuestions:   'Questions:',
+    labelRole:        'AI Role:',
+    pauseTitle:       'Pause',
+    pauseText:        'The session is paused.',
+    pauseResume:      '▶ Continue',
+    selfTitle:        'How did it go?',
+    selfText:         'Rate your own performance.',
+    selfPlaceholder:  'Optional: What was difficult? What went well?',
+    selfSubmit:       '✔ Submit & Finish',
+    browserTitle:     'Browser not supported',
+    browserText:      'The app only works in <strong>Google Chrome</strong> or <strong>Microsoft Edge</strong>.',
+    sideTitle:        'Learning Aids',
+    sideSubtitle:     'Integrate these into your answers.',
+    vocabLabel:       'Vocabulary',
+    scaffoldLabel:    'Phrases',
+    statusListen:     'Listening...',
+    statusMic:        'Press microphone to speak',
+    statusRecord:     'Speak now – press Stop to send',
+    statusTranscribe: 'Transcribing...',
+    statusCoach:      'Coach is speaking...',
+    statusTranslate:  'Translating...',
+    statusTip:        'Generating tip...',
+    statusAnalyze:    'AI analysing...',
+    statusSend:       'Sending report...',
+    statusDone:       'Completed ✅',
+    statusEnded:      'Session ended',
+    btnRepeat:        'Repeat',
+    btnTranslate:     'Translate',
+    btnHelp:          'Help',
+    btnRetry:         'Try again',
+    scoreTitle:       '📊 Your results:\n',
+    scoreVocab:       '• Vocabulary: ',
+    scoreVocabOf:     ' of ',
+    scoreVocabUsed:   ' used',
+    scoreVocabAll:    ' ✅ All!',
+    scoreScaff:       '• Phrases: ',
+    retryMsg:         '🔄 No problem! Try again:',
+    tipPrefix:        '💡 Tip: ',
+    tipError:         '⚠️ Tip could not be loaded.',
+    analysisLoading:  '📝 Creating final analysis...',
+    analysisTitle:    '📋 Final Analysis:\n\n',
+    analysisTTS:      'Here is your final analysis.',
+    analysisError:    '⚠️ Analysis could not be created.',
+    finishMsg:        '🟢 Training complete. Sending report to teacher...',
+    sendOk:           '✅ Report sent successfully! You can close this tab.',
+    sendError:        '⚠️ Send error. Please contact your teacher.',
+    sendNoId:         '⚠️ No Formspree ID configured.',
+    sendConnErr:      '⚠️ Connection error while sending.',
+    connError:        '⚠️ Connection error: ',
+    connRetry:        '. Please try again.',
+    micBlocked:       'Microphone blocked! Please allow it in your browser.',
+    requesting:       'Requesting microphone...',
+    progressText:     'DialogCoach',
+    questionOf:       'Question',
+    questionOfOf:     'of',
+    done:             'Completed ✅',
+    hiddenText:       '🔊 Text hidden (Listen)',
+    noSpeech:         '*(No speech detected)*',
+    transError:       '*(Transcription error – please try again)*',
+  },
+  'Französisch': {
+    ready:            'Prêt(e),',
+    micAllow:         "Veuillez autoriser l'accès au microphone.",
+    micStart:         '🎤 Autoriser le micro & Démarrer',
+    labelTopic:       'Sujet:',
+    labelLevel:       'Niveau:',
+    labelQuestions:   'Questions:',
+    labelRole:        "Rôle de l'IA:",
+    pauseTitle:       'Pause',
+    pauseText:        'La session est en pause.',
+    pauseResume:      '▶ Continuer',
+    selfTitle:        'Comment ça s\'est passé ?',
+    selfText:         'Évaluez vos propres performances.',
+    selfPlaceholder:  'Facultatif: Qu\'est-ce qui était difficile? Qu\'est-ce qui a bien marché?',
+    selfSubmit:       '✔ Envoyer & Terminer',
+    browserTitle:     'Navigateur non pris en charge',
+    browserText:      'L\'application ne fonctionne qu\'avec <strong>Google Chrome</strong> ou <strong>Microsoft Edge</strong>.',
+    sideTitle:        "Aides à l'apprentissage",
+    sideSubtitle:     'Intégrez ceci dans vos réponses.',
+    vocabLabel:       'Vocabulaire',
+    scaffoldLabel:    'Expressions',
+    statusListen:     'Écoute...',
+    statusMic:        'Appuyez sur le micro pour parler',
+    statusRecord:     'Parlez maintenant – appuyez sur Stop pour envoyer',
+    statusTranscribe: 'Transcription en cours...',
+    statusCoach:      'Le coach parle...',
+    statusTranslate:  'Traduction...',
+    statusTip:        'Génération du conseil...',
+    statusAnalyze:    "L'IA analyse...",
+    statusSend:       'Envoi du rapport...',
+    statusDone:       'Terminé ✅',
+    statusEnded:      'Session terminée',
+    btnRepeat:        'Répéter',
+    btnTranslate:     'Traduire',
+    btnHelp:          'Aide',
+    btnRetry:         'Réessayer',
+    scoreTitle:       '📊 Vos résultats :\n',
+    scoreVocab:       '• Vocabulaire : ',
+    scoreVocabOf:     ' sur ',
+    scoreVocabUsed:   ' utilisé(s)',
+    scoreVocabAll:    ' ✅ Tous!',
+    scoreScaff:       '• Expressions : ',
+    retryMsg:         '🔄 Pas de problème! Réessayez:',
+    tipPrefix:        '💡 Conseil: ',
+    tipError:         '⚠️ Le conseil n\'a pas pu être chargé.',
+    analysisLoading:  '📝 Création de l\'analyse finale...',
+    analysisTitle:    '📋 Analyse finale :\n\n',
+    analysisTTS:      'Voici votre analyse finale.',
+    analysisError:    '⚠️ L\'analyse n\'a pas pu être créée.',
+    finishMsg:        '🟢 Entraînement terminé. Envoi du rapport à l\'enseignant...',
+    sendOk:           '✅ Rapport envoyé avec succès! Vous pouvez fermer cet onglet.',
+    sendError:        '⚠️ Erreur d\'envoi. Veuillez contacter votre enseignant.',
+    sendNoId:         '⚠️ Aucun ID Formspree configuré.',
+    sendConnErr:      '⚠️ Erreur de connexion lors de l\'envoi.',
+    connError:        '⚠️ Erreur de connexion : ',
+    connRetry:        '. Veuillez réessayer.',
+    micBlocked:       'Microphone bloqué! Veuillez l\'autoriser dans votre navigateur.',
+    requesting:       'Demande d\'accès au microphone...',
+    progressText:     'DialogCoach',
+    questionOf:       'Question',
+    questionOfOf:     'sur',
+    done:             'Terminé ✅',
+    hiddenText:       '🔊 Texte masqué (Écoutez)',
+    noSpeech:         '*(Aucune parole détectée)*',
+    transError:       '*(Erreur de transcription – veuillez réessayer)*',
+  },
+  'Spanisch': {
+    ready:            'Listo/a,',
+    micAllow:         'Por favor, permite el acceso al micrófono.',
+    micStart:         '🎤 Permitir micrófono & Empezar',
+    labelTopic:       'Tema:',
+    labelLevel:       'Nivel:',
+    labelQuestions:   'Preguntas:',
+    labelRole:        'Rol de la IA:',
+    pauseTitle:       'Pausa',
+    pauseText:        'La sesión está en pausa.',
+    pauseResume:      '▶ Continuar',
+    selfTitle:        '¿Cómo fue?',
+    selfText:         'Evalúa tu propio desempeño.',
+    selfPlaceholder:  'Opcional: ¿Qué fue difícil? ¿Qué salió bien?',
+    selfSubmit:       '✔ Enviar & Terminar',
+    browserTitle:     'Navegador no compatible',
+    browserText:      'La aplicación solo funciona en <strong>Google Chrome</strong> o <strong>Microsoft Edge</strong>.',
+    sideTitle:        'Ayudas de aprendizaje',
+    sideSubtitle:     'Integra esto en tus respuestas.',
+    vocabLabel:       'Vocabulario',
+    scaffoldLabel:    'Frases',
+    statusListen:     'Escuchando...',
+    statusMic:        'Pulsa el micrófono para hablar',
+    statusRecord:     'Habla ahora – pulsa Stop para enviar',
+    statusTranscribe: 'Transcribiendo...',
+    statusCoach:      'El coach está hablando...',
+    statusTranslate:  'Traduciendo...',
+    statusTip:        'Generando consejo...',
+    statusAnalyze:    'La IA analiza...',
+    statusSend:       'Enviando informe...',
+    statusDone:       'Completado ✅',
+    statusEnded:      'Sesión finalizada',
+    btnRepeat:        'Repetir',
+    btnTranslate:     'Traducir',
+    btnHelp:          'Ayuda',
+    btnRetry:         'Reintentar',
+    scoreTitle:       '📊 Tus resultados:\n',
+    scoreVocab:       '• Vocabulario: ',
+    scoreVocabOf:     ' de ',
+    scoreVocabUsed:   ' usado(s)',
+    scoreVocabAll:    ' ✅ ¡Todos!',
+    scoreScaff:       '• Frases: ',
+    retryMsg:         '🔄 ¡Sin problema! Inténtalo de nuevo:',
+    tipPrefix:        '💡 Consejo: ',
+    tipError:         '⚠️ No se pudo cargar el consejo.',
+    analysisLoading:  '📝 Creando análisis final...',
+    analysisTitle:    '📋 Análisis final:\n\n',
+    analysisTTS:      'Aquí está tu análisis final.',
+    analysisError:    '⚠️ No se pudo crear el análisis.',
+    finishMsg:        '🟢 Entrenamiento completado. Enviando informe al profesor...',
+    sendOk:           '✅ ¡Informe enviado con éxito! Puedes cerrar esta pestaña.',
+    sendError:        '⚠️ Error de envío. Por favor contacta a tu profesor.',
+    sendNoId:         '⚠️ No hay ID de Formspree configurado.',
+    sendConnErr:      '⚠️ Error de conexión al enviar.',
+    connError:        '⚠️ Error de conexión: ',
+    connRetry:        '. Por favor inténtalo de nuevo.',
+    micBlocked:       '¡Micrófono bloqueado! Por favor permítelo en tu navegador.',
+    requesting:       'Solicitando micrófono...',
+    progressText:     'DialogCoach',
+    questionOf:       'Pregunta',
+    questionOfOf:     'de',
+    done:             'Completado ✅',
+    hiddenText:       '🔊 Texto oculto (Escucha)',
+    noSpeech:         '*(No se detectó voz)*',
+    transError:       '*(Error de transcripción – por favor inténtalo de nuevo)*',
+  },
+  'Italienisch': {
+    ready:            'Pronto/a,',
+    micAllow:         "Consenti l'accesso al microfono.",
+    micStart:         '🎤 Consenti microfono & Inizia',
+    labelTopic:       'Argomento:',
+    labelLevel:       'Livello:',
+    labelQuestions:   'Domande:',
+    labelRole:        "Ruolo dell'IA:",
+    pauseTitle:       'Pausa',
+    pauseText:        'La sessione è in pausa.',
+    pauseResume:      '▶ Continua',
+    selfTitle:        "Com'è andata?",
+    selfText:         'Valuta le tue prestazioni.',
+    selfPlaceholder:  'Facoltativo: Cosa è stato difficile? Cosa è andato bene?',
+    selfSubmit:       '✔ Invia & Termina',
+    browserTitle:     'Browser non supportato',
+    browserText:      'L\'app funziona solo con <strong>Google Chrome</strong> o <strong>Microsoft Edge</strong>.',
+    sideTitle:        'Aiuti per l\'apprendimento',
+    sideSubtitle:     'Integra questo nelle tue risposte.',
+    vocabLabel:       'Vocabolario',
+    scaffoldLabel:    'Espressioni',
+    statusListen:     'In ascolto...',
+    statusMic:        'Premi il microfono per parlare',
+    statusRecord:     'Parla ora – premi Stop per inviare',
+    statusTranscribe: 'Trascrizione in corso...',
+    statusCoach:      'Il coach sta parlando...',
+    statusTranslate:  'Traduzione...',
+    statusTip:        'Generazione suggerimento...',
+    statusAnalyze:    "L'IA sta analizzando...",
+    statusSend:       'Invio del rapporto...',
+    statusDone:       'Completato ✅',
+    statusEnded:      'Sessione terminata',
+    btnRepeat:        'Ripeti',
+    btnTranslate:     'Traduci',
+    btnHelp:          'Aiuto',
+    btnRetry:         'Riprova',
+    scoreTitle:       '📊 I tuoi risultati:\n',
+    scoreVocab:       '• Vocabolario: ',
+    scoreVocabOf:     ' di ',
+    scoreVocabUsed:   ' usato/i',
+    scoreVocabAll:    ' ✅ Tutti!',
+    scoreScaff:       '• Espressioni: ',
+    retryMsg:         '🔄 Nessun problema! Riprova:',
+    tipPrefix:        '💡 Suggerimento: ',
+    tipError:         '⚠️ Il suggerimento non ha potuto essere caricato.',
+    analysisLoading:  '📝 Creazione analisi finale...',
+    analysisTitle:    '📋 Analisi finale:\n\n',
+    analysisTTS:      'Ecco la tua analisi finale.',
+    analysisError:    "⚠️ L'analisi non ha potuto essere creata.",
+    finishMsg:        "🟢 L'allenamento è terminato. Invio del rapporto all'insegnante...",
+    sendOk:           '✅ Rapporto inviato con successo! Puoi chiudere questa scheda.',
+    sendError:        "⚠️ Errore di invio. Contatta il tuo insegnante.",
+    sendNoId:         '⚠️ Nessun ID Formspree configurato.',
+    sendConnErr:      "⚠️ Errore di connessione durante l'invio.",
+    connError:        '⚠️ Errore di connessione: ',
+    connRetry:        '. Per favore riprova.',
+    micBlocked:       'Microfono bloccato! Consentilo nel browser.',
+    requesting:       'Richiesta microfono...',
+    progressText:     'DialogCoach',
+    questionOf:       'Domanda',
+    questionOfOf:     'di',
+    done:             'Completato ✅',
+    hiddenText:       '🔊 Testo nascosto (Ascolta)',
+    noSpeech:         '*(Nessun parlato rilevato)*',
+    transError:       '*(Errore di trascrizione – per favore riprova)*',
+  },
+  'Russisch': {
+    ready:            'Готов(а),',
+    micAllow:         'Пожалуйста, разрешите доступ к микрофону.',
+    micStart:         '🎤 Разрешить микрофон и начать',
+    labelTopic:       'Тема:',
+    labelLevel:       'Уровень:',
+    labelQuestions:   'Вопросы:',
+    labelRole:        'Роль ИИ:',
+    pauseTitle:       'Пауза',
+    pauseText:        'Сессия приостановлена.',
+    pauseResume:      '▶ Продолжить',
+    selfTitle:        'Как всё прошло?',
+    selfText:         'Оцените свои результаты.',
+    selfPlaceholder:  'Необязательно: Что было сложно? Что получилось хорошо?',
+    selfSubmit:       '✔ Отправить и завершить',
+    browserTitle:     'Браузер не поддерживается',
+    browserText:      'Приложение работает только в <strong>Google Chrome</strong> или <strong>Microsoft Edge</strong>.',
+    sideTitle:        'Учебные материалы',
+    sideSubtitle:     'Используйте это в своих ответах.',
+    vocabLabel:       'Словарь',
+    scaffoldLabel:    'Фразы',
+    statusListen:     'Слушаю...',
+    statusMic:        'Нажмите микрофон',
+    statusRecord:     'Говорите сейчас – нажмите Стоп для отправки',
+    statusTranscribe: 'Транскрипция...',
+    statusCoach:      'Тренер говорит...',
+    statusTranslate:  'Перевод...',
+    statusTip:        'Создание подсказки...',
+    statusAnalyze:    'ИИ анализирует...',
+    statusSend:       'Отправка отчёта...',
+    statusDone:       'Завершено ✅',
+    statusEnded:      'Сессия завершена',
+    btnRepeat:        'Повторить',
+    btnTranslate:     'Перевести',
+    btnHelp:          'Помощь',
+    btnRetry:         'Ещё раз',
+    scoreTitle:       '📊 Ваши результаты:\n',
+    scoreVocab:       '• Словарь: ',
+    scoreVocabOf:     ' из ',
+    scoreVocabUsed:   ' использовано',
+    scoreVocabAll:    ' ✅ Все!',
+    scoreScaff:       '• Фразы: ',
+    retryMsg:         '🔄 Без проблем! Попробуйте ещё раз:',
+    tipPrefix:        '💡 Подсказка: ',
+    tipError:         '⚠️ Подсказка не загружена.',
+    analysisLoading:  '📝 Создание итогового анализа...',
+    analysisTitle:    '📋 Итоговый анализ:\n\n',
+    analysisTTS:      'Вот ваш итоговый анализ.',
+    analysisError:    '⚠️ Анализ не мог быть создан.',
+    finishMsg:        '🟢 Тренировка завершена. Отправка отчёта учителю...',
+    sendOk:           '✅ Отчёт успешно отправлен! Вы можете закрыть эту вкладку.',
+    sendError:        '⚠️ Ошибка отправки. Свяжитесь с учителем.',
+    sendNoId:         '⚠️ ID Formspree не настроен.',
+    sendConnErr:      '⚠️ Ошибка подключения при отправке.',
+    connError:        '⚠️ Ошибка подключения: ',
+    connRetry:        '. Попробуйте ещё раз.',
+    micBlocked:       'Микрофон заблокирован! Разрешите его в браузере.',
+    requesting:       'Запрос микрофона...',
+    progressText:     'DialogCoach',
+    questionOf:       'Вопрос',
+    questionOfOf:     'из',
+    done:             'Завершено ✅',
+    hiddenText:       '🔊 Текст скрыт (Слушайте)',
+    noSpeech:         '*(Речь не распознана)*',
+    transError:       '*(Ошибка транскрипции – попробуйте ещё раз)*',
+  },
+  'Türkisch': {
+    ready:            'Hazır mısın,',
+    micAllow:         'Lütfen mikrofon erişimine izin ver.',
+    micStart:         '🎤 Mikrofona İzin Ver & Başla',
+    labelTopic:       'Konu:',
+    labelLevel:       'Seviye:',
+    labelQuestions:   'Sorular:',
+    labelRole:        'Yapay Zeka Rolü:',
+    pauseTitle:       'Duraklat',
+    pauseText:        'Oturum duraklatıldı.',
+    pauseResume:      '▶ Devam Et',
+    selfTitle:        'Nasıldı?',
+    selfText:         'Kendi performansını değerlendir.',
+    selfPlaceholder:  'İsteğe bağlı: Ne zordu? Ne iyi gitti?',
+    selfSubmit:       '✔ Gönder & Bitir',
+    browserTitle:     'Tarayıcı desteklenmiyor',
+    browserText:      'Uygulama yalnızca <strong>Google Chrome</strong> veya <strong>Microsoft Edge</strong> ile çalışır.',
+    sideTitle:        'Öğrenme Yardımcıları',
+    sideSubtitle:     'Bunları cevaplarına dahil et.',
+    vocabLabel:       'Kelimeler',
+    scaffoldLabel:    'İfadeler',
+    statusListen:     'Dinleniyor...',
+    statusMic:        'Konuşmak için mikrofona bas',
+    statusRecord:     'Şimdi konuş – göndermek için Dur\'a bas',
+    statusTranscribe: 'Transkripsiyon yapılıyor...',
+    statusCoach:      'Koç konuşuyor...',
+    statusTranslate:  'Çeviriliyor...',
+    statusTip:        'İpucu oluşturuluyor...',
+    statusAnalyze:    'Yapay Zeka analiz ediyor...',
+    statusSend:       'Rapor gönderiliyor...',
+    statusDone:       'Tamamlandı ✅',
+    statusEnded:      'Oturum bitti',
+    btnRepeat:        'Tekrarla',
+    btnTranslate:     'Çevir',
+    btnHelp:          'Yardım',
+    btnRetry:         'Tekrar Dene',
+    scoreTitle:       '📊 Sonuçların:\n',
+    scoreVocab:       '• Kelimeler: ',
+    scoreVocabOf:     ' / ',
+    scoreVocabUsed:   ' kullanıldı',
+    scoreVocabAll:    ' ✅ Hepsi!',
+    scoreScaff:       '• İfadeler: ',
+    retryMsg:         '🔄 Sorun değil! Tekrar dene:',
+    tipPrefix:        '💡 İpucu: ',
+    tipError:         '⚠️ İpucu yüklenemedi.',
+    analysisLoading:  '📝 Final analizi oluşturuluyor...',
+    analysisTitle:    '📋 Final Analizi:\n\n',
+    analysisTTS:      'İşte final analizin.',
+    analysisError:    '⚠️ Analiz oluşturulamadı.',
+    finishMsg:        '🟢 Antrenman tamamlandı. Rapor öğretmene gönderiliyor...',
+    sendOk:           '✅ Rapor başarıyla gönderildi! Bu sekmeyi kapatabilirsin.',
+    sendError:        '⚠️ Gönderme hatası. Lütfen öğretmeninle iletişime geç.',
+    sendNoId:         '⚠️ Formspree ID yapılandırılmamış.',
+    sendConnErr:      '⚠️ Gönderme sırasında bağlantı hatası.',
+    connError:        '⚠️ Bağlantı hatası: ',
+    connRetry:        '. Lütfen tekrar dene.',
+    micBlocked:       'Mikrofon engellendi! Lütfen tarayıcında izin ver.',
+    requesting:       'Mikrofon isteniyor...',
+    progressText:     'DialogCoach',
+    questionOf:       'Soru',
+    questionOfOf:     '/',
+    done:             'Tamamlandı ✅',
+    hiddenText:       '🔊 Gizli metin (Dinle)',
+    noSpeech:         '*(Konuşma algılanmadı)*',
+    transError:       '*(Deşifre hatası – lütfen tekrar dene)*',
+  }
+};
+
+function t(key) {
+    var lang = (C && C.nativeLanguage) ? C.nativeLanguage : 'Deutsch';
+    if (!UI_TRANSLATIONS[lang]) lang = 'Deutsch';
+    return UI_TRANSLATIONS[lang][key] || UI_TRANSLATIONS['Deutsch'][key] || key;
+}
+
+function translateUI() {
+    document.querySelectorAll('[data-i18n]').forEach(function(el) {
+        var key = el.getAttribute('data-i18n');
+        if (key === 'browserText') { el.innerHTML = t(key); }
+        else { el.innerText = t(key); }
+    });
+    var ta = document.getElementById('selfComment');
+    if (ta) ta.placeholder = t('selfPlaceholder');
+}
+
+// ── STATE ────────────────────────────────────────
+var C = null;
+var S = {
     step: 0,
     recording: false,
     speaking: false,
@@ -246,57 +725,66 @@
     selfRating: 0,
     selfComment: "",
     currentQuestionText: ""
-  };
-  var conversationHistory = [];
-  var mediaStream = null;
+};
+var conversationHistory = [];
+var mediaStream = null;
 
-  // ── INIT ─────────────────────────────────────────
-  window.addEventListener('DOMContentLoaded', function() {
+// ── INIT ─────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', function() {
     if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window) && !('MediaRecorder' in window)) {
-      document.getElementById('browserWarning').style.display = 'flex';
-      document.getElementById('startOverlay').style.display = 'none';
-      return;
+        document.getElementById('browserWarning').style.display = 'flex';
+        document.getElementById('startOverlay').style.display = 'none';
+        return;
     }
     if (window.matchMedia('(prefers-color-scheme: dark)').matches) toggleDarkMode(true);
-
+    
     var d = new URLSearchParams(location.search).get('config');
     if (d) {
-      try {
-        C = JSON.parse(decodeURIComponent(escape(atob(decodeURIComponent(d)))));
-        renderUI();
-        buildSystemPrompt();
-      } catch (e) {
-        alert("Konfiguration defekt. Bitte den Lehrer kontaktieren.");
-      }
-    } else {
-      alert("Kein Session-Code gefunden.");
-    }
-  });
+        try {
+            C = JSON.parse(decodeURIComponent(escape(atob(decodeURIComponent(d)))));
+            
+            // NEU: Ablauf-Datum prüfen
+            if (C.expiresAt && Date.now() > C.expiresAt) {
+                document.body.innerHTML = '<div class="flex items-center justify-center h-full text-center p-8"><h1 class="text-2xl font-bold text-slate-500">Dieser Link ist leider abgelaufen. / This link has expired.</h1></div>';
+                return;
+            }
 
-  // ── DARK MODE ────────────────────────────────────
-  function toggleDarkMode(forceDark) {
+            renderUI();
+            buildSystemPrompt();
+        } catch (e) {
+            alert("Konfiguration defekt. Bitte den Lehrer kontaktieren.");
+        }
+    } else {
+        alert("Kein Session-Code gefunden.");
+    }
+});
+
+// ── DARK MODE ────────────────────────────────────
+function toggleDarkMode(forceDark) {
     var isDark;
     if (forceDark !== undefined && forceDark !== null) {
-      isDark = forceDark;
+        isDark = forceDark;
     } else {
-      isDark = !document.documentElement.classList.contains('dark');
+        isDark = !document.documentElement.classList.contains('dark');
     }
     document.documentElement.classList.toggle('dark', isDark);
     document.getElementById('themeIcon').className = isDark ? 'fas fa-sun text-yellow-400' : 'fas fa-moon text-slate-500';
-  }
+}
 
-  // ── TEXT CLEANING ────────────────────────────────
-  function clean(str) {
+// ── TEXT CLEANING ────────────────────────────────
+function clean(str) {
     return str.toLowerCase().normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "")
-      .replace(/[.,!??"'();:]/g, '')
-      .trim();
-  }
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[.,!??"'();:]/g, '')
+        .trim();
+}
 
-  // ── UI AUFBAUEN ──────────────────────────────────
-  function renderUI() {
+// ── UI AUFBAUEN ──────────────────────────────────
+function renderUI() {
+    translateUI(); // Wendet die Muttersprache auf das UI an
+
     document.getElementById('topicDisplay').innerText = C.topic || "Sitzung";
-    document.getElementById('welcomeName').innerText = C.studentName || 'Schüler';
+    document.getElementById('welcomeName').innerText = C.studentName || '';
 
     // Lernziel-Anzeige im Start-Overlay
     document.getElementById('infoTopic').innerText = C.topic || '-';
@@ -309,91 +797,91 @@
     var panelActive = false;
 
     if (C.showVocab && C.vocab && C.vocab.length > 0) {
-      panelActive = true;
-      document.getElementById('vocabSection').classList.remove('hidden');
-      var vocabHTML = '';
-      for (var i = 0; i < C.vocab.length; i++) {
-        var word = C.vocab[i];
-        var safeId = 'v-' + clean(word).replace(/\s+/g, '-');
-        vocabHTML += '<span class="vocab-chip" id="' + safeId + '" data-vocab="' + clean(word) + '">' + word + '</span>';
-      }
-      document.getElementById('vocabList').innerHTML = vocabHTML;
+        panelActive = true;
+        document.getElementById('vocabSection').classList.remove('hidden');
+        var vocabHTML = '';
+        for (var i = 0; i < C.vocab.length; i++) {
+            var word = C.vocab[i];
+            var safeId = 'v-' + clean(word).replace(/\s+/g, '-');
+            vocabHTML += '<span class="vocab-chip" id="' + safeId + '" data-vocab="' + clean(word) + '">' + word + '</span>';
+        }
+        document.getElementById('vocabList').innerHTML = vocabHTML;
     }
 
     if (C.showScaffolds && C.scaffolds && C.scaffolds.length > 0) {
-      panelActive = true;
-      document.getElementById('scaffoldSection').classList.remove('hidden');
-      var scaffHTML = '';
-      for (var j = 0; j < C.scaffolds.length; j++) {
-        scaffHTML += '<li class="text-sm dark:text-slate-300 pl-3 border-l-2 border-indigo-200 dark:border-indigo-800 transition-colors duration-300" data-index="' + j + '">' + C.scaffolds[j] + '</li>';
-      }
-      document.getElementById('scaffoldList').innerHTML = scaffHTML;
+        panelActive = true;
+        document.getElementById('scaffoldSection').classList.remove('hidden');
+        var scaffHTML = '';
+        for (var j = 0; j < C.scaffolds.length; j++) {
+            scaffHTML += '<li class="text-sm dark:text-slate-300 pl-3 border-l-2 border-indigo-200 dark:border-indigo-800 transition-colors duration-300" data-index="' + j + '">' + C.scaffolds[j] + '</li>';
+        }
+        document.getElementById('scaffoldList').innerHTML = scaffHTML;
     }
 
     if (panelActive) document.getElementById('sidePanel').style.display = 'flex';
     updateProgress();
-  }
+}
 
-  // ── FORTSCHRITTSBALKEN ───────────────────────────
-  function updateProgress() {
+// ── FORTSCHRITTSBALKEN ─────────────────────────
+function updateProgress() {
     var total = C.questions ? C.questions.length : 0;
     if (total === 0) return;
     var pct = Math.round((S.step / total) * 100);
     document.getElementById('progressBar').style.width = pct + '%';
-    document.getElementById('progressText').innerText = 'Frage ' + Math.min(S.step + 1, total) + ' von ' + total;
-  }
+    document.getElementById('progressText').innerText = t('questionOf') + ' ' + Math.min(S.step + 1, total) + ' ' + t('questionOfOf') + ' ' + total;
+}
 
-  // ── SYSTEM PROMPT ────────────────────────────────
-  function buildSystemPrompt() {
+// ── SYSTEM PROMPT ──────────────────────────────
+function buildSystemPrompt() {
     var prompt = '### ROLLE\nDu bist ein hochqualifizierter KI-Sprachtutor für ' + C.language + ' als Fremdsprache.\n';
     prompt += '### SCHÜLER\n- Name: ' + (C.studentName || 'Schüler') + '\n- Muttersprache: ' + (C.nativeLanguage || 'unbekannt') + '\n- Thema: ' + C.topic + '\n- Niveau: ' + C.level + '\n- Deine Rolle: ' + C.role + '\n\n';
-
     prompt += '### GESPRÄCHSMODUS: ' + (C.dialogMode === 'strict' ? 'STRENG' : 'ADAPTIV') + '\n';
+    
     if (C.dialogMode === 'strict') {
-      prompt += '- Stelle die vorgegebene Frage klar und deutlich.\n';
-      prompt += '- Warte auf die Antwort des Schülers.\n';
-      prompt += '- Reagiere kurz und gehe dann zur nächsten Frage über.\n';
-      prompt += '- Kein Nachhaken, keine Zusatzfragen.\n\n';
+        prompt += '- Stelle die vorgegebene Frage klar und deutlich.\n';
+        prompt += '- Warte auf die Antwort des Schülers.\n';
+        prompt += '- Reagiere kurz und gehe dann zur nächsten Frage über.\n';
+        prompt += '- Kein Nachhaken, keine Zusatzfragen.\n\n';
     } else {
-      prompt += '- Passe dein Niveau dynamisch an die Antwortqualität an.\n';
-      prompt += '- Bei sehr kurzen Antworten: hake nach.\n';
-      prompt += '- Bei sehr guten Antworten: erhöhe die Komplexität.\n\n';
+        prompt += '- Passe dein Niveau dynamisch an die Antwortqualität an.\n';
+        prompt += '- Bei sehr kurzen Antworten: hake nach.\n';
+        prompt += '- Bei sehr guten Antworten: erhöhe die Komplexität.\n\n';
     }
-
+    
     prompt += '### REGELN\n';
     prompt += '1. ANREDE: Immer informelles DU.\n';
     prompt += '2. SPRACHE: Ausschließlich ' + C.language + '.\n';
-
+    
     if (C.correction === 'immediate') {
-      prompt += '3. KORREKTUR: Gib niemals die Lösung vor. Stelle sokratische Rückfragen bei Fehlern.\n';
+        prompt += '3. KORREKTUR: Gib niemals die Lösung vor. Stelle sokratische Rückfragen bei Fehlern.\n';
     } else if (C.correction === 'end') {
-      prompt += '3. KORREKTUR: Ignoriere Grammatikfehler während des Dialogs.\n';
+        prompt += '3. KORREKTUR: Ignoriere Grammatikfehler während des Dialogs.\n';
     } else {
-      prompt += '3. KORREKTUR: Keine Korrekturen. Fokus auf Sprechfluss.\n';
+        prompt += '3. KORREKTUR: Keine Korrekturen. Fokus auf Sprechfluss.\n';
     }
-
     prompt += '4. LÄNGE: Halte deine Antworten kurz und klar (2-4 Sätze max).\n';
-
+    
     conversationHistory.push({ role: "system", content: prompt });
-  }
+}
 
-  // ── FLASH EFFEKT ─────────────────────────────────
-  function triggerFlash() {
+// ── FLASH EFFEKT ───────────────────────────────
+function triggerFlash() {
     var flash = document.getElementById('successFlash');
     if (flash) {
-      flash.classList.add('flash-active');
-      setTimeout(function() { flash.classList.remove('flash-active'); }, 200);
+        flash.classList.add('flash-active');
+        setTimeout(function() { flash.classList.remove('flash-active'); }, 200);
     }
-  }
+}
 
-  // ── CHAT BUBBLE ──────────────────────────────────
-  function addChatBubble(sender, text, id) {
+// ── CHAT BUBBLE ────────────────────────────────
+function addChatBubble(sender, text, id) {
     var isCoach = (sender === 'Coach');
+    var isSystem = (sender === 'System');
     var box = document.getElementById('chatHistory');
     if (!box) return null;
 
     var group = document.createElement('div');
-    group.className = 'flex flex-col w-full ' + (isCoach ? 'items-start' : 'items-end') + ' mb-4';
+    group.className = 'flex flex-col w-full ' + (isSystem ? 'items-center my-4' : (isCoach ? 'items-start mb-4' : 'items-end mb-4'));
     if (id) group.id = id;
 
     var label = document.createElement('div');
@@ -401,365 +889,348 @@
     label.textContent = isCoach ? (C.role || 'Coach') : (C.studentName || 'Du');
 
     var bubble = document.createElement('div');
-    if (isCoach) {
-      bubble.className = 'w-fit max-w-[85%] rounded-2xl p-4 text-[15px] leading-relaxed chat-bubble-content bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 border border-slate-200 dark:border-slate-700 shadow-sm rounded-tl-none';
+    
+    if (isSystem) {
+        bubble.className = 'w-fit max-w-[90%] rounded-xl px-4 py-2 text-[13px] leading-relaxed chat-bubble-content bg-slate-200 dark:bg-slate-700/80 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-600 text-center mx-auto';
+    } else if (isCoach) {
+        bubble.className = 'w-fit max-w-[85%] rounded-2xl p-4 text-[15px] leading-relaxed chat-bubble-content bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 border border-slate-200 dark:border-slate-700 shadow-sm rounded-tl-none';
     } else {
-      bubble.className = 'w-fit max-w-[85%] rounded-2xl p-4 text-[15px] leading-relaxed chat-bubble-content bg-indigo-600 text-white rounded-tr-none shadow-md';
+        bubble.className = 'w-fit max-w-[85%] rounded-2xl p-4 text-[15px] leading-relaxed chat-bubble-content bg-indigo-600 text-white rounded-tr-none shadow-md';
     }
 
     if (text === '...') {
-      bubble.innerHTML = '<i class="fas fa-ellipsis-h animate-pulse"></i>';
+        bubble.innerHTML = '<i class="fas fa-ellipsis-h animate-pulse"></i>';
     } else if (isCoach && C.textMode === 'hidden') {
-      bubble.innerHTML = '🔊 <i>Text verborgen (Höre zu)</i>';
+        bubble.innerHTML = '🔊 <i>' + t('hiddenText') + '</i>';   
     } else {
-      bubble.textContent = text;
+        bubble.textContent = text;
     }
 
-    if (text !== '...') group.appendChild(label);
+    if (text !== '...' && !isSystem) group.appendChild(label);
     group.appendChild(bubble);
 
     // Übersetzungs-Container
     if (isCoach && text !== '...' && C.textMode !== 'hidden') {
-      var transContainer = document.createElement('div');
-      transContainer.className = 'translation-container hidden mt-1 pl-1';
-      transContainer.id = id ? ('trans-' + id) : ('trans-' + Date.now());
-      group.appendChild(transContainer);
+        var transContainer = document.createElement('div');
+        transContainer.className = 'translation-container hidden mt-1 pl-1';
+        transContainer.id = id ? ('trans-' + id) : ('trans-' + Date.now());
+        group.appendChild(transContainer);
     }
 
     box.appendChild(group);
     box.scrollTo({ top: box.scrollHeight, behavior: 'smooth' });
 
     if (isCoach && text !== '...') {
-      S.lastCoachMessage = text;
-      S.lastCoachBubble = group;
+        S.lastCoachMessage = text;
+        S.lastCoachBubble = group;
     }
 
     return group;
-  }
+}
 
-  // ── STATUS BADGE ─────────────────────────────────
-  function setStatus(msg, visible) {
+// ── STATUS BADGE ─────────────────────────────────
+function setStatus(msg, visible) {
     var b = document.getElementById('statusBadge');
     b.innerText = msg;
     b.style.opacity = visible ? 1 : 0;
-  }
+}
 
-  // ── MIC LOCK/UNLOCK ──────────────────────────────
-  function lockMic() {
+// ── MIC LOCK/UNLOCK ──────────────────────────────
+function lockMic() {
     var btn = document.getElementById('micBtn');
     btn.className = 'mic-fab mic-disabled';
     btn.innerHTML = '<i class="fas fa-microphone"></i>';
     btn.disabled = true;
     document.getElementById('actionButtons').classList.add('hidden');
-  }
+}
 
-  function unlockMic() {
+function unlockMic() {
     var btn = document.getElementById('micBtn');
     btn.className = 'mic-fab mic-idle';
     btn.innerHTML = '<i class="fas fa-microphone"></i>';
     btn.disabled = false;
-    setStatus('Mikrofon drücken zum Sprechen', true);
-
+    setStatus(t('statusMic'), true);
+    
     var actions = document.getElementById('actionButtons');
     actions.classList.remove('hidden');
     actions.style.display = 'flex';
-
+    
     var pauseBtn = document.getElementById('pauseBtn');
     pauseBtn.classList.remove('hidden');
     pauseBtn.style.display = 'flex';
-
-    // Hilfe-Button
+    
     if (C.enableHelpButton) {
-      var helpBtn = document.getElementById('helpBtnWrap');
-      helpBtn.classList.remove('hidden');
-      helpBtn.style.display = 'flex';
+        var helpBtn = document.getElementById('helpBtnWrap');
+        helpBtn.classList.remove('hidden');
+        helpBtn.style.display = 'flex';
     }
-
-    // Nochmal-Button
     if (C.enableRetry) {
-      var retryBtn = document.getElementById('retryBtnWrap');
-      retryBtn.classList.remove('hidden');
-      retryBtn.style.display = 'flex';
+        var retryBtn = document.getElementById('retryBtnWrap');
+        retryBtn.classList.remove('hidden');
+        retryBtn.style.display = 'flex';
     }
-  }
+}
 
-  // ── TIMER (FIXED – behält Restzeit bei Pause) ───
-  function updTimeUI() {
+// ── TIMER (FIXED) ────────────────────────────────
+function updTimeUI() {
     var m = Math.floor(S.timeLeft / 60);
     var s = S.timeLeft % 60;
     document.getElementById('countdown').innerText = m + ':' + (s < 10 ? '0' + s : s);
-  }
+}
 
-  function startTimer() {
+function startTimer() {
     if (!C.hasTimer) return;
-    // Nur neuen Timer starten wenn timeLeft 0 oder nicht gesetzt
     if (!S.timeLeft || S.timeLeft <= 0) {
-      S.timeLeft = parseInt(C.timer);
+        S.timeLeft = parseInt(C.timer);
     }
     updTimeUI();
     clearInterval(S.timer);
     S.timer = setInterval(function() {
-      S.timeLeft--;
-      updTimeUI();
-      var box = document.getElementById('countdownWrapper');
-      if (S.timeLeft <= 10 && S.timeLeft > 0) {
-        box.classList.add('timer-warning');
-      } else {
-        box.classList.remove('timer-warning');
-      }
-      if (S.timeLeft <= 0) {
-        clearInterval(S.timer);
-        if (S.recording) stopRec();
-      }
+        S.timeLeft--;
+        updTimeUI();
+        var box = document.getElementById('countdownWrapper');
+        if (S.timeLeft <= 10 && S.timeLeft > 0) {
+            box.classList.add('timer-warning');
+        } else {
+            box.classList.remove('timer-warning');
+        }
+        if (S.timeLeft <= 0) {
+            clearInterval(S.timer);
+            if (S.recording) stopRec();
+        }
     }, 1000);
-  }
+}
 
-  function resetTimer() {
+function resetTimer() {
     S.timeLeft = 0;
     clearInterval(S.timer);
     document.getElementById('countdownWrapper').classList.remove('timer-warning');
-  }
+}
 
-  // ── VOCAB CHECK ──────────────────────────────────
-  function checkVocab(fullText) {
+// ── VOCAB CHECK ──────────────────────────────────
+function checkVocab(fullText) {
     if (!C.vocab && !C.scaffolds) return;
     var cleanText = clean(fullText);
     var hitFound = false;
 
     if (C.vocab) {
-      for (var i = 0; i < C.vocab.length; i++) {
-        var w = C.vocab[i];
-        var cleanW = clean(w);
-        if (cleanText.indexOf(cleanW) !== -1 && !S.usedVocab[cleanW]) {
-          S.usedVocab[cleanW] = true;
-          hitFound = true;
-          var el = document.querySelector('[data-vocab="' + cleanW + '"]');
-          if (el && !el.classList.contains('vocab-hit')) {
-            el.classList.add('vocab-hit');
-          }
+        for (var i = 0; i < C.vocab.length; i++) {
+            var w = C.vocab[i];
+            var cleanW = clean(w);
+            if (cleanText.indexOf(cleanW) !== -1 && !S.usedVocab[cleanW]) {
+                S.usedVocab[cleanW] = true;
+                hitFound = true;
+                var el = document.querySelector('[data-vocab="' + cleanW + '"]');
+                if (el && !el.classList.contains('vocab-hit')) {
+                    el.classList.add('vocab-hit');
+                }
+            }
         }
-      }
     }
 
     if (C.scaffolds) {
-      for (var j = 0; j < C.scaffolds.length; j++) {
-        var s = C.scaffolds[j];
-        var cleanS = clean(s);
-        if (cleanText.indexOf(cleanS) !== -1 && !S.usedScaffolds[cleanS]) {
-          S.usedScaffolds[cleanS] = true;
-          hitFound = true;
-          var li = document.querySelector('#scaffoldList li[data-index="' + j + '"]');
-          if (li) {
-            li.style.borderColor = '#14b8a6';
-            li.classList.add('font-bold');
-            li.style.color = '#0f766e';
-          }
+        for (var j = 0; j < C.scaffolds.length; j++) {
+            var s = C.scaffolds[j];
+            var cleanS = clean(s);
+            if (cleanText.indexOf(cleanS) !== -1 && !S.usedScaffolds[cleanS]) {
+                S.usedScaffolds[cleanS] = true;
+                hitFound = true;
+                var li = document.querySelector('#scaffoldList li[data-index="' + j + '"]');
+                if (li) {
+                    li.style.borderColor = '#14b8a6';
+                    li.classList.add('font-bold');
+                    li.style.color = '#0f766e';
+                }
+            }
         }
-      }
     }
-
     if (hitFound) triggerFlash();
-  }
+}
 
-  // ── PAUSE / RESUME (FIXED) ──────────────────────
-  function pauseSession() {
+// ── PAUSE / RESUME ───────────────────────────────
+function pauseSession() {
     if (S.speaking || S.recording) return;
     S.paused = true;
     clearInterval(S.timer);
     document.getElementById('pauseOverlay').style.display = 'flex';
-  }
+}
 
-  function resumeSession() {
+function resumeSession() {
     S.paused = false;
     document.getElementById('pauseOverlay').style.display = 'none';
-    // Timer mit Restzeit fortsetzen
     if (C.hasTimer && S.timeLeft > 0) {
-      startTimer();
+        startTimer();
     }
-  }
+}
 
-  // ── WIEDERHOLEN ──────────────────────────────────
-  function repeatLastCoachMessage() {
+// ── WIEDERHOLEN ──────────────────────────────────
+function repeatLastCoachMessage() {
     if (!S.lastCoachMessage || S.speaking) return;
-    setStatus('Wiederholt...', true);
+    setStatus(t('btnRepeat') + '...', true);
     playTTS(S.lastCoachMessage, function() {
-      setStatus('Mikrofon drücken zum Sprechen', true);
+        setStatus(t('statusMic'), true);
     });
-  }
+}
 
-  // ── ÜBERSETZEN (FIXED) ──────────────────────────
-  async function translateLastCoachMessage() {
+// ── ÜBERSETZEN ───────────────────────────────────
+async function translateLastCoachMessage() {
     if (!S.lastCoachMessage || !S.lastCoachBubble) return;
     var nativeLang = C.nativeLanguage || 'Deutsch';
 
-    // Bereits übersetzt? → Toggle
     var existing = S.lastCoachBubble.querySelector('.translation-box');
     if (existing) {
-      var container = existing.parentElement;
-      if (container.classList.contains('hidden')) {
-        container.classList.remove('hidden');
-      } else {
-        container.classList.add('hidden');
-      }
-      return;
+        var container = existing.parentElement;
+        if (container.classList.contains('hidden')) {
+            container.classList.remove('hidden');
+        } else {
+            container.classList.add('hidden');
+        }
+        return;
     }
 
-    setStatus('Übersetze...', true);
+    setStatus(t('statusTranslate'), true);
     var prompt = 'Übersetze folgenden Text ins ' + nativeLang + '. Gib NUR die Übersetzung zurück, nichts anderes:\n\n' + S.lastCoachMessage;
 
     try {
-      var response = await fetch('/.netlify/functions/ai-proxy', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          type: 'chat',
-          model: 'gpt-4o',
-          messages: [{ role: 'user', content: prompt }],
-          max_tokens: 200
-        })
-      });
+        var response = await fetch('/.netlify/functions/ai-proxy', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                type: 'chat',
+                model: 'gpt-4o',
+                messages: [{ role: 'user', content: prompt }],
+                max_tokens: 200
+            })
+        });
 
-      if (!response.ok) throw new Error('API Fehler');
-      var result = await response.json();
-      var translation = result.choices[0].message.content.trim();
+        if (!response.ok) throw new Error('API Fehler');
+        var result = await response.json();
+        var translation = result.choices[0].message.content.trim();
 
-      var transContainer = S.lastCoachBubble.querySelector('.translation-container');
-      if (transContainer) {
-        var transBox = document.createElement('div');
-        transBox.className = 'translation-box';
-        transBox.textContent = '🌐 ' + translation;
-        transContainer.appendChild(transBox);
-        transContainer.classList.remove('hidden');
-      }
+        var transContainer = S.lastCoachBubble.querySelector('.translation-container');
+        if (transContainer) {
+            var transBox = document.createElement('div');
+            transBox.className = 'translation-box';
+            transBox.textContent = '🌐 ' + translation;   
+            transContainer.appendChild(transBox);
+            transContainer.classList.remove('hidden');
+        }
     } catch (e) {
-      console.warn("Übersetzungsfehler:", e);
+        console.warn("Übersetzungsfehler:", e);
     }
-    setStatus('Mikrofon drücken zum Sprechen', true);
-  }
+    setStatus(t('statusMic'), true);
+}
 
-  // ── HILFE-BUTTON (NEU) ──────────────────────────
-  async function requestHelp() {
+// ── HILFE-BUTTON ─────────────────────────────────
+async function requestHelp() {
     if (S.speaking) return;
     lockMic();
-    setStatus('Generiere Tipp...', true);
+    setStatus(t('statusTip'), true);
 
     var currentQ = S.currentQuestionText || 'die aktuelle Frage';
     var prompt = 'Der Schüler ' + (C.studentName || '') + ' (Niveau ' + C.level + ') braucht Hilfe bei folgender Frage: "' + currentQ + '". Gib einen kurzen Tipp oder Satzanfang in ' + C.language + ', der ihm hilft zu antworten. Gib NICHT die vollständige Antwort. Maximal 1-2 Sätze.';
 
     try {
-      var response = await fetch('/.netlify/functions/ai-proxy', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          type: 'chat',
-          model: C.model || 'gpt-4o',
-          messages: [{ role: 'user', content: prompt }],
-          max_tokens: 150
-        })
-      });
-
-      if (!response.ok) throw new Error('API Fehler');
-      var result = await response.json();
-      var tip = result.choices[0].message.content.trim();
-
-      addChatBubble('Coach', '💡 Tipp: ' + tip);
-      S.log.push({ s: 'Coach (Tipp)', t: tip });
-
-      playTTS(tip, function() {
-        unlockMic();
-      });
+        var response = await fetch('/.netlify/functions/ai-proxy', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                type: 'chat',
+                model: C.model || 'gpt-4o',
+                messages: [{ role: 'user', content: prompt }],
+                max_tokens: 150
+            })
+        });
+        if (!response.ok) throw new Error('API Fehler');
+        var result = await response.json();
+        var tip = result.choices[0].message.content.trim();
+        
+        addChatBubble('System', t('tipPrefix') + tip);   
+        S.log.push({ s: 'Coach (Tipp)', t: tip });
+        
+        playTTS(tip, function() {
+            unlockMic();
+        });
     } catch (e) {
-      addChatBubble('Coach', '⚠️ Tipp konnte nicht geladen werden.');
-      unlockMic();
+        addChatBubble('System', t('tipError'));
+        unlockMic();
     }
-  }
+}
 
-  // ── NOCHMAL-BUTTON (NEU) ────────────────────────
-  function retryQuestion() {
+// ── NOCHMAL-BUTTON ───────────────────────────────
+function retryQuestion() {
     if (S.speaking || S.recording) return;
     if (!S.currentQuestionText) return;
-
+    
     S.log.push({ s: 'System', t: 'Schüler wiederholt die Frage.' });
-    addChatBubble('Coach', '🔄 Kein Problem! Versuche es nochmal:');
-
-    // Frage nochmal vorlesen
+    addChatBubble('System', t('retryMsg'));   
+    
     setTimeout(function() {
-      addChatBubble('Coach', S.currentQuestionText);
-      lockMic();
-      playTTS(S.currentQuestionText, function() {
-        unlockMic();
-        resetTimer();
-        S.timeLeft = 0; // Reset damit startTimer frischen Wert nimmt
-        startTimer();
-      });
+        addChatBubble('Coach', S.currentQuestionText);
+        lockMic();
+        playTTS(S.currentQuestionText, function() {
+            unlockMic();
+            resetTimer();
+            S.timeLeft = 0; 
+            startTimer();
+        });
     }, 500);
-  }
+}
 
-  // ── SELF ASSESSMENT (NEU) ───────────────────────
-  function setStar(n) {
+// ── SELF ASSESSMENT ──────────────────────────────
+function setStar(n) {
     S.selfRating = n;
     var stars = document.getElementById('starContainer').children;
     for (var i = 0; i < stars.length; i++) {
-      if (i < n) {
-        stars[i].classList.add('active');
-      } else {
-        stars[i].classList.remove('active');
-      }
+        if (i < n) { stars[i].classList.add('active'); } 
+        else { stars[i].classList.remove('active'); }
     }
-  }
+}
 
-  function submitSelfAssessment() {
+function submitSelfAssessment() {
     S.selfComment = document.getElementById('selfComment').value.trim();
     document.getElementById('selfAssessmentOverlay').style.display = 'none';
     finishAndSend();
-  }
+}
 
-<!-- ════════════════════════════════════════════ -->
-<!-- WEITER IN NACHRICHT 3 von 4                 -->
-<!-- ════════════════════════════════════════════ -->
-<!-- ════════════════════════════════════════════ -->
-<!-- NACHRICHT 3 von 4 – direkt nach Nachricht 2 -->
-<!-- ════════════════════════════════════════════ -->
-
-  // ── UNLOCK / START ───────────────────────────────
-  async function unlockEverything() {
+// ── UNLOCK / START ───────────────────────────────
+async function unlockEverything() {
     var btn = document.querySelector('#startOverlay button');
     var originalHTML = btn.innerHTML;
-    btn.innerHTML = '<i class="fas fa-circle-notch fa-spin mr-2"></i> Fordere Mikrofon an...';
-
+    btn.innerHTML = '<i class="fas fa-circle-notch fa-spin mr-2"></i> ' + t('requesting');
+    
     try {
-      mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      var ac = new (window.AudioContext || window.webkitAudioContext)();
-      await ac.resume();
-
-      document.getElementById('startOverlay').style.opacity = '0';
-      setTimeout(function() {
-        document.getElementById('startOverlay').style.display = 'none';
-        startSessionFlow();
-      }, 500);
+        mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        var ac = new (window.AudioContext || window.webkitAudioContext)();
+        await ac.resume();
+        document.getElementById('startOverlay').style.opacity = '0';
+        setTimeout(function() {
+            document.getElementById('startOverlay').style.display = 'none';
+            startSessionFlow();
+        }, 500);
     } catch (err) {
-      alert("Mikrofon blockiert! Bitte erlaube es im Browser neben der URL-Leiste.");
-      btn.innerHTML = originalHTML;
+        alert(t('micBlocked'));
+        btn.innerHTML = originalHTML;
     }
-  }
+}
 
-  // ── SESSION FLOW ─────────────────────────────────
-  function startSessionFlow() {
+// ── SESSION FLOW ─────────────────────────────────
+function startSessionFlow() {
     var intro = C.intro || "Die Simulation beginnt jetzt.";
     S.log.push({ s: 'Coach', t: intro });
     conversationHistory.push({ role: "assistant", content: intro });
-    setStatus('Coach spricht...', true);
+    setStatus(t('statusCoach'), true);
     addChatBubble('Coach', intro);
     lockMic();
     playTTS(intro, function() {
-      setTimeout(nextTeacherQuestion, 500);
+        setTimeout(nextTeacherQuestion, 500);
     });
-  }
+}
 
-  function nextTeacherQuestion() {
+function nextTeacherQuestion() {
     if (S.step >= C.questions.length) {
-      beginFinish();
-      return;
+        beginFinish();
+        return;
     }
     var text = C.questions[S.step];
     S.currentQuestionText = text;
@@ -768,411 +1239,355 @@
     addChatBubble('Coach', text);
     lockMic();
     updateProgress();
+    
     playTTS(text, function() {
-      unlockMic();
-      resetTimer();
-      S.timeLeft = 0;
-      startTimer();
+        unlockMic();
+        resetTimer();
+        S.timeLeft = 0;
+        startTimer();
     });
-  }
+}
 
-  // ── TTS ──────────────────────────────────────────
-  async function playTTS(text, callback) {
+// ── TTS ──────────────────────────────────────────
+async function playTTS(text, callback) {
     S.speaking = true;
     document.body.classList.add('is-speaking');
-    setStatus('Coach spricht...', true);
-
+    setStatus(t('statusCoach'), true);
+    
     // OpenAI TTS über Server
     try {
-      var res = await fetch('/.netlify/functions/ai-proxy', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          type: 'tts',
-          model: 'tts-1',
-          input: text,
-          voice: C.openaiVoice || 'nova'
-        })
-      });
-      if (!res.ok) throw new Error('TTS Fehler');
-      var blob = await res.blob();
-      playAudioBlob(blob, callback);
-      return;
+        var res = await fetch('/.netlify/functions/ai-proxy', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                type: 'tts',
+                model: 'tts-1',
+                input: text,
+                voice: C.openaiVoice || 'nova'
+            })
+        });
+        if (!res.ok) throw new Error('TTS Fehler');
+        var blob = await res.blob();
+        playAudioBlob(blob, callback);
+        return;
     } catch (e) {
-      console.warn("OpenAI TTS Fehler, Browser Fallback:", e);
+        console.warn("OpenAI TTS Fehler, Browser Fallback:", e);
     }
-
+    
     // Browser Fallback
     if (window.speechSynthesis) {
-      speechSynthesis.cancel();
-      var u = new SpeechSynthesisUtterance(text);
-      var langMap = {
-        'Englisch': 'en-US',
-        'Spanisch': 'es-ES',
-        'Französisch': 'fr-FR',
-        'Italienisch': 'it-IT',
-        'Deutsch': 'de-DE'
-      };
-      u.lang = langMap[C.language] || 'de-DE';
-
-      var callbackFired = false;
-      var fireCallback = function() {
-        if (callbackFired) return;
-        callbackFired = true;
+        speechSynthesis.cancel();
+        var u = new SpeechSynthesisUtterance(text);
+        var langMap = {
+            'Englisch': 'en-US',
+            'Spanisch': 'es-ES',
+            'Französisch': 'fr-FR',
+            'Italienisch': 'it-IT',
+            'Deutsch': 'de-DE',
+            'Russisch': 'ru-RU',
+            'Türkisch': 'tr-TR'
+        };
+        u.lang = langMap[C.language] || 'de-DE';
+        
+        var callbackFired = false;
+        var fireCallback = function() {
+            if (callbackFired) return;
+            callbackFired = true;
+            S.speaking = false;
+            document.body.classList.remove('is-speaking');
+            if (callback) callback();
+        };
+        u.onend = fireCallback;
+        var timeoutMs = Math.max(5000, text.length * 60 + 2000);
+        setTimeout(fireCallback, timeoutMs);
+        speechSynthesis.speak(u);
+    } else {
         S.speaking = false;
         document.body.classList.remove('is-speaking');
         if (callback) callback();
-      };
-
-      u.onend = fireCallback;
-      var timeoutMs = Math.max(5000, text.length * 60 + 2000);
-      setTimeout(fireCallback, timeoutMs);
-      speechSynthesis.speak(u);
-    } else {
-      S.speaking = false;
-      document.body.classList.remove('is-speaking');
-      if (callback) callback();
     }
-  }
+}
 
-  function playAudioBlob(blob, callback) {
+function playAudioBlob(blob, callback) {
     var audio = new Audio(URL.createObjectURL(blob));
     audio.onended = function() {
-      S.speaking = false;
-      document.body.classList.remove('is-speaking');
-      if (callback) callback();
+        S.speaking = false;
+        document.body.classList.remove('is-speaking');
+        if (callback) callback();
     };
     audio.onerror = function() {
-      S.speaking = false;
-      document.body.classList.remove('is-speaking');
-      if (callback) callback();
+        S.speaking = false;
+        document.body.classList.remove('is-speaking');
+        if (callback) callback();
     };
     audio.play();
-  }
+}
 
-  // ── WHISPER RECORDING ────────────────────────────
-  function toggleRecording() {
+// ── WHISPER RECORDING ────────────────────────────
+function toggleRecording() {
     if (S.paused) return;
-    if (S.recording) {
-      stopRec();
-    } else {
-      startRec();
-    }
-  }
+    if (S.recording) { stopRec(); } else { startRec(); }
+}
 
-  function startRec() {
+function startRec() {
     if (S.speaking) return;
     S.recording = true;
     S.audioChunks = [];
-
     try {
-      var options = {};
-      if (MediaRecorder.isTypeSupported('audio/webm;codecs=opus')) {
-        options = { mimeType: 'audio/webm;codecs=opus' };
-      }
-      S.mediaRecorder = new MediaRecorder(mediaStream, options);
+        var options = {};
+        if (MediaRecorder.isTypeSupported('audio/webm;codecs=opus')) {
+            options = { mimeType: 'audio/webm;codecs=opus' };
+        }
+        S.mediaRecorder = new MediaRecorder(mediaStream, options);
     } catch (e) {
-      S.mediaRecorder = new MediaRecorder(mediaStream);
+        S.mediaRecorder = new MediaRecorder(mediaStream);
     }
-
     S.mediaRecorder.ondataavailable = function(e) {
-      if (e.data && e.data.size > 0) {
-        S.audioChunks.push(e.data);
-        S.allAudioChunks.push(e.data);
-      }
+        if (e.data && e.data.size > 0) {
+            S.audioChunks.push(e.data);
+            S.allAudioChunks.push(e.data);
+        }
     };
-
     S.mediaRecorder.start(100);
-
     var btn = document.getElementById('micBtn');
     btn.className = 'mic-fab mic-recording';
     btn.innerHTML = '<i class="fas fa-stop"></i>';
     document.getElementById('recIndicator').classList.remove('hidden');
     document.getElementById('recIndicator').style.display = 'flex';
-    setStatus('Sprich jetzt – drücke Stop zum Senden', true);
-  }
+    setStatus(t('statusRecord'), true);
+}
 
-  async function stopRec() {
+async function stopRec() {
     if (!S.recording) return;
     S.recording = false;
-
     var btn = document.getElementById('micBtn');
     btn.className = 'mic-fab mic-disabled';
     btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
     btn.disabled = true;
     document.getElementById('recIndicator').classList.add('hidden');
-
     resetTimer();
-    setStatus('Whisper transkribiert...', true);
+    setStatus(t('statusTranscribe'), true);
 
-    // MediaRecorder stoppen und auf Daten warten
     await new Promise(function(resolve) {
-      S.mediaRecorder.onstop = resolve;
-      S.mediaRecorder.stop();
+        S.mediaRecorder.onstop = resolve;
+        S.mediaRecorder.stop();
     });
 
-    // Audio-Blob erstellen
     var mimeType = S.mediaRecorder.mimeType || 'audio/webm';
     var audioBlob = new Blob(S.audioChunks, { type: mimeType });
-
-    // An Whisper schicken
     var studentText = await transcribeWithWhisper(audioBlob);
 
-    // Bubble anzeigen
     addChatBubble('Student', studentText);
     checkVocab(studentText);
-
-    // Protokoll
+    
     S.log.push({ s: C.studentName || 'Student', t: studentText });
     conversationHistory.push({ role: "user", content: studentText });
-
+    
     addChatBubble('Coach', '...', 'typingIndicator');
     await askGPT();
-  }
+}
 
-  // ── WHISPER TRANSKRIPTION ────────────────────────
-  async function transcribeWithWhisper(audioBlob) {
+async function transcribeWithWhisper(audioBlob) {
     var langMap = {
-      'Deutsch': 'de',
-      'Englisch': 'en',
-      'Spanisch': 'es',
-      'Französisch': 'fr',
-      'Italienisch': 'it'
+        'Deutsch': 'de', 'Englisch': 'en', 'Spanisch': 'es', 
+        'Französisch': 'fr', 'Italienisch': 'it', 'Russisch': 'ru', 'Türkisch': 'tr'
     };
-
     var ext = 'webm';
     if (audioBlob.type.indexOf('mp4') !== -1) ext = 'mp4';
-
     var formData = new FormData();
     formData.append('file', audioBlob, 'audio.' + ext);
     formData.append('model', 'whisper-1');
     formData.append('language', langMap[C.language] || 'de');
-
     try {
-      var response = await fetch('/.netlify/functions/ai-proxy', {
-        method: 'POST',
-        body: formData
-      });
-      if (!response.ok) throw new Error('Whisper Fehler: ' + response.status);
-      var result = await response.json();
-      return result.text || "*(Keine Sprache erkannt)*";
+        var response = await fetch('/.netlify/functions/ai-proxy', {
+            method: 'POST', body: formData
+        });
+        if (!response.ok) throw new Error('Whisper Fehler');
+        var result = await response.json();
+        return result.text || t('noSpeech');
     } catch (e) {
-      console.error("Whisper Fehler:", e);
-      return "*(Transkriptionsfehler – bitte nochmal versuchen)*";
+        console.error("Whisper Fehler:", e);
+        return t('transError');
     }
-  }
+}
 
-  // ── ASK GPT ──────────────────────────────────────
-  async function askGPT() {
+// ── ASK GPT ──────────────────────────────────────
+async function askGPT() {
     var messagesToSend = conversationHistory.slice();
-
     if (S.step < C.questions.length) {
-      messagesToSend.push({
-        role: "system",
-        content: 'Beziehe dich kurz auf die letzte Antwort des Schülers. Leite dann organisch zur nächsten Frage über: "' + C.questions[S.step] + '". Stelle NUR diese eine Frage und warte auf die Antwort.'
-      });
+        messagesToSend.push({
+            role: "system",
+            content: 'Beziehe dich kurz auf die letzte Antwort des Schülers. Leite dann organisch zur nächsten Frage über: "' + C.questions[S.step] + '". Stelle NUR diese eine Frage und warte auf die Antwort.'
+        });
     } else {
-      messagesToSend.push({
-        role: "system",
-        content: 'Das war die letzte Frage. Beende jetzt das Training. Bedanke dich beim Schüler ' + (C.studentName || '') + ', gib ein kurzes ehrliches Lob und verabschiede dich freundlich. Stelle KEINE weitere Frage mehr.'
-      });
+        messagesToSend.push({
+            role: "system",
+            content: 'Das war die letzte Frage. Beende jetzt das Training. Bedanke dich beim Schüler ' + (C.studentName || '') + ', gib ein kurzes ehrliches Lob und verabschiede dich freundlich. Stelle KEINE weitere Frage mehr.'
+        });
     }
 
     try {
-      var response = await fetch('/.netlify/functions/ai-proxy', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          type: 'chat',
-          model: C.model || 'gpt-4o',
-          messages: messagesToSend,
-          temperature: 0.7,
-          max_tokens: 400
-        })
-      });
+        var response = await fetch('/.netlify/functions/ai-proxy', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                type: 'chat',
+                model: C.model || 'gpt-4o',
+                messages: messagesToSend,
+                temperature: 0.7,
+                max_tokens: 400
+            })
+        });
 
-      var indicator = document.getElementById('typingIndicator');
-      if (indicator) indicator.remove();
+        var indicator = document.getElementById('typingIndicator');
+        if (indicator) indicator.remove();
 
-      if (!response.ok) {
-        var errText = '';
-        try {
-          var errData = await response.json();
-          errText = errData.error ? errData.error.message : ('' + response.status);
-        } catch (parseErr) {
-          errText = '' + response.status;
+        if (!response.ok) {
+            var errText = '';
+            try {
+                var errData = await response.json();
+                errText = errData.error ? errData.error.message : ('' + response.status);
+            } catch (parseErr) { errText = '' + response.status; }
+            throw new Error(errText);
         }
-        throw new Error(errText);
-      }
 
-      var data = await response.json();
-      var aiReply = data.choices[0].message.content;
-
-      S.log.push({ s: 'Coach', t: aiReply });
-      conversationHistory.push({ role: "assistant", content: aiReply });
-      addChatBubble('Coach', aiReply);
-
-      S.step++;
-      updateProgress();
-
-      playTTS(aiReply, function() {
-        if (S.step >= C.questions.length) {
-          setTimeout(beginFinish, 1000);
-        } else {
-          S.currentQuestionText = C.questions[S.step] || '';
-          unlockMic();
-          resetTimer();
-          S.timeLeft = 0;
-          startTimer();
-        }
-      });
-
+        var data = await response.json();
+        var aiReply = data.choices[0].message.content;
+        
+        S.log.push({ s: 'Coach', t: aiReply });
+        conversationHistory.push({ role: "assistant", content: aiReply });
+        addChatBubble('Coach', aiReply);
+        
+        S.step++;
+        updateProgress();
+        
+        playTTS(aiReply, function() {
+            if (S.step >= C.questions.length) {
+                setTimeout(beginFinish, 1000);
+            } else {
+                S.currentQuestionText = C.questions[S.step] || '';
+                unlockMic();
+                resetTimer();
+                S.timeLeft = 0;
+                startTimer();
+            }
+        });
     } catch (err) {
-      var indicator2 = document.getElementById('typingIndicator');
-      if (indicator2) indicator2.remove();
-      addChatBubble('Coach', '⚠️ Verbindungsfehler: ' + err.message + '. Bitte versuche es nochmal.');
-      unlockMic();
+        var indicator2 = document.getElementById('typingIndicator');
+        if (indicator2) indicator2.remove();
+        addChatBubble('System', t('connError') + err.message + t('connRetry'));
+        unlockMic();
     }
-  }
+}
 
-<!-- ════════════════════════════════════════════ -->
-<!-- WEITER IN NACHRICHT 4 von 4                 -->
-<!-- ════════════════════════════════════════════ -->
-<!-- ════════════════════════════════════════════ -->
-<!-- NACHRICHT 4 von 4 – direkt nach Nachricht 3 -->
-<!-- ════════════════════════════════════════════ -->
-
-   // ── BEGIN FINISH ─────────────────────────────────
-  async function beginFinish() {
-    // UI aufräumen
+// ── BEGIN FINISH  ────────────────────────────────
+async function beginFinish() {
     document.getElementById('micBtn').style.display = 'none';
     document.getElementById('countdownWrapper').style.display = 'none';
     document.getElementById('pauseBtn').style.display = 'none';
     document.getElementById('actionButtons').style.display = 'none';
-
     document.getElementById('progressBar').style.width = '100%';
-    document.getElementById('progressText').innerText = 'Abgeschlossen ✅';
-    setStatus('Session beendet', true);
+    document.getElementById('progressText').innerText = t('done');
+    setStatus(t('statusEnded'), true);
 
-    // Vokabel-Score berechnen
     var vocabTotal = C.vocab ? C.vocab.length : 0;
     var scaffTotal = C.scaffolds ? C.scaffolds.length : 0;
     var usedVocabCount = 0;
-    for (var key in S.usedVocab) {
-      if (S.usedVocab[key]) usedVocabCount++;
-    }
+    for (var key in S.usedVocab) { if (S.usedVocab[key]) usedVocabCount++; }
     var usedScaffCount = 0;
-    for (var key2 in S.usedScaffolds) {
-      if (S.usedScaffolds[key2]) usedScaffCount++;
-    }
+    for (var key2 in S.usedScaffolds) { if (S.usedScaffolds[key2]) usedScaffCount++; }
 
-    // Vokabel-Score anzeigen
     if (vocabTotal > 0 || scaffTotal > 0) {
-      var scoreText = '📊 Deine Ergebnisse:\n';
-      if (vocabTotal > 0) {
-        scoreText += '• Vokabeln: ' + usedVocabCount + ' von ' + vocabTotal + ' verwendet';
-        if (usedVocabCount === vocabTotal) scoreText += ' ✅ Alle!';
-        scoreText += '\n';
-      }
-      if (scaffTotal > 0) {
-        scoreText += '• Redemittel: ' + usedScaffCount + ' von ' + scaffTotal + ' verwendet';
-        if (usedScaffCount === scaffTotal) scoreText += ' ✅ Alle!';
-        scoreText += '\n';
-      }
-      addChatBubble('Coach', scoreText);
-      S.log.push({ s: 'System', t: scoreText });
+        var scoreText = t('scoreTitle');   
+        if (vocabTotal > 0) {
+            scoreText += t('scoreVocab') + usedVocabCount + t('scoreVocabOf') + vocabTotal + t('scoreVocabUsed');
+            if (usedVocabCount === vocabTotal) scoreText += t('scoreVocabAll');
+            scoreText += '\n';
+        }
+        if (scaffTotal > 0) {
+            scoreText += t('scoreScaff') + usedScaffCount + t('scoreVocabOf') + scaffTotal + t('scoreVocabUsed');
+            if (usedScaffCount === scaffTotal) scoreText += t('scoreVocabAll');
+            scoreText += '\n';
+        }
+        addChatBubble('System', scoreText);
+        S.log.push({ s: 'System', t: scoreText });
     }
 
-    // KI-Abschlussanalyse
     var analysisText = '';
     if (C.enableEndReport) {
-      var loadingBubble = addChatBubble('Coach', '📝 Erstelle Abschlussanalyse...', 'analysisLoading');
-      setStatus('KI analysiert...', true);
+        var loadingBubble = addChatBubble('System', t('analysisLoading'), 'analysisLoading');
+        setStatus(t('statusAnalyze'), true);
 
-      var analysisPrompt = 'Du bist ein Sprachlehrer. Analysiere den folgenden Dialog zwischen dir und dem Schüler ' + (C.studentName || '') + ' (Niveau: ' + C.level + ', Zielsprache: ' + C.language + ').\n\n';
-      analysisPrompt += 'Erstelle eine kurze, strukturierte Analyse mit:\n';
-      analysisPrompt += '1. GRAMMATIK: Welche Fehler wurden gemacht? (max 3 Punkte)\n';
-      analysisPrompt += '2. WORTSCHATZ: Wie war die Wortschatznutzung? (max 2 Punkte)\n';
-      analysisPrompt += '3. SPRECHFLUSS: War der Schüler flüssig? (max 2 Punkte)\n';
-      analysisPrompt += '4. TIPPS: 2-3 konkrete Verbesserungstipps\n';
-      analysisPrompt += '5. GESAMTNOTE: Gib eine Note von 1-10\n\n';
-      analysisPrompt += 'Schreibe die Analyse in ' + (C.nativeLanguage || 'Deutsch') + ', damit der Schüler sie versteht.\n';
-      analysisPrompt += 'Halte dich kurz und präzise.\n\n';
-      analysisPrompt += '--- DIALOG ---\n';
+        var analysisPrompt = 'Du bist ein Sprachlehrer. Analysiere den folgenden Dialog zwischen dir und dem Schüler ' + (C.studentName || '') + ' (Niveau: ' + C.level + ', Zielsprache: ' + C.language + ').\n\n';
+        analysisPrompt += 'Erstelle eine kurze, strukturierte Analyse mit:\n';
+        analysisPrompt += '1. GRAMMATIK: Welche Fehler wurden gemacht? (max 3 Punkte)\n';
+        analysisPrompt += '2. WORTSCHATZ: Wie war die Wortschatznutzung? (max 2 Punkte)\n';
+        analysisPrompt += '3. SPRECHFLUSS: War der Schüler flüssig? (max 2 Punkte)\n';
+        analysisPrompt += '4. TIPPS: 2-3 konkrete Verbesserungstipps\n';
+        analysisPrompt += '5. GESAMTNOTE: Gib eine Note von 1-10\n\n';
+        analysisPrompt += 'Schreibe die Analyse in ' + (C.nativeLanguage || 'Deutsch') + ', damit der Schüler sie versteht.\n';
+        analysisPrompt += 'Halte dich kurz und präzise.\n\n';
 
-      for (var i = 0; i < S.log.length; i++) {
-        analysisPrompt += S.log[i].s + ': ' + S.log[i].t + '\n';
-      }
+        analysisPrompt += '--- DIALOG ---\n';
+        for (var i = 0; i < S.log.length; i++) {
+            analysisPrompt += S.log[i].s + ': ' + S.log[i].t + '\n';
+        }
 
-      try {
-        var response = await fetch('/.netlify/functions/ai-proxy', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            type: 'chat',
-            model: C.model || 'gpt-4o',
-            messages: [{ role: 'user', content: analysisPrompt }],
-            max_tokens: 600
-          })
-        });
+        try {
+            var response = await fetch('/.netlify/functions/ai-proxy', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    type: 'chat',
+                    model: C.model || 'gpt-4o',
+                    messages: [{ role: 'user', content: analysisPrompt }],
+                    max_tokens: 600
+                })
+            });
 
-        // Lade-Bubble entfernen
-        var loader = document.getElementById('analysisLoading');
-        if (loader) loader.remove();
+            var loader = document.getElementById('analysisLoading');
+            if (loader) loader.remove();
 
-        if (!response.ok) throw new Error('API Fehler');
-        var result = await response.json();
-        analysisText = result.choices[0].message.content.trim();
+            if (!response.ok) throw new Error('API Fehler');
+            var result = await response.json();
+            analysisText = result.choices[0].message.content.trim();
 
-        addChatBubble('Coach', '📋 Abschlussanalyse:\n\n' + analysisText);
-        S.log.push({ s: 'KI-Analyse', t: analysisText });
+            addChatBubble('System', t('analysisTitle') + analysisText);   
+            S.log.push({ s: 'KI-Analyse', t: analysisText });
 
-        // Analyse vorlesen und dann weitermachen
-        await new Promise(function(resolve) {
-          playTTS('Hier ist deine Abschlussanalyse.', function() {
-            resolve();
-          });
-        });
-
-      } catch (e) {
-        var loader2 = document.getElementById('analysisLoading');
-        if (loader2) loader2.remove();
-        addChatBubble('Coach', '⚠️ Analyse konnte nicht erstellt werden.');
-      }
+            await new Promise(function(resolve) {
+                // Liest die Analyse per TTS in der Muttersprache (nativeLanguage) akzentfrei vor!
+                playTTS(t('analysisTTS'), function() { resolve(); });
+            });
+        } catch (e) {
+            var loader2 = document.getElementById('analysisLoading');
+            if (loader2) loader2.remove();
+            addChatBubble('System', t('analysisError'));
+        }
     }
-
-    // Jetzt Selbstbewertung oder direkt senden
-    // Analyse ist garantiert fertig und in S.log
+    
     showSelfAssessmentOrFinish();
-  }
+}
 
-  // ── SELF ASSESSMENT ODER DIREKT SENDEN ──────────
-  function showSelfAssessmentOrFinish() {
+function showSelfAssessmentOrFinish() {
     if (C.enableSelfAssessment) {
-      document.getElementById('selfAssessmentOverlay').style.display = 'flex';
+        document.getElementById('selfAssessmentOverlay').style.display = 'flex';
     } else {
-      finishAndSend();
+        finishAndSend();
     }
-  }
+}
 
-  // ── FINISH AND SEND ─────────────────────────────
-  async function finishAndSend() {
-    addChatBubble('Coach', '🟢 Das Training ist beendet. Protokoll wird an den Lehrer gesendet...');
-
-    var dateStr = new Date().toLocaleDateString('de-DE', {
-      day: '2-digit', month: '2-digit', year: 'numeric'
-    });
-
+// ── FINISH AND SEND ─────────────────────────────
+async function finishAndSend() {
+    addChatBubble('System', t('finishMsg'));   
+    
+    var dateStr = new Date().toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
     var vocabTotal = C.vocab ? C.vocab.length : 0;
     var scaffTotal = C.scaffolds ? C.scaffolds.length : 0;
     var usedVocabCount = 0;
-    for (var k1 in S.usedVocab) {
-      if (S.usedVocab[k1]) usedVocabCount++;
-    }
+    for (var k1 in S.usedVocab) { if (S.usedVocab[k1]) usedVocabCount++; }
     var usedScaffCount = 0;
-    for (var k2 in S.usedScaffolds) {
-      if (S.usedScaffolds[k2]) usedScaffCount++;
-    }
+       for (var k2 in S.usedScaffolds) { if (S.usedScaffolds[k2]) usedScaffCount++; }
 
     // Protokoll erstellen
     var md = '═══════════════════════════════════════\n';
@@ -1186,63 +1601,64 @@
     md += 'KI-Rolle: ' + (C.role || '?') + '\n';
     md += 'Modus: ' + (C.dialogMode === 'strict' ? 'Streng' : 'Adaptiv') + '\n';
     md += 'Korrektur: ' + C.correction + '\n\n';
-
+    
     md += '--- Lernziel-Auswertung ---\n';
     if (vocabTotal > 0) {
-      md += 'Pflichtvokabeln: ' + usedVocabCount + ' von ' + vocabTotal + ' verwendet';
-      if (vocabTotal > 0 && usedVocabCount === vocabTotal) md += ' (ALLE ✅)';
-      md += '\n';
-      // Welche wurden verwendet, welche nicht
-      md += 'Verwendet: ';
-      var usedWords = [];
-      var missedWords = [];
-      for (var vi = 0; vi < C.vocab.length; vi++) {
-        var cleanW = clean(C.vocab[vi]);
-        if (S.usedVocab[cleanW]) {
-          usedWords.push(C.vocab[vi]);
-        } else {
-          missedWords.push(C.vocab[vi]);
+        md += 'Pflichtvokabeln: ' + usedVocabCount + ' von ' + vocabTotal + ' verwendet';
+        if (vocabTotal > 0 && usedVocabCount === vocabTotal) md += ' (ALLE ✅)';
+        md += '\n';
+        
+        md += 'Verwendet: ';
+        var usedWords = [];
+        var missedWords = [];
+        for (var vi = 0; vi < C.vocab.length; vi++) {
+            var cleanW = clean(C.vocab[vi]);
+            if (S.usedVocab[cleanW]) {
+                usedWords.push(C.vocab[vi]);
+            } else {
+                missedWords.push(C.vocab[vi]);
+            }
         }
-      }
-      md += usedWords.length > 0 ? usedWords.join(', ') : 'keine';
-      md += '\n';
-      if (missedWords.length > 0) {
-        md += 'Nicht verwendet: ' + missedWords.join(', ') + '\n';
-      }
+        md += usedWords.length > 0 ? usedWords.join(', ') : 'keine';
+        md += '\n';
+        if (missedWords.length > 0) {
+            md += 'Nicht verwendet: ' + missedWords.join(', ') + '\n';
+        }
     }
+    
     if (scaffTotal > 0) {
-      md += 'Redemittel: ' + usedScaffCount + ' von ' + scaffTotal + ' verwendet.\n';
+        md += 'Redemittel: ' + usedScaffCount + ' von ' + scaffTotal + ' verwendet.\n';
     }
     md += '\n';
-
+    
     // Selbstbewertung
     if (C.enableSelfAssessment && S.selfRating > 0) {
-      md += '--- Selbstbewertung des Schülers ---\n';
-      var stars = '';
-      for (var si = 0; si < 5; si++) {
-        stars += (si < S.selfRating) ? '★' : '☆';
-      }
-      md += 'Bewertung: ' + stars + ' (' + S.selfRating + '/5)\n';
-      if (S.selfComment) {
-        md += 'Kommentar: ' + S.selfComment + '\n';
-      }
-      md += '\n';
+        md += '--- Selbstbewertung des Schülers ---\n';
+        var stars = '';
+        for (var si = 0; si < 5; si++) {
+            stars += (si < S.selfRating) ? '★' : '☆';
+        }
+        md += 'Bewertung: ' + stars + ' (' + S.selfRating + '/5)\n';
+        if (S.selfComment) {
+            md += 'Kommentar: ' + S.selfComment + '\n';
+        }
+        md += '\n';
     }
-
+    
     md += '--- Dialog-Verlauf ---\n\n';
     for (var li = 0; li < S.log.length; li++) {
-      md += '**' + S.log[li].s + ':**\n' + S.log[li].t + '\n\n';
+        md += '**' + S.log[li].s + ':**\n' + S.log[li].t + '\n\n';
     }
 
     // Formspree senden
     var formspreeId = C.formspreeId || '';
     if (!formspreeId) {
-      addChatBubble('Coach', '⚠️ Keine Formspree ID konfiguriert.');
-      return;
+        addChatBubble('System', t('sendNoId'));
+        return;
     }
-
-    setStatus('Sende Protokoll...', true);
-
+    
+    setStatus(t('statusSend'), true);
+    
     var formData = new URLSearchParams();
     formData.append("_subject", "DialogCoach: " + (C.studentName || '?') + " – " + (C.topic || 'Training'));
     formData.append("Schueler", C.studentName || "Unbekannt");
@@ -1252,39 +1668,39 @@
     formData.append("Sprache", C.language || "?");
     formData.append("Modus", C.dialogMode === 'strict' ? 'Streng' : 'Adaptiv');
     formData.append("Korrektur", C.correction || "?");
+    
     if (vocabTotal > 0) {
-      formData.append("Vokabeln", usedVocabCount + '/' + vocabTotal);
+        formData.append("Vokabeln", usedVocabCount + '/' + vocabTotal);
     }
     if (scaffTotal > 0) {
-      formData.append("Redemittel", usedScaffCount + '/' + scaffTotal);
+        formData.append("Redemittel", usedScaffCount + '/' + scaffTotal);
     }
     if (C.enableSelfAssessment && S.selfRating > 0) {
-      formData.append("Selbstbewertung", S.selfRating + '/5');
-      if (S.selfComment) {
-        formData.append("Schueler-Kommentar", S.selfComment);
-      }
+        formData.append("Selbstbewertung", S.selfRating + '/5');
+        if (S.selfComment) {
+            formData.append("Schueler-Kommentar", S.selfComment);
+        }
     }
     formData.append("Protokoll", md);
 
     try {
-      var response = await fetch('https://formspree.io/f/' + formspreeId, {
-        method: "POST",
-        headers: { "Accept": "application/json" },
-        body: formData
-      });
-
-      if (response.ok) {
-        setStatus('Abgeschlossen ✅', true);
-        addChatBubble('Coach', '✅ Protokoll erfolgreich gesendet! Du kannst diesen Tab nun schließen.');
-      } else {
-        addChatBubble('Coach', '⚠️ Sende-Fehler (' + response.status + '). Bitte melde dich beim Lehrer.');
-      }
+        var response = await fetch('https://formspree.io/f/' + formspreeId, {
+            method: "POST",
+            headers: { "Accept": "application/json" },
+            body: formData
+        });
+        
+        if (response.ok) {
+            setStatus(t('done'), true);
+            addChatBubble('System', t('sendOk'));
+        } else {
+            addChatBubble('System', t('sendError'));
+        }
     } catch (error) {
-      console.error(error);
-      addChatBubble('Coach', '⚠️ Verbindungsfehler beim Senden.');
+        console.error(error);
+        addChatBubble('System', t('sendConnErr'));
     }
-  }
-
+}
 </script>
 </body>
 </html>
