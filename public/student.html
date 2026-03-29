@@ -1042,7 +1042,7 @@
 <!-- NACHRICHT 4 von 4 – direkt nach Nachricht 3 -->
 <!-- ════════════════════════════════════════════ -->
 
-  // ── BEGIN FINISH ─────────────────────────────────
+   // ── BEGIN FINISH ─────────────────────────────────
   async function beginFinish() {
     // UI aufräumen
     document.getElementById('micBtn').style.display = 'none';
@@ -1054,7 +1054,7 @@
     document.getElementById('progressText').innerText = 'Abgeschlossen ✅';
     setStatus('Session beendet', true);
 
-    // Vokabel-Score anzeigen
+    // Vokabel-Score berechnen
     var vocabTotal = C.vocab ? C.vocab.length : 0;
     var scaffTotal = C.scaffolds ? C.scaffolds.length : 0;
     var usedVocabCount = 0;
@@ -1066,20 +1066,17 @@
       if (S.usedScaffolds[key2]) usedScaffCount++;
     }
 
+    // Vokabel-Score anzeigen
     if (vocabTotal > 0 || scaffTotal > 0) {
       var scoreText = '📊 Deine Ergebnisse:\n';
       if (vocabTotal > 0) {
         scoreText += '• Vokabeln: ' + usedVocabCount + ' von ' + vocabTotal + ' verwendet';
-        if (usedVocabCount === vocabTotal) {
-          scoreText += ' ✅ Alle!';
-        }
+        if (usedVocabCount === vocabTotal) scoreText += ' ✅ Alle!';
         scoreText += '\n';
       }
       if (scaffTotal > 0) {
         scoreText += '• Redemittel: ' + usedScaffCount + ' von ' + scaffTotal + ' verwendet';
-        if (usedScaffCount === scaffTotal) {
-          scoreText += ' ✅ Alle!';
-        }
+        if (usedScaffCount === scaffTotal) scoreText += ' ✅ Alle!';
         scoreText += '\n';
       }
       addChatBubble('Coach', scoreText);
@@ -1087,8 +1084,9 @@
     }
 
     // KI-Abschlussanalyse
+    var analysisText = '';
     if (C.enableEndReport) {
-      addChatBubble('Coach', '📝 Erstelle Abschlussanalyse...');
+      var loadingBubble = addChatBubble('Coach', '📝 Erstelle Abschlussanalyse...', 'analysisLoading');
       setStatus('KI analysiert...', true);
 
       var analysisPrompt = 'Du bist ein Sprachlehrer. Analysiere den folgenden Dialog zwischen dir und dem Schüler ' + (C.studentName || '') + ' (Niveau: ' + C.level + ', Zielsprache: ' + C.language + ').\n\n';
@@ -1118,29 +1116,34 @@
           })
         });
 
+        // Lade-Bubble entfernen
+        var loader = document.getElementById('analysisLoading');
+        if (loader) loader.remove();
+
         if (!response.ok) throw new Error('API Fehler');
         var result = await response.json();
-        var analysis = result.choices[0].message.content.trim();
+        analysisText = result.choices[0].message.content.trim();
 
-        // Lade-Bubble entfernen (letzte Coach-Bubble)
-        var chatBox = document.getElementById('chatHistory');
-        if (chatBox.lastChild) chatBox.removeChild(chatBox.lastChild);
+        addChatBubble('Coach', '📋 Abschlussanalyse:\n\n' + analysisText);
+        S.log.push({ s: 'KI-Analyse', t: analysisText });
 
-        addChatBubble('Coach', '📋 Abschlussanalyse:\n\n' + analysis);
-        S.log.push({ s: 'KI-Analyse', t: analysis });
-
-        playTTS('Hier ist deine Abschlussanalyse.', function() {
-          showSelfAssessmentOrFinish();
+        // Analyse vorlesen und dann weitermachen
+        await new Promise(function(resolve) {
+          playTTS('Hier ist deine Abschlussanalyse.', function() {
+            resolve();
+          });
         });
+
       } catch (e) {
-        var chatBox2 = document.getElementById('chatHistory');
-        if (chatBox2.lastChild) chatBox2.removeChild(chatBox2.lastChild);
+        var loader2 = document.getElementById('analysisLoading');
+        if (loader2) loader2.remove();
         addChatBubble('Coach', '⚠️ Analyse konnte nicht erstellt werden.');
-        showSelfAssessmentOrFinish();
       }
-    } else {
-      showSelfAssessmentOrFinish();
     }
+
+    // Jetzt Selbstbewertung oder direkt senden
+    // Analyse ist garantiert fertig und in S.log
+    showSelfAssessmentOrFinish();
   }
 
   // ── SELF ASSESSMENT ODER DIREKT SENDEN ──────────
@@ -1172,13 +1175,40 @@
     }
 
     // Protokoll erstellen
-    var md = 'DialogCoach Pro V5.0 – Training: ' + C.topic + '\n';
-    md += 'Schüler: ' + (C.studentName || '?') + ' | Datum: ' + dateStr + ' | Niveau: ' + C.level + ' | Sprache: ' + C.language + '\n';
-    md += 'Modus: ' + (C.dialogMode === 'strict' ? 'Streng' : 'Adaptiv') + ' | Korrektur: ' + C.correction + '\n\n';
+    var md = '═══════════════════════════════════════\n';
+    md += 'DialogCoach Pro V5.0 – Trainingsprotokoll\n';
+    md += '═══════════════════════════════════════\n\n';
+    md += 'Schüler: ' + (C.studentName || '?') + '\n';
+    md += 'Datum: ' + dateStr + '\n';
+    md += 'Niveau: ' + C.level + '\n';
+    md += 'Sprache: ' + C.language + '\n';
+    md += 'Thema: ' + (C.topic || '?') + '\n';
+    md += 'KI-Rolle: ' + (C.role || '?') + '\n';
+    md += 'Modus: ' + (C.dialogMode === 'strict' ? 'Streng' : 'Adaptiv') + '\n';
+    md += 'Korrektur: ' + C.correction + '\n\n';
 
     md += '--- Lernziel-Auswertung ---\n';
     if (vocabTotal > 0) {
-      md += 'Pflichtvokabeln: ' + usedVocabCount + ' von ' + vocabTotal + ' verwendet.\n';
+      md += 'Pflichtvokabeln: ' + usedVocabCount + ' von ' + vocabTotal + ' verwendet';
+      if (vocabTotal > 0 && usedVocabCount === vocabTotal) md += ' (ALLE ✅)';
+      md += '\n';
+      // Welche wurden verwendet, welche nicht
+      md += 'Verwendet: ';
+      var usedWords = [];
+      var missedWords = [];
+      for (var vi = 0; vi < C.vocab.length; vi++) {
+        var cleanW = clean(C.vocab[vi]);
+        if (S.usedVocab[cleanW]) {
+          usedWords.push(C.vocab[vi]);
+        } else {
+          missedWords.push(C.vocab[vi]);
+        }
+      }
+      md += usedWords.length > 0 ? usedWords.join(', ') : 'keine';
+      md += '\n';
+      if (missedWords.length > 0) {
+        md += 'Nicht verwendet: ' + missedWords.join(', ') + '\n';
+      }
     }
     if (scaffTotal > 0) {
       md += 'Redemittel: ' + usedScaffCount + ' von ' + scaffTotal + ' verwendet.\n';
@@ -1187,10 +1217,10 @@
 
     // Selbstbewertung
     if (C.enableSelfAssessment && S.selfRating > 0) {
-      md += '--- Selbstbewertung ---\n';
+      md += '--- Selbstbewertung des Schülers ---\n';
       var stars = '';
-      for (var s = 0; s < 5; s++) {
-        stars += (s < S.selfRating) ? '★' : '☆';
+      for (var si = 0; si < 5; si++) {
+        stars += (si < S.selfRating) ? '★' : '☆';
       }
       md += 'Bewertung: ' + stars + ' (' + S.selfRating + '/5)\n';
       if (S.selfComment) {
@@ -1200,8 +1230,8 @@
     }
 
     md += '--- Dialog-Verlauf ---\n\n';
-    for (var i = 0; i < S.log.length; i++) {
-      md += '**' + S.log[i].s + ':**\n' + S.log[i].t + '\n\n';
+    for (var li = 0; li < S.log.length; li++) {
+      md += '**' + S.log[li].s + ':**\n' + S.log[li].t + '\n\n';
     }
 
     // Formspree senden
@@ -1214,11 +1244,20 @@
     setStatus('Sende Protokoll...', true);
 
     var formData = new URLSearchParams();
+    formData.append("_subject", "DialogCoach: " + (C.studentName || '?') + " – " + (C.topic || 'Training'));
     formData.append("Schueler", C.studentName || "Unbekannt");
+    formData.append("Datum", dateStr);
     formData.append("Thema", C.topic || "Sitzung");
     formData.append("Niveau", C.level || "?");
     formData.append("Sprache", C.language || "?");
     formData.append("Modus", C.dialogMode === 'strict' ? 'Streng' : 'Adaptiv');
+    formData.append("Korrektur", C.correction || "?");
+    if (vocabTotal > 0) {
+      formData.append("Vokabeln", usedVocabCount + '/' + vocabTotal);
+    }
+    if (scaffTotal > 0) {
+      formData.append("Redemittel", usedScaffCount + '/' + scaffTotal);
+    }
     if (C.enableSelfAssessment && S.selfRating > 0) {
       formData.append("Selbstbewertung", S.selfRating + '/5');
       if (S.selfComment) {
@@ -1238,7 +1277,7 @@
         setStatus('Abgeschlossen ✅', true);
         addChatBubble('Coach', '✅ Protokoll erfolgreich gesendet! Du kannst diesen Tab nun schließen.');
       } else {
-        addChatBubble('Coach', '⚠️ Sende-Fehler. Bitte melde dich beim Lehrer.');
+        addChatBubble('Coach', '⚠️ Sende-Fehler (' + response.status + '). Bitte melde dich beim Lehrer.');
       }
     } catch (error) {
       console.error(error);
@@ -1249,3 +1288,4 @@
 </script>
 </body>
 </html>
+
